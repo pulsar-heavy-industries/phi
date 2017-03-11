@@ -1,6 +1,8 @@
 #ifndef _GDISP_LLD_BOARD_H
 #define _GDISP_LLD_BOARD_H
 
+#define SSD1306_SH1106 FALSE
+
 // Pin & SPI setup
 #define SPI_DRIVER  (&SPID1)
 #define SPI_PORT    GPIOA
@@ -64,8 +66,7 @@ static GFXINLINE void post_init_board(GDisplay* g)
 
 static GFXINLINE void setpin_reset(GDisplay* g, bool_t state)
 {
-	(void)g;
-
+	(void)g; (void) state;
 //	palWritePad(RESET_PORT, RESET_PAD, !state);
 }
 

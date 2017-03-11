@@ -1,7 +1,10 @@
 #include "phi_lib/phi_midi_consts.h"
+#include "phi_lib/phi_app_mgr.h"
+
 #include "cenx4_conf.h"
 #include "cenx4_midi.h"
 #include "usbcfg.h"
+
 
 const phi_midi_cfg_t cenx4_midi_cfg = {
     .in_handler   = cenx4_midi_in_handler,

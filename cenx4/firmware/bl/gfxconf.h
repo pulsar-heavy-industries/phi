@@ -335,4 +335,8 @@
 //#define GMISC_NEED_MATRIXFLOAT2D                     FALSE
 //#define GMISC_NEED_MATRIXFIXED2D                     FALSE
 
+
+#define GOS_NEED_X_THREADS FALSE
+#define GOS_NEED_X_HEAP FALSE
+
 #endif /* _GFXCONF_H */

@@ -147,7 +147,7 @@ void cenx4_ui_render_logo(cenx4_ui_t * ui)
 {
 	for (int disp = 0; disp < 2; ++disp)
     {
-	   for (int row = 0; row < PHI_ARRLEN(phi_logo); ++row)
+	   for (uint32_t row = 0; row < PHI_ARRLEN(phi_logo); ++row)
 	   {
 		   for (int byte = 0; byte < 8; ++byte)
 		   {

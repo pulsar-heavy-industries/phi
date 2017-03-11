@@ -449,7 +449,7 @@ void HAL_FLASH_IRQHandler(void)
 void HAL_FLASH_EndOfOperationCallback(uint32_t ReturnValue)
 {
   /* Prevent unused argument(s) compilation warning */
-  UNUSED(ReturnValue);
+  (void) ReturnValue;
 
   /* NOTE : This function Should not be modified, when the callback is needed,
             the HAL_FLASH_EndOfOperationCallback could be implemented in the user file
@@ -467,7 +467,7 @@ void HAL_FLASH_EndOfOperationCallback(uint32_t ReturnValue)
 void HAL_FLASH_OperationErrorCallback(uint32_t ReturnValue)
 {
   /* Prevent unused argument(s) compilation warning */
-  UNUSED(ReturnValue);
+  (void) ReturnValue;
 
   /* NOTE : This function Should not be modified, when the callback is needed,
             the HAL_FLASH_OperationErrorCallback could be implemented in the user file

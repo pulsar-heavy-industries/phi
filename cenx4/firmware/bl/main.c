@@ -3,6 +3,7 @@
 
 #include "cenx4_can.h"
 #include "cenx4_ui.h"
+#include "cenx4_midi.h"
 #include "usbcfg.h"
 
 /*===========================================================================*/
@@ -107,7 +108,6 @@ void user_jump_to_app(uint32_t address) {
 void boot_user(void)
 {
     const phi_bl_hdr_t * hdr = (phi_bl_hdr_t *) CENX4_BL_USER_ADDR;
-    void * user_code = (void (*)()) (hdr->load_addr);
 
     int is_watchdog_reset = RCC->CSR;
     RCC->CSR |= RCC_CSR_RMVF;
@@ -138,7 +138,7 @@ void boot_user(void)
 
     strcpy(boot_user_status, "FW OK");
 
-    user_jump_to_app(hdr->load_addr); // TODO PHI_CAN_BL_USER_ADDR + sizeof(*hdr));
+    user_jump_to_app(hdr->load_addr);
 }
 
 int main(void)

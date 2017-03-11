@@ -51,6 +51,7 @@
 #define assert_param chDbgCheck
 #define HAL_GetTick chVTGetSystemTimeX
 #define HAL_IS_BIT_SET(REG, BIT)         (((REG) & (BIT)) != RESET)
+#define HAL_IS_BIT_CLR(REG, BIT)         (((REG) & (BIT)) == RESET)
 
 #define __HAL_LOCK(__HANDLE__)                                           \
                               do{                                        \
