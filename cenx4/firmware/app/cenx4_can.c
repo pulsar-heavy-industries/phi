@@ -114,7 +114,6 @@ void cenx4_can_handle_encoder_event(phi_can_t * can, void * context, uint8_t pri
 
     if (len != sizeof(*msg))
     {
-        // TODO count?
         return;
     }
 
@@ -131,11 +130,9 @@ void cenx4_can_handle_set_dispmode(phi_can_t * can, void * context, uint8_t prio
 		(msg->disp >= CENX4_UI_NUM_DISPS) ||
 		(msg->dispmode >= CENX4_UI_NUM_DISPMODES))
 	{
-		// TODO count?
 		return;
 	}
 
-	// TODO Nasty
 	cenx4_ui_t * ui = cenx4_ui_lock(msg->disp);
 	memset(&(ui->state), 0, sizeof(ui->state));
 	ui->dispmode = msg->dispmode;
@@ -154,11 +151,9 @@ void cenx4_can_handle_set_dispmode_state(phi_can_t * can, void * context, uint8_
 	if ((len != sizeof(*msg)) ||
 		(msg->disp >= CENX4_UI_NUM_DISPS))
 	{
-		// TODO count?
 		return;
 	}
 
-	// TODO Nasty
 	cenx4_ui_t * ui = cenx4_ui_lock(msg->disp);
 	memcpy(&(ui->state), &(msg->state), sizeof(ui->state));
 	cenx4_ui_unlock(ui);
@@ -178,18 +173,14 @@ void cenx4_can_handle_set_split_pot_val(phi_can_t * can, void * context, uint8_t
         (msg->disp >= CENX4_UI_NUM_DISPS) ||
         (msg->pot >= 2))
     {
-        // TODO count?
         return;
     }
 
-    // TODO Nasty
     cenx4_ui_t * ui = cenx4_ui_lock(msg->disp);
-
     if (ui->dispmode == CENX4_UI_DISPMODE_SPLIT_POT)
     {
         ui->state.split_pot.pots[msg->pot].val = msg->val;
     }
-
     cenx4_ui_unlock(ui);
 }
 
@@ -204,18 +195,14 @@ void cenx4_can_handle_set_split_pot_text(phi_can_t * can, void * context, uint8_
         (msg->disp >= CENX4_UI_NUM_DISPS) ||
         (msg->pot >= 2))
     {
-        // TODO count?
         return;
     }
 
-    // TODO Nasty
     cenx4_ui_t * ui = cenx4_ui_lock(msg->disp);
-
     if (ui->dispmode == CENX4_UI_DISPMODE_SPLIT_POT)
     {
         memcpy(ui->state.split_pot.pots[msg->pot].text_top, msg->text_top, CENX4_UI_MAX_LINE_TEXT_LEN);
         memcpy(ui->state.split_pot.pots[msg->pot].text_bottom, msg->text_bottom, CENX4_UI_MAX_LINE_TEXT_LEN);
     }
-
     cenx4_ui_unlock(ui);
 }

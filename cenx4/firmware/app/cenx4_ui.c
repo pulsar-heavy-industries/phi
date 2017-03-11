@@ -490,8 +490,7 @@ void cenx4_ui_render_split_pot(cenx4_ui_t * ui)
 {
 	cenx4_ui_render_split_pot_helper(ui, &(ui->state.split_pot.pots[0]), 0);
 
-	// TODO hack - flags are not defined anywhere
-	if (ui->state.split_pot.flags & 1) {
+	if (ui->state.split_pot.flags & CENX4_UI_DISPMODE_POT_FLAGS_DIVIDER_LINE) {
 		gdispGDrawLine(ui->g, 0, ui->h / 2, ui->w, ui->h / 2, White);
 	}
 

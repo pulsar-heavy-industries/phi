@@ -30,7 +30,7 @@ msg_t phi_mtf_async_call(phi_mtf_t * mtf, systime_t timeout, void * func, uint8_
         goto lbl_ret;
     }
 
-    chBSemObjectInit(&(msg->done), TRUE); // TODO not used for waiting but is always signalled
+    chBSemObjectInit(&(msg->done), TRUE);
     msg->func = func;
     msg->n_args = n_args;
     for (i = 0; i < n_args; ++i)
@@ -64,7 +64,7 @@ msg_t phi_mtf_async_callI(phi_mtf_t * mtf, void * func, uint8_t n_args, ...)
         goto lbl_ret;
     }
 
-    chBSemObjectInit(&(msg->done), TRUE); // TODO not used for waiting but is always signalled
+    chBSemObjectInit(&(msg->done), TRUE);
     msg->func = func;
     msg->n_args = n_args;
     for (i = 0; i < n_args; ++i)
