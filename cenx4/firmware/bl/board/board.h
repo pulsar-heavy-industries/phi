@@ -30,7 +30,7 @@
  * Board identifier.
  */
 #define BOARD_CENX4_REV_2_1
-#define BOARD_NAME                  "ab-berry 2.1"
+#define BOARD_NAME                  "cenx4 2.1"
 
 /*
  * Board oscillators-related settings.

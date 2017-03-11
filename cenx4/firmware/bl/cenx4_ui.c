@@ -172,7 +172,7 @@ void cenx4_ui_render_boot(cenx4_ui_t * ui)
 	uint32_t        up_secs = ST2S(ping);
 	msg_t           ret;
 
-	cenx4_ui_text(ui, 0, 0, ui->w, justifyCenter, "ab-berry-bl");
+	cenx4_ui_text(ui, 0, 0, ui->w, justifyCenter, "cenx4-bl");
 	y += font_height + 2;
 
 	chsnprintf(buf, sizeof(buf) - 1, "HwSw %04x", CENX4_HW_SW_VER);
