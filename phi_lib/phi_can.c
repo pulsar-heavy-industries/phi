@@ -411,7 +411,7 @@ msg_t phi_can_xfer(
         }
     }
 
-    ret = phi_can_send_internal(can, FALSE, xfer ? XFER_ID_GET_CHAN(xfer->xfer_id) : 0, prio, msg_id, dst, req_buf, req_len, timeout); // TODO bit hack to get chan
+    ret = phi_can_send_internal(can, FALSE, xfer ? XFER_ID_GET_CHAN(xfer->xfer_id) : 0, prio, msg_id, dst, req_buf, req_len, timeout);
     if (MSG_OK != ret)
     {
         goto lbl_ret;

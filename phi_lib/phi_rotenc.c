@@ -10,7 +10,6 @@ void phi_rotenc_update_state(phi_rotenc_t * rotenc, uint8_t new_state)
 {
     int32_t delta;
 
-    // chSysDisable(); TODO
     rotenc->last_state = rotenc->active_state;
     rotenc->active_state = new_state;
 
@@ -85,8 +84,6 @@ void phi_rotenc_update_state(phi_rotenc_t * rotenc, uint8_t new_state)
         rotenc->prev_accel = rotenc->accel;
         rotenc->accel = 0xff;
     }
-
-    // chSysEnable();
 }
 
 void phi_rotenc_process(phi_rotenc_t * rotencs, uint8_t n_rotencs, phi_rotenc_callback_f callback)
