@@ -1,0 +1,10 @@
+*.map
+*.elf
+*.hex
+*.d
+*.o
+*.swp
+.dep
+build/
+.DS_Store
+*.pyc
