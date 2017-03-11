@@ -468,7 +468,7 @@ void phi_usb_midi_send2(MIDIUSBDriver *mdup, uint8_t port, uint8_t b0, uint8_t b
   write(&mdup, &tx[0], 4);
 }
 
-void phi_usb_midi_send33(MIDIUSBDriver *mdup, uint8_t port, uint8_t b0, uint8_t b1, uint8_t b2) {
+void phi_usb_midi_send3(MIDIUSBDriver *mdup, uint8_t port, uint8_t b0, uint8_t b1, uint8_t b2) {
   uint8_t tx[4];
   tx[0] = calcCIN1(port, b0);
   tx[1] = b0;

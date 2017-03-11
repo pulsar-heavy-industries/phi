@@ -1,4 +1,5 @@
 #include "phi_lib/phi_app_mgr.h"
+#include "phi_lib/phi_mtf.h"
 
 #define PHI_APP_MGR_MTF_NUM_MSGS 8
 
