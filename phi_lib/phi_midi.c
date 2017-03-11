@@ -92,21 +92,9 @@ void phi_midi_rx_pkt(phi_midi_port_t port, const phi_midi_pkt_t * pkt)
     }
 }
 
-// TODO MDU1 shouldnt be used here!
-#include "usbcfg.h"
-
 void phi_midi_tx_pkt(phi_midi_port_t port, const phi_midi_pkt_t * pkt)
 {
-    switch (port)
-        {
-        case PHI_MIDI_PORT_USB:
-            phi_usb_midi_send3(&MDU1, 1, pkt->chn_event, pkt->val1, pkt->val2); // TODO 1? need to come from pkt
-            break;
-
-        default:
-            chDbgCheck(FALSE);
-            break;
-        }
+	phi_midi_cfg->tx_pkt(port, pkt);
 }
 
 void phi_midi_tx_sysex(phi_midi_port_t port, uint8_t cmd, const void * data, size_t data_len)
@@ -153,16 +141,7 @@ void phi_midi_tx_sysex(phi_midi_port_t port, uint8_t cmd, const void * data, siz
         w += 8;
     }
 
-    switch (port)
-    {
-    case PHI_MIDI_PORT_USB:
-        phi_usb_midi_send_sysex(&MDU1, 1, buf, buf_len); // TODO should go through a callback in phi_midi_cfg
-        break;
-
-    default:
-        chDbgCheck(FALSE);
-        break;
-    }
+    phi_midi_cfg->tx_sysex(port, buf, buf_len);
 }
 
 void phi_midi_rx_handle_sysex(phi_midi_port_t port, uint8_t cmd, const void * data, size_t data_len)

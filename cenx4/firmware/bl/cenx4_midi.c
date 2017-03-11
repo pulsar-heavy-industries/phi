@@ -10,6 +10,8 @@ const phi_midi_cfg_t cenx4_midi_cfg = {
     .in_handler   = cenx4_midi_in_handler,
     .in_sysex     = cenx4_midi_in_sysex,
     .get_dev_info = cenx4_midi_get_dev_info,
+	.tx_pkt       = cenx4_midi_tx_pkt,
+	.tx_sysex     = cenx4_midi_tx_sysex,
 };
 
 static THD_WORKING_AREA(midi_thread_wa, 512 + PHI_MIDI_SYSEX_MAX_LEN);
@@ -75,6 +77,22 @@ void cenx4_midi_get_dev_info(phi_midi_sysex_dev_info_t * dev_info)
     dev_info->hw_sw_ver = CENX4_HW_SW_VER;
     memcpy(&(dev_info->uid[0]), &(dev_info->dev_id), sizeof(uint32_t));
     memcpy(&(dev_info->uid[4]), (void *) STM32_REG_UNIQUE_ID, 12);
+}
+
+void cenx4_midi_tx_pkt(phi_midi_port_t port, const phi_midi_pkt_t * pkt)
+{
+	if  (port & PHI_MIDI_PORT_USB)
+	{
+		phi_usb_midi_send3(&MDU1, 1, pkt->chn_event, pkt->val1, pkt->val2); // TODO 1? need to come from pkt
+	}
+}
+
+void cenx4_midi_tx_sysex(phi_midi_port_t port, const uint8_t * data, size_t len)
+{
+	if  (port & PHI_MIDI_PORT_USB)
+	{
+        phi_usb_midi_send_sysex(&MDU1, 1, data, len);
+    }
 }
 
 /******************************************************************************

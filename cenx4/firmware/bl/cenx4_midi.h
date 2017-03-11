@@ -17,6 +17,8 @@ void cenx4_midi_init(void);
 void cenx4_midi_in_handler(phi_midi_port_t port, const phi_midi_pkt_t * pkt);
 void cenx4_midi_in_sysex(phi_midi_port_t port, uint8_t cmd, const void * data, size_t data_len);
 void cenx4_midi_get_dev_info(phi_midi_sysex_dev_info_t * dev_info);
+void cenx4_midi_tx_pkt(phi_midi_port_t port, const phi_midi_pkt_t * pkt);
+void cenx4_midi_tx_sysex(phi_midi_port_t port, const uint8_t * data, size_t len);
 
 void cenx4_midi_bl_start(phi_midi_port_t port, const void * data, size_t data_len);
 void cenx4_midi_bl_data(phi_midi_port_t port, const void * data, size_t data_len);

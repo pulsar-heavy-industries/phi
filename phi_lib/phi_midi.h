@@ -6,9 +6,9 @@ extern "C" {
 #endif
 
 #include "phi_lib/phi_lib.h"
+#include "phi_lib/phi_usb_midi.h"
 
 #define PHI_MIDI_SYSEX_MAX_LEN   295  // (256 + 2) * 8 / 7 // (256 data + 2 crc)
-
 
 typedef enum phi_midi_port_e
 {
@@ -16,6 +16,7 @@ typedef enum phi_midi_port_e
     PHI_MIDI_PORT_USB      = 1,
     PHI_MIDI_PORT_INTERNAL = 2,
     PHI_MIDI_PORT_SERIAL   = 4,
+	PHI_MIDI_PORT_CAN      = 8,
     PHI_MIDI_PORT_ALL      = 0xFF,
 } phi_midi_port_t;
 
@@ -52,6 +53,7 @@ typedef union phi_midi_pkt_s
     };
 } phi_midi_pkt_t;
 
+
 typedef enum phi_midi_sysex_cmd_e
 {
     PHI_MIDI_SYSEX_CMD_INVALID = 0,
@@ -71,12 +73,18 @@ typedef struct phi_midi_sysex_dev_info_s
 typedef void (* phi_midi_in_handler_f)(phi_midi_port_t port, const phi_midi_pkt_t * pkt);
 typedef void (* phi_midi_in_sysex_f)(phi_midi_port_t port, uint8_t cmd, const void * data, size_t data_len);
 typedef void (* phi_midi_get_dev_info_f)(phi_midi_sysex_dev_info_t * dev_info);
+typedef void (* phi_midi_tx_pkt_f)(phi_midi_port_t port, const phi_midi_pkt_t * pkt);
+typedef void (* phi_midi_tx_sysex_f)(phi_midi_port_t port, const uint8_t * data, size_t len);
 
 typedef struct phi_midi_cfg_s
 {
     phi_midi_in_handler_f   in_handler;
     phi_midi_in_sysex_f     in_sysex;
     phi_midi_get_dev_info_f get_dev_info;
+    phi_midi_tx_pkt_f       tx_pkt;
+    phi_midi_tx_sysex_f     tx_sysex;
+
+    MIDIUSBDriver *         usb_midi_drv;
 } phi_midi_cfg_t;
 
 void phi_midi_init(const phi_midi_cfg_t * cfg);
