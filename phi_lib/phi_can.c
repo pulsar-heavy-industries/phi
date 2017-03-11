@@ -27,8 +27,6 @@ static THD_FUNCTION(phi_can_read_thread, arg)
         // RX FULL
         if(mask & EVENT_MASK(0))
         {
-            // palTogglePad(GPIOD, GPIOA_LED_GREEN);
-
             for (;;)
             {
                 // Get a buffer if we need one
@@ -45,9 +43,6 @@ static THD_FUNCTION(phi_can_read_thread, arg)
                     break;
                 }
 
-                //memcpy(&(can->rx_log[can->rx_log_cnt++]), rxmsg, sizeof(CANRxFrame));
-                //chDbgAssert(can->rx_log_cnt < 50, "err");
-
                 // Got a buffer, put that on queue
                 ret = chMBPost(&(can->rx_bufs), (msg_t) rxmsg, TIME_INFINITE);
                 chDbgAssert(ret == MSG_OK, "WTF");
@@ -58,11 +53,8 @@ static THD_FUNCTION(phi_can_read_thread, arg)
         // ERROR
         if (mask & EVENT_MASK(1))
         {
-            // TODO
-            // palTogglePad(GPIOD, GPIOD_LED5);
             errors |= chEvtGetAndClearFlags(&err_evt);
-            //while(errors);
-            ++(can->stat_err);
+            ++(can->stat_read_errs);
         }
     }
 
@@ -77,7 +69,7 @@ void process_rx(phi_can_t * can, const CANRxFrame * rxmsg)
     const uint8_t * data = &(rxmsg->data8[1]);
     uint8_t data_len = rxmsg->DLC - 1;
     uint32_t i;
-    volatile /* TODO */ uint32_t t_xfer_id;
+    uint32_t t_xfer_id;
     phi_can_xfer_t * xfer;
     systime_t now;
 
@@ -99,8 +91,7 @@ void process_rx(phi_can_t * can, const CANRxFrame * rxmsg)
     // We must have at least 1 byte of data - the xfer id
     if (0 == rxmsg->DLC)
     {
-        // TODO error
-        //palTogglePad(GPIOD, GPIOD_LED5);
+        ++can->stat_process_rx_err;
         return;
     }
 
@@ -132,6 +123,7 @@ void process_rx(phi_can_t * can, const CANRxFrame * rxmsg)
         {
             phi_can_free_xfer(can, FALSE, xfer);
             xfer = NULL;
+            ++can->stat_process_rx_timeout;
         }
         else
         {
@@ -149,6 +141,7 @@ void process_rx(phi_can_t * can, const CANRxFrame * rxmsg)
             if (xfer_desc.toggle_or_is_reply)
             {
                 // This is a reply to something we don't recognize, nothing to do about it
+            	++can->stat_process_rx_err;
             }
             else
             {
@@ -182,15 +175,21 @@ void process_rx(phi_can_t * can, const CANRxFrame * rxmsg)
                     xfer = phi_can_alloc_xfer(can, FALSE, FALSE, eid.src, xfer_desc.chan_id, TIME_IMMEDIATE);
                     if (NULL == xfer)
                     {
-                        can->dropped_multi_reqs++;
+                        can->stat_process_rx_dropped_multi_reqs++;
                     }
                     else
                     {
                         // Store the data we have so far
-                        chDbgAssert(data_len == 7, "WTF"); // TODO just drop the packer;
-                        xfer->expected_crc = data[0] << 8 | data[1];
-                        memcpy(xfer->rx_data, &(data[2]), 5);
-                        xfer->rx_len = 5;
+                    	if (data_len == 7)
+                    	{
+							xfer->expected_crc = data[0] << 8 | data[1];
+							memcpy(xfer->rx_data, &(data[2]), 5);
+							xfer->rx_len = 5;
+                    	}
+                    	else
+                    	{
+                    		++can->stat_process_rx_err;
+                    	}
                     }
                 }
             }
@@ -217,34 +216,36 @@ void process_rx(phi_can_t * can, const CANRxFrame * rxmsg)
             else
             {
                 // Start of a multi-message reply
-
-                // Sanity
-                chDbgAssert(data_len == 7, "WTF"); // TODO just drop the packer;
-                xfer->expected_crc = data[0] << 8 | data[1];
-                memcpy(xfer->rx_data, &(data[2]), 5);
-                xfer->rx_len = 5;
+                if (data_len == 7)
+                {
+					xfer->expected_crc = data[0] << 8 | data[1];
+					memcpy(xfer->rx_data, &(data[2]), 5);
+					xfer->rx_len = 5;
+                }
+                else
+                {
+                	++can->stat_process_rx_err;
+                }
             }
         }
     }
     // End of a recognized multi-msg transfer
     else if ((xfer_desc.end) && (NULL != xfer))
     {
-        // TODO verify toggle bit
-        // TODO verify we're not overflowing rx_data
-        // TODO verify CRC
+        bool error = (
+        	(xfer->toggle != xfer_desc.toggle_or_is_reply) ||
+			((xfer->rx_len + data_len) > sizeof(xfer->rx_data)) ||
+			(phi_crc16(xfer->rx_data, (xfer->rx_len + data_len)) != xfer->expected_crc)
+		);
 
-        // TODO chDbgAssert(xfer->toggle == xfer_desc.toggle_or_is_reply, "WTF");
-        bool error = xfer->toggle != xfer_desc.toggle_or_is_reply;
-
-        // Won't fit
-        if ((xfer->rx_len + data_len) > sizeof(xfer->rx_data))
-        {
-            error = TRUE;
-        }
-        else
+        if (!error)
         {
             memcpy(xfer->rx_data + xfer->rx_len, data, data_len);
             xfer->rx_len += data_len;
+        }
+        else
+        {
+        	++can->stat_process_rx_err;
         }
 
         if (xfer->xfer_id & 1) // TODO is_reply
@@ -273,6 +274,7 @@ void process_rx(phi_can_t * can, const CANRxFrame * rxmsg)
             {
                 // signal whoever is waiting on this reply that we're done
                 // TODO set error flag
+            	++can->stat_process_rx_err;
                 chBSemSignal(&(xfer->rx_done));
             }
             else
@@ -305,9 +307,6 @@ static THD_FUNCTION(phi_can_process_thread, arg)
         {
               continue;
         }
-
-
-        //palTogglePad(GPIOD, GPIOD_LED4);
 
         process_rx(can, rxmsg);
 
@@ -477,29 +476,27 @@ phi_can_xfer_t * phi_can_alloc_xfer(phi_can_t * can, bool lock, bool is_reply, u
         }
     }
 
-    // SAnity - this id should never be in the table
+	uint32_t _x = PACK_XFER_ID(
+		is_reply ? node_id : can->node_id,
+		is_reply ? can->node_id : node_id,
+		chan_id,
+		is_reply ? 1 : 0
+	);
 
-        uint32_t _x = PACK_XFER_ID(
-            is_reply ? node_id : can->node_id,
-            is_reply ? can->node_id : node_id,
-            chan_id,
-            is_reply ? 1 : 0
-        );
-
+	// Sanity - this id should never be in the table
+#if PHI_CAN_SANITY_TESTS
         for (i = 0; i < PHI_CAN_MAX_XFERS; ++i)
         {
             chDbgAssert(can->xfers[i].xfer_id != _x, "WTF");
         }
-
+#endif
 
     for (i = 0; i < PHI_CAN_MAX_XFERS; ++i)
     {
         xfer = &(can->xfers[i]);
         if (xfer->xfer_id == 0)
         {
-            chDbgAssert(xfer->used == FALSE, "WTF");
             chBSemObjectInit(&(xfer->rx_done), TRUE);
-            xfer->used = true;
             xfer->toggle = false;
             xfer->rx_len = 0;
 
@@ -532,7 +529,6 @@ void phi_can_free_xfer(phi_can_t * can, bool lock, phi_can_xfer_t * xfer)
     }
     xfer->rx_len = 0;
     xfer->expected_crc = 0;
-    xfer->used = false;
     memset(xfer->rx_data, 0, sizeof(xfer->rx_data));
     xfer->xfer_id = 0;
 
@@ -546,9 +542,7 @@ void phi_can_free_xfer(phi_can_t * can, bool lock, phi_can_xfer_t * xfer)
 
 void phi_can_handle_incoming_msg(phi_can_t * can, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, uint8_t data_len)
 {
-    unsigned int i;
-
-    can->handled[msg_id]++;
+    uint32_t i;
 
     if (src == PHI_CAN_AUTO_ID)
     {
@@ -590,6 +584,7 @@ msg_t phi_can_send_internal(
     phi_can_msg_xfer_desc_t xfer_desc;
     CANTxFrame frame;
     bool toggle = false;
+    uint16_t crc;
     phi_can_eid_t eid = {
         .prio = prio,
         .msg_id = msg_id,
@@ -621,9 +616,7 @@ msg_t phi_can_send_internal(
         {
             memcpy(&(frame.data8[1]), data, data_len);
         }
-        //memcpy(&(can->tx_log[can->tx_log_cnt++]), &frame, sizeof(frame));
-        //chDbgAssert(can->tx_log_cnt < 50, "err");
-        //chDbgAssert(frame.data8[1] != 0x11, "XXX");
+
         return canTransmit(can->cfg->drv, MBOX, &frame, timeout);
     }
     // Multi message reply
@@ -635,13 +628,15 @@ msg_t phi_can_send_internal(
         xfer_desc.toggle_or_is_reply = is_reply;
         xfer_desc.chan_id = chan_id;
 
+        crc = phi_crc16(data, data_len);
+
         frame.DLC = 8; // 2 bytes for crc, 1 byte for xfer desc, we're left with 5 for data
         frame.RTR = 0;
         frame.IDE = 1;
         frame.EID = EID_PACK(eid);
         frame.data8[0] = xfer_desc.val;
-        frame.data8[1] = 0; // TODO CRC
-        frame.data8[2] = 0; // TODO CRC
+        frame.data8[1] = (crc >> 8) & 0xFF;
+        frame.data8[2] = crc & 0xFF;
         frame.data8[3] = data[0];
         frame.data8[4] = data[1];
         frame.data8[5] = data[2];
@@ -654,10 +649,6 @@ msg_t phi_can_send_internal(
         for (;;)
         {
             int chunk_size = data_len <= 7 ? data_len : 7;
-
-            //memcpy(&(can->tx_log[can->tx_log_cnt++]), &frame, sizeof(frame));
-            //chDbgAssert(can->tx_log_cnt < 50, "err");
-            //chDbgAssert(frame.data8[1] != 0x11, "XXX");
 
             if (MSG_OK != canTransmit(can->cfg->drv, MBOX, &frame, timeout))
             {

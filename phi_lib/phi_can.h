@@ -10,15 +10,16 @@ extern "C" {
 /******************************************************************************
  * Misc consts
  *****************************************************************************/
-#define PHI_CAN_MSG_POOL_SIZE		32
-#define PHI_CAN_MAX_XFERS        	4
-#define PHI_CAN_MAX_MSG_DATA_LEN    140 // we have 7 bytes of data per can msg so we want to this to be divisible by 7
-#define PHI_CAN_VERSION 				0x100a
-#define PHI_CAN_DEFAULT_TIMEOUT 		MS2ST(100)
-#define PHI_CAN_PRIO_LOWEST          0x1F
-#define PHI_CAN_PRIO_HIGHEST         0
-#define PHI_CAN_MAX_NODE_ID			0x7F
-
+#define PHI_CAN_MSG_POOL_SIZE					32
+#define PHI_CAN_MAX_XFERS        				4
+#define PHI_CAN_MAX_MSG_DATA_LEN    			140 // we have 7 bytes of data per can msg so we want to this to be divisible by 7
+#define PHI_CAN_VERSION 						0x100a
+#define PHI_CAN_DEFAULT_TIMEOUT 				MS2ST(100)
+#define PHI_CAN_PRIO_LOWEST         			0x1F
+#define PHI_CAN_PRIO_HIGHEST        			0
+#define PHI_CAN_MAX_NODE_ID						0x7F
+#define PHI_CAN_PROCESS_RX_THREAD_STACK_SIZE	512
+#define PHI_CAN_SANITY_TESTS                    1
 
 /******************************************************************************
  * Auto-id allocation
@@ -134,10 +135,8 @@ typedef struct phi_can_xfer_s {
 	uint8_t rx_len;
 
 	uint8_t toggle;
-	bool used; // TODO not really used
-	uint16_t expected_crc; // TODO does nothing
+	uint16_t expected_crc;
 	systime_t last_seen_at;
-
 
 	binary_semaphore_t rx_done;
 } phi_can_xfer_t;
@@ -164,16 +163,11 @@ typedef struct phi_can_s {
 	mutex_t xfer_lock;
 	semaphore_t xfer_sem;
 
-	uint32_t stat_err;
+	uint32_t stat_read_errs;
 	uint32_t stat_process_rx;
-	uint32_t dropped_multi_reqs;
-
-	// TODO
-	uint32_t handled[5];
-	CANRxFrame rx_log[50];
-	uint8_t rx_log_cnt;
-	CANTxFrame tx_log[50];
-	uint8_t tx_log_cnt;
+	uint32_t stat_process_rx_err;
+	uint32_t stat_process_rx_timeout;
+	uint32_t stat_process_rx_dropped_multi_reqs;
 
 	CANRxFrame bufs[PHI_CAN_MSG_POOL_SIZE];
 	msg_t free_bufs_q[PHI_CAN_MSG_POOL_SIZE];
@@ -182,7 +176,7 @@ typedef struct phi_can_s {
 	mailbox_t rx_bufs;
 
 	thread_t * process_rx_thread;
-	THD_WORKING_AREA(process_rx_thread_wa, 512); // TODO 512?
+	THD_WORKING_AREA(process_rx_thread_wa, PHI_CAN_PROCESS_RX_THREAD_STACK_SIZE);
 
 	thread_t * read_thread;
 	THD_WORKING_AREA(read_thread_wa, 128);
