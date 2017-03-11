@@ -83,8 +83,6 @@ typedef struct phi_midi_cfg_s
     phi_midi_get_dev_info_f get_dev_info;
     phi_midi_tx_pkt_f       tx_pkt;
     phi_midi_tx_sysex_f     tx_sysex;
-
-    MIDIUSBDriver *         usb_midi_drv;
 } phi_midi_cfg_t;
 
 void phi_midi_init(const phi_midi_cfg_t * cfg);
