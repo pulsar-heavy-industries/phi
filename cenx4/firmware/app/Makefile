@@ -145,7 +145,8 @@ CSRC = $(STARTUPSRC) \
 	   cenx4_app_test.c \
 	   cenx4_midi.c \
        cenx4_can.c \
-       cenx4_ui.c
+       cenx4_ui.c \
+       cenx4_io.c
 
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global

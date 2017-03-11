@@ -1,9 +1,8 @@
-#include "phi_lib/phi_rotenc.h"
-
-#include "cenx4_conf.h"
-#include "cenx4_midi.h"
 #include "cenx4_app_ableton.h"
 #include "cenx4_app_registry.h"
+#include "cenx4_conf.h"
+#include "cenx4_io.h"
+#include "cenx4_midi.h"
 
 
 const phi_app_desc_t cenx4_app_ableton_desc = {
@@ -38,7 +37,6 @@ const uint8_t hw_to_ableton_pot_maps[][CENX4_MAX_POTS] = {
     },
 };
 
-extern phi_rotenc_t phi_rotencs[];
 
 void cenx4_app_ableton_start(void * _ctx)
 {
@@ -51,7 +49,7 @@ void cenx4_app_ableton_start(void * _ctx)
 
     for (i = 0; i < 4; ++i)
     {
-    	phi_rotencs[i].speed = 1;
+    	cenx4_rotencs[i].speed = 1;
     }
 
     ctx->num_pots = 8; // TODO constant
@@ -157,11 +155,11 @@ void cenx4_app_ableton_btn_event(void * ctx, uint8_t node_id, uint8_t btn_num, p
 		switch (event)
 		{
 		case PHI_BTN_EVENT_PRESSED:
-			phi_rotencs[btn_num].speed = 2;
+			cenx4_rotencs[btn_num].speed = 2;
 			break;
 
 		case PHI_BTN_EVENT_RELEASED:
-			phi_rotencs[btn_num].speed = 1;
+			cenx4_rotencs[btn_num].speed = 1;
 			break;
 
 		default:
