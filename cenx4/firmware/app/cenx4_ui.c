@@ -48,7 +48,7 @@ static THD_FUNCTION(cenx4_ui_thread, arg)
 			gdispGFlush(ui->g);
 		}
 
-		chThdSleepMilliseconds(50);
+		chThdSleepMilliseconds(10);
 	}
 }
 
@@ -253,62 +253,6 @@ void cenx4_ui_render_texts(cenx4_ui_t * ui)
 	}
 }
 
-
-#if 0
-// This is the code that does not use lookup tables, but is slow
-#include <math.h>
-#define ARM_MATH_CM0 1
-#include "arm_math.h"
-float inline degree2radian(int a) { return (a * 0.017453292519f); }
-void getEndPointx(float angle, int len, int start_x,
-    int start_y, int *end_x, int *end_y) {
-		float cos_val, sin_val;
-		arm_sin_cos_f32(angle, &sin_val, &cos_val);
-		*end_x = start_x + len * cos_val;
-		*end_y = start_y + len * sin_val;
-
-        // *end_x = start_x + len * cosf(angle);
-        // *end_y = start_y + len * sinf(angle);
-} // getEndPoint
-#endif
-
-/* Lookup tables generated for len=7 and len=10, using the following Python script:
-
-import itertools
-from math import sin, cos
-
-def deg2rad(a):
-    return a * 0.017453292519
-
-def gen_for_len(l):
-    return list(itertools.chain(*[[int(l * sin(deg2rad(i))), int(l * cos(deg2rad(i)))] for i in range(360)]))
-
-print gen_for_len(10)
-
-
-
- */
-static const int8_t lookup7[] = {0, 7, 0, 6, 0, 6, 0, 6, 0, 6, 0, 6, 0, 6, 0, 6, 0, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 2, 6, 2, 6, 2, 6, 2, 6, 2, 6, 2, 6, 2, 6, 2, 6, 2, 6, 3, 6, 3, 6, 3, 6, 3, 6, 3, 6, 3, 6, 3, 5, 3, 5, 3, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 3, 5, 3, 5, 3, 6, 3, 6, 3, 6, 3, 6, 3, 6, 3, 6, 3, 6, 2, 6, 2, 6, 2, 6, 2, 6, 2, 6, 2, 6, 2, 6, 2, 6, 2, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 1, 6, 0, 6, 0, 6, 0, 6, 0, 6, 0, 6, 0, 6, 0, 6, 0, 7, 0, 6, 0, 6, 0, 6, 0, 6, 0, 6, 0, 6, 0, 6, 0, 6, 0, 6, -1, 6, -1, 6, -1, 6, -1, 6, -1, 6, -1, 6, -1, 6, -1, 6, -2, 6, -2, 6, -2, 6, -2, 6, -2, 6, -2, 6, -2, 6, -2, 6, -2, 6, -3, 6, -3, 6, -3, 6, -3, 6, -3, 6, -3, 5, -3, 5, -3, 5, -3, 5, -4, 5, -4, 5, -4, 5, -4, 5, -4, 5, -4, 5, -4, 5, -4, 5, -4, 5, -4, 4, -4, 4, -5, 4, -5, 4, -5, 4, -5, 4, -5, 4, -5, 4, -5, 4, -5, 4, -5, 4, -5, 3, -5, 3, -5, 3, -5, 3, -6, 3, -6, 3, -6, 3, -6, 3, -6, 3, -6, 2, -6, 2, -6, 2, -6, 2, -6, 2, -6, 2, -6, 2, -6, 2, -6, 2, -6, 1, -6, 1, -6, 1, -6, 1, -6, 1, -6, 1, -6, 1, -6, 1, -6, 0, -6, 0, -6, 0, -6, 0, -6, 0, -6, 0, -6, 0, -6, 0, -6, 0, -7, 0, -6, 0, -6, 0, -6, 0, -6, 0, -6, 0, -6, 0, -6, 0, -6, -1, -6, -1, -6, -1, -6, -1, -6, -1, -6, -1, -6, -1, -6, -1, -6, -2, -6, -2, -6, -2, -6, -2, -6, -2, -6, -2, -6, -2, -6, -2, -6, -2, -6, -3, -6, -3, -6, -3, -6, -3, -6, -3, -6, -3, -6, -3, -5, -3, -5, -3, -5, -4, -5, -4, -5, -4, -5, -4, -5, -4, -5, -4, -5, -4, -5, -4, -5, -4, -5, -4, -5, -4, -4, -5, -4, -5, -4, -5, -4, -5, -4, -5, -4, -5, -4, -5, -4, -5, -4, -5, -4, -5, -4, -5, -3, -5, -3, -5, -3, -6, -3, -6, -3, -6, -3, -6, -3, -6, -3, -6, -3, -6, -2, -6, -2, -6, -2, -6, -2, -6, -2, -6, -2, -6, -2, -6, -2, -6, -2, -6, -1, -6, -1, -6, -1, -6, -1, -6, -1, -6, -1, -6, -1, -6, -1, -6, 0, -6, 0, -6, 0, -6, 0, -6, 0, -6, 0, -6, 0, -6, 0, -7, 0, -6, 0, -6, 0, -6, 0, -6, 0, -6, 0, -6, 0, -6, 0, -6, 0, -6, 1, -6, 1, -6, 1, -6, 1, -6, 1, -6, 1, -6, 1, -6, 1, -6, 2, -6, 2, -6, 2, -6, 2, -6, 2, -6, 2, -6, 2, -6, 2, -6, 2, -6, 3, -6, 3, -6, 3, -6, 3, -6, 3, -6, 3, -5, 3, -5, 3, -5, 3, -5, 4, -5, 4, -5, 4, -5, 4, -5, 4, -5, 4, -5, 4, -5, 4, -5, 4, -5, 4, -4, 4, -4, 5, -4, 5, -4, 5, -4, 5, -4, 5, -4, 5, -4, 5, -4, 5, -4, 5, -4, 5, -3, 5, -3, 5, -3, 5, -3, 6, -3, 6, -3, 6, -3, 6, -3, 6, -3, 6, -2, 6, -2, 6, -2, 6, -2, 6, -2, 6, -2, 6, -2, 6, -2, 6, -2, 6, -1, 6, -1, 6, -1, 6, -1, 6, -1, 6, -1, 6, -1, 6, -1, 6, 0, 6, 0, 6, 0, 6, 0, 6, 0, 6, 0, 6, 0, 6, 0, 6};
-static const int8_t lookup10[] = {0, 10, 0, 9, 0, 9, 0, 9, 0, 9, 0, 9, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9, 2, 9, 2, 9, 2, 9, 2, 9, 2, 9, 2, 9, 3, 9, 3, 9, 3, 9, 3, 9, 3, 9, 3, 9, 4, 9, 4, 9, 4, 8, 4, 8, 4, 8, 4, 8, 4, 8, 5, 8, 5, 8, 5, 8, 5, 8, 5, 8, 5, 8, 6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 7, 7, 7, 6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 6, 7, 6, 8, 5, 8, 5, 8, 5, 8, 5, 8, 5, 8, 5, 8, 5, 8, 4, 8, 4, 8, 4, 8, 4, 9, 4, 9, 4, 9, 3, 9, 3, 9, 3, 9, 3, 9, 3, 9, 3, 9, 2, 9, 2, 9, 2, 9, 2, 9, 2, 9, 2, 9, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9, 1, 9, 0, 9, 0, 9, 0, 9, 0, 9, 0, 10, 0, 9, 0, 9, 0, 9, 0, 9, 0, 9, 0, 9, -1, 9, -1, 9, -1, 9, -1, 9, -1, 9, -1, 9, -2, 9, -2, 9, -2, 9, -2, 9, -2, 9, -2, 9, -3, 9, -3, 9, -3, 9, -3, 9, -3, 9, -3, 9, -4, 9, -4, 8, -4, 8, -4, 8, -4, 8, -4, 8, -4, 8, -5, 8, -5, 8, -5, 8, -5, 8, -5, 8, -5, 7, -6, 7, -6, 7, -6, 7, -6, 7, -6, 7, -6, 7, -6, 7, -6, 7, -7, 6, -7, 6, -7, 6, -7, 6, -7, 6, -7, 6, -7, 6, -7, 6, -7, 5, -8, 5, -8, 5, -8, 5, -8, 5, -8, 5, -8, 5, -8, 4, -8, 4, -8, 4, -8, 4, -8, 4, -9, 4, -9, 3, -9, 3, -9, 3, -9, 3, -9, 3, -9, 3, -9, 2, -9, 2, -9, 2, -9, 2, -9, 2, -9, 2, -9, 1, -9, 1, -9, 1, -9, 1, -9, 1, -9, 1, -9, 0, -9, 0, -9, 0, -9, 0, -9, 0, -9, 0, -10, 0, -9, 0, -9, 0, -9, 0, -9, 0, -9, -1, -9, -1, -9, -1, -9, -1, -9, -1, -9, -1, -9, -2, -9, -2, -9, -2, -9, -2, -9, -2, -9, -2, -9, -3, -9, -3, -9, -3, -9, -3, -9, -3, -9, -3, -9, -4, -9, -4, -9, -4, -8, -4, -8, -4, -8, -4, -8, -4, -8, -5, -8, -5, -8, -5, -8, -5, -8, -5, -8, -5, -8, -6, -7, -6, -7, -6, -7, -6, -7, -6, -7, -6, -7, -6, -7, -6, -7, -7, -7, -7, -6, -7, -6, -7, -6, -7, -6, -7, -6, -7, -6, -7, -6, -7, -6, -8, -5, -8, -5, -8, -5, -8, -5, -8, -5, -8, -5, -8, -5, -8, -4, -8, -4, -8, -4, -8, -4, -9, -4, -9, -4, -9, -3, -9, -3, -9, -3, -9, -3, -9, -3, -9, -3, -9, -2, -9, -2, -9, -2, -9, -2, -9, -2, -9, -2, -9, -1, -9, -1, -9, -1, -9, -1, -9, -1, -9, -1, -9, 0, -9, 0, -9, 0, -9, 0, -9, 0, -10, 0, -9, 0, -9, 0, -9, 0, -9, 0, -9, 0, -9, 1, -9, 1, -9, 1, -9, 1, -9, 1, -9, 1, -9, 2, -9, 2, -9, 2, -9, 2, -9, 2, -9, 2, -9, 3, -9, 3, -9, 3, -9, 3, -9, 3, -9, 3, -9, 4, -9, 4, -8, 4, -8, 4, -8, 4, -8, 4, -8, 4, -8, 5, -8, 5, -8, 5, -8, 5, -8, 5, -8, 5, -7, 6, -7, 6, -7, 6, -7, 6, -7, 6, -7, 6, -7, 6, -7, 6, -7, 7, -6, 7, -6, 7, -6, 7, -6, 7, -6, 7, -6, 7, -6, 7, -6, 7, -5, 8, -5, 8, -5, 8, -5, 8, -5, 8, -5, 8, -5, 8, -4, 8, -4, 8, -4, 8, -4, 8, -4, 9, -4, 9, -3, 9, -3, 9, -3, 9, -3, 9, -3, 9, -3, 9, -2, 9, -2, 9, -2, 9, -2, 9, -2, 9, -2, 9, -1, 9, -1, 9, -1, 9, -1, 9, -1, 9, -1, 9, 0, 9, 0, 9, 0, 9, 0, 9, 0, 9};
-
-void getEndPoint(int angle, int len, int start_x, int start_y, int *x, int *y)
-{
-	angle %= 360;
-	switch (len) {
-	case 7:
-		*x = start_x + lookup7[(angle * 2)];
-		*y = start_y + lookup7[(angle * 2) + 1];
-		break;
-	case 10:
-		*x = start_x + lookup10[(angle * 2)];
-		*y = start_y + lookup10[(angle * 2) + 1];
-		break;
-	default:
-		chDbgAssert(FALSE, "WTF");
-		break;
-	}
-}
-
 void cenx4_ui_render_split_pot_helper(cenx4_ui_t * ui, struct cenx4_ui_dispmode_state_split_pot_s * pot, coord_t y)
 {
 	int top_font = (pot->flags & (3 << 5)) >> 5;
@@ -333,45 +277,45 @@ void cenx4_ui_render_split_pot_helper(cenx4_ui_t * ui, struct cenx4_ui_dispmode_
 	{
 		gdispGDrawCircle(ui->g, ui->w / 2, y + (ui->h / 4), (ui->w / 2) - 20, White);
 
-		int xx1, yy1, xx2, yy2, i;
-		int start_angle, end_angle, abs_angle;
-
-		if (pot->flags & CENX4_UI_DISPMODE_POT_FLAGS_CENTERED)
+		if (pot->flags & CENX4_UI_DISPMODE_POT_FLAGS_FILL)
 		{
-			if (pot->val > 50)
-            {
-                start_angle = 180;
-                end_angle  = 180 + phi_lib_map(pot->val - 50, 0, 99, 0, 270);
-                abs_angle = end_angle;
-            }
-            else
-            {
-                //start_angle = 315;
-                //end_angle  = phi_lib_map(pot->val, 0, 99, 0, 270);
-                start_angle = 180 - phi_lib_map(50 - pot->val, 0, 99, 0, 270);
-                end_angle = 180;
-                abs_angle = start_angle;
-            }
-		} else {
-		    start_angle = 45;
-		    end_angle = 45 + phi_lib_map(pot->val, 0, 99, 0, 270);
-		    abs_angle = end_angle;
-		}
+			if (pot->flags & CENX4_UI_DISPMODE_POT_FLAGS_CENTERED)
+			{
+				if (pot->val > 50)
+				{
+					int m = 225 - phi_lib_map(pot->val, 0, 99, 10, 270);
+					gdispGDrawThickArc(ui->g, ui->w / 2, y + (ui->h / 4), 7, 10, m, 90, White);
+				}
+				else
+				{
+					int m = (90 + phi_lib_map(50 - pot->val, 0, 99, 10, 270));
+					gdispGDrawThickArc(ui->g, ui->w / 2, y + (ui->h / 4), 7, 10, 90, m, White);
+				}
 
-		if (pot->flags & CENX4_UI_DISPMODE_POT_FLAGS_FILL) {
-			for (i = 0; i < (end_angle - start_angle); ++i) {
-				getEndPoint(360 - (start_angle + i), 10, ui->w / 2, y + (ui->h / 4), &xx1, &yy1);
-				getEndPoint(360 - (start_angle + i), 7, ui->w / 2, y + (ui->h / 4), &xx2, &yy2);
-
-				gdispGDrawLine(ui->g, xx1, yy1, xx2, yy2, White);
+			}
+			else
+			{
+				int m = 225 - phi_lib_map(pot->val, 0, 99, 5, 270);
+				gdispGDrawThickArc(ui->g, ui->w / 2, y + (ui->h / 4), 7, 10, m, 225, White);
 			}
 		}
 		else
 		{
-			getEndPoint(360 - abs_angle, 10, ui->w / 2, y + (ui->h / 4), &xx1, &yy1);
-			getEndPoint(360 - abs_angle, 7, ui->w / 2, y + (ui->h / 4), &xx2, &yy2);
+			coord_t center_x = ui->w / 2;
+			coord_t center_y = y + (ui->h / 4);
+			int deg = 135 + phi_lib_map(pot->val, 0, 99, 0, 270);
 
-			gdispGDrawLine(ui->g, xx1, yy1, xx2, yy2, White);
+			fixed cos_m = ffcos(deg);
+			fixed sin_m = ffsin(deg);
+
+			int x1 = center_x + NONFIXED(FIXEDMUL(FIXED(5), cos_m));
+			int y1 = center_y + NONFIXED(FIXEDMUL(FIXED(5), sin_m));
+
+			int x2 = center_x + NONFIXED(FIXEDMUL(FIXED(10), cos_m));
+			int y2 = center_y + NONFIXED(FIXEDMUL(FIXED(10), sin_m));
+
+			gdispGDrawLine(ui->g, x1, y1, x2, y2, White);
+
 		}
 
 		y = y + (ui->h / 4) + ((ui->w / 2) - 20) + 2;

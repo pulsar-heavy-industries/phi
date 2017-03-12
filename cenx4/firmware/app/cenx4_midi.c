@@ -116,7 +116,7 @@ void cenx4_midi_tx_pkt(phi_midi_port_t port, const phi_midi_pkt_t * pkt)
 {
 	if  (port & PHI_MIDI_PORT_USB)
 	{
-		phi_usb_midi_send3(&MDU1, 1, pkt->chn_event, pkt->val1, pkt->val2); // TODO 1? need to come from pkt
+		phi_usb_midi_send3(&MDU1, 1, pkt->chn_event, pkt->val1, pkt->val2);
 	}
 }
 
