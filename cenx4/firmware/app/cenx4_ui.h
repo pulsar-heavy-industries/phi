@@ -47,8 +47,11 @@ typedef enum cenx4_ui_dispmode_e
 	CENX4_UI_DISPMODE_TEXTS,
 	CENX4_UI_DISPMODE_SPLIT_POT,
 	CENX4_UI_DISPMODE_LOGO,
+	CENX4_UI_DISPMODE_CALLBACK,
 	CENX4_UI_NUM_DISPMODES,
 } cenx4_ui_dispmode_t;
+
+struct cenx4_ui_s;
 
 #pragma pack(1)
 typedef union cenx4_ui_dispmode_state_u
@@ -76,6 +79,12 @@ typedef union cenx4_ui_dispmode_state_u
 
 		uint8_t flags;
 	} split_pot;
+
+	struct
+	{
+		void * ctx;
+		void (* func)(struct cenx4_ui_s * ui, void * ctx);
+	} callback;
 } cenx4_ui_dispmode_state_t;
 #pragma pack()
 
@@ -96,11 +105,15 @@ void cenx4_ui_init(void);
 cenx4_ui_t * cenx4_ui_lock(uint8_t idx);
 void cenx4_ui_unlock(cenx4_ui_t * ui);
 
+void cenx4_ui_text(cenx4_ui_t * ui, coord_t x, coord_t y, coord_t w, uint8_t font_idx, uint8_t justify, const char * text);
+
 void cenx4_ui_render_boot(cenx4_ui_t * ui);
 void cenx4_ui_render_texts(cenx4_ui_t * ui);
 void cenx4_ui_render_split_pot(cenx4_ui_t * ui);
 uint8_t cenx4_ui_get_biggest_possible_font_idx(cenx4_ui_t * ui, const char * s);
 
 void cenx4_ui_render_logo(cenx4_ui_t * ui);
+
+void cenx4_ui_render_callback(cenx4_ui_t * ui);
 
 #endif /* CENX4_UI_H_ */

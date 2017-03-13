@@ -221,6 +221,10 @@ void cenx4_app_setup_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, ph
 			phi_app_mgr_switch_app(&cenx4_app_test_desc, &(cenx4_app_contexts.test));
 			break;
 
+		case CENX4_APP_SETUP_ACTION_LOG:
+			phi_app_mgr_switch_app(&cenx4_app_log_viewer_desc, &(cenx4_app_contexts.log_viewer));
+			break;
+
         case CENX4_APP_SETUP_ACTION_BOOTLOADER:
             {
                 const WDGConfig wdgcfg = {
@@ -311,6 +315,7 @@ msg_t cenx4_app_setup_berry_update_ui(cenx4_app_setup_context_t * ctx, uint8_t n
     		"Exit",
 			"Save",
 			"Test",
+			"Log",
 			"BL",
     	};
 

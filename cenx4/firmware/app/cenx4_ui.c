@@ -10,13 +10,13 @@ static cenx4_ui_t uis[CENX4_UI_NUM_DISPS];
 
 static font_t fonts[3];
 static coord_t font_heights[3];
-#define cenx4_ui_text(ui, x, y, w, font_idx, justify, text) gdispGFillStringBox(ui->g, x, y, w, font_heights[font_idx], text, fonts[font_idx], White, Black, justify)
 
 void (*cenx4_ui_renderers[])(cenx4_ui_t *) = {
 	cenx4_ui_render_boot,
 	cenx4_ui_render_texts,
 	cenx4_ui_render_split_pot,
 	cenx4_ui_render_logo,
+	cenx4_ui_render_callback,
 };
 
 static THD_WORKING_AREA(cenx4_ui_thread_wa, 1024);
@@ -102,6 +102,12 @@ void cenx4_ui_unlock(cenx4_ui_t * ui)
 	chDbgCheck(ui);
 	//chMtxUnlock(&(ui->lock));
 }
+
+void cenx4_ui_text(cenx4_ui_t * ui, coord_t x, coord_t y, coord_t w, uint8_t font_idx, uint8_t justify, const char * text)
+{
+	gdispGFillStringBox(ui->g, x, y, w, font_heights[font_idx], text, fonts[font_idx], White, Black, justify);
+}
+
 
 void cenx4_ui_render_boot(cenx4_ui_t * ui)
 {
@@ -518,4 +524,9 @@ void cenx4_ui_render_logo(cenx4_ui_t * ui)
 	   }
 	   gdispGFlush(ui->g);
    }
+}
+
+void cenx4_ui_render_callback(cenx4_ui_t * ui)
+{
+	ui->state.callback.func(ui, ui->state.callback.ctx);
 }

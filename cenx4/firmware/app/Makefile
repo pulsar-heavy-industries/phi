@@ -11,7 +11,7 @@ endif
 
 # C specific options here (added to USE_OPT).
 ifeq ($(USE_COPT),)
-  USE_COPT =
+  USE_COPT = -Wno-unused-parameter
 endif
 
 # C++ specific options here (added to USE_OPT).
@@ -146,7 +146,8 @@ CSRC = $(STARTUPSRC) \
 	   cenx4_midi.c \
        cenx4_can.c \
        cenx4_ui.c \
-       cenx4_io.c
+       cenx4_io.c \
+       cenx4_app_log.c
 
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global

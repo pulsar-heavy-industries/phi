@@ -59,6 +59,8 @@ void cenx4_app_ableton_start(void * _ctx)
 		PHI_ARRLEN(cenx4_app_cfg.cur.mod_num_to_uid)
 	);
 
+    cenx4_app_log("Ableton!");
+
     // Construct a reverse map
     memset(ctx->mod_num_to_node_id, CENX4_APP_CFG_INVALID_MODULE_NUM, sizeof(ctx->mod_num_to_node_id));
 
@@ -98,11 +100,22 @@ void cenx4_app_ableton_start(void * _ctx)
     	msg_t ret;
     	memset(&si, 0, sizeof(si));
     	ret = phi_can_xfer(&cenx4_can, 1, PHI_CAN_MSG_ID_SYSINFO, ctx->mod_num_to_node_id[mod_num], NULL, 0, (uint8_t *)&si, sizeof(si), &bytes, MS2ST(100));
-    	if ((ret != MSG_OK) ||
-    		(sizeof(si) != bytes) ||
-			((si.dev_id != PHI_DEV_ID('C', 'N', 'X', '4') && (si.dev_id != PHI_DEV_ID('B', 'E', 'R', 'Y')))) // TODO
-		) {
-    		chDbgCheck(FALSE);
+    	if (ret != MSG_OK)
+    	{
+    		cenx4_app_log_fmt("M%dR%d", mod_num, ret);
+    		goto err_bad_cfg;
+    	}
+
+    	if (sizeof(si) != bytes)
+		{
+			cenx4_app_log_fmt("M%dB%d", mod_num, bytes);
+			goto err_bad_cfg;
+		}
+
+		if ((si.dev_id != PHI_DEV_ID('C', 'N', 'X', '4') && (si.dev_id != PHI_DEV_ID('B', 'E', 'R', 'Y')))) // TODO
+		{
+			cenx4_app_log_fmt("M%dDevId?", mod_num);
+			cenx4_app_log_fmt("%x", si.dev_id);
     		goto err_bad_cfg;
     	}
 
@@ -115,6 +128,7 @@ void cenx4_app_ableton_start(void * _ctx)
     {
     	if (ctx->mod_num_to_node_id[mod_num] != CENX4_APP_CFG_INVALID_MODULE_NUM)
     	{
+    		cenx4_app_log_fmt("Hole?%d", mod_num);
     		goto err_bad_cfg;
     	}
     }
@@ -130,8 +144,11 @@ void cenx4_app_ableton_start(void * _ctx)
         ctx->hw_to_ableton_pot_map = (const uint8_t *) &(hw_to_ableton_pot_maps[1]);
         break;
     default:
+    	cenx4_app_log_fmt("NumM?%d", ctx->num_modules);
         goto err_bad_cfg;
     }
+
+    cenx4_app_log("CfgOk!");
 
     // Move our displays into pots mode
     for (i = 0; i < 2; ++i)
@@ -183,8 +200,7 @@ void cenx4_app_ableton_start(void * _ctx)
     return;
 
 err_bad_cfg:
-	// TODO
-	chDbgCheck(FALSE);
+	phi_app_mgr_switch_app(&cenx4_app_setup_desc, &(cenx4_app_contexts.setup));
 }
 
 void cenx4_app_ableton_stop(void * ctx)
@@ -259,8 +275,6 @@ void cenx4_app_ableton_midi_sysex(void * _ctx, phi_midi_port_t port, uint8_t cmd
     (void) port;
 
     chDbgCheck(cmd == CENX4_MIDI_SYSEX_APP_CMD);
-
-    // TODO counters for all the failures here
 
     if (data_len < 1)
     {
