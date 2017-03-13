@@ -43,6 +43,7 @@ void cenx4_app_ableton_start(void * _ctx)
     cenx4_app_ableton_context_t * ctx = (cenx4_app_ableton_context_t *) _ctx;
     cenx4_ui_t * ui;
     uint8_t i;
+    uint8_t mod_num;
 
     chDbgCheck(ctx != NULL);
     memset(ctx, 0, sizeof(*ctx));
@@ -52,22 +53,87 @@ void cenx4_app_ableton_start(void * _ctx)
     	cenx4_rotencs[i].speed = 1;
     }
 
-    ctx->num_pots = 8; // TODO constant
-    switch (ctx->num_pots)
+    // Load mod_num_to_uid from cfg
+    cenx4_app_cfg_get_node_id_to_mod_num_map(
+  		ctx->node_id_to_mod_num,
+		PHI_ARRLEN(cenx4_app_cfg.cur.mod_num_to_uid)
+	);
+
+    // Construct a reverse map
+    memset(ctx->mod_num_to_node_id, CENX4_APP_CFG_INVALID_MODULE_NUM, sizeof(ctx->mod_num_to_node_id));
+
+    for (i = 0; i < CENX4_APP_CFG_MAX_MODULES; ++i)
     {
-    case 4:
+		if (ctx->node_id_to_mod_num[i] != CENX4_APP_CFG_INVALID_MODULE_NUM)
+		{
+			chDbgCheck(ctx->node_id_to_mod_num[i] < CENX4_APP_CFG_MAX_MODULES);
+			ctx->mod_num_to_node_id[ctx->node_id_to_mod_num[i]] = (i == 0) ? 0 : i + PHI_CAN_AUTO_ID_ALLOCATOR_FIRST_DEV_ID - 1;
+		}
+    }
+
+
+    // See what we can learn about our module configuration.
+    // We start with one module because we (the master) act as one
+    ctx->num_modules = 0;
+
+    for (mod_num = 0; mod_num < CENX4_APP_CFG_MAX_MODULES; ++mod_num)
+    {
+    	// Short-circuit if we're testing ourselves
+    	if (ctx->mod_num_to_node_id[mod_num] == 0)
+    	{
+    		ctx->num_modules++;
+    		continue;
+    	}
+
+    	if (ctx->mod_num_to_node_id[mod_num] == CENX4_APP_CFG_INVALID_MODULE_NUM)
+    	{
+    		// We don't allow "holes" in our module numbers. Once we encounter an invalid module number
+    		// (effectively an unused entry in the table) we expect all others to also be unused
+    		break;
+    	}
+
+    	// Check to see if the module is there, and if it's a CENX4
+    	phi_can_msg_data_sysinfo_t si;
+    	uint32_t bytes;
+    	msg_t ret;
+    	memset(&si, 0, sizeof(si));
+    	ret = phi_can_xfer(&cenx4_can, 1, PHI_CAN_MSG_ID_SYSINFO, ctx->mod_num_to_node_id[mod_num], NULL, 0, (uint8_t *)&si, sizeof(si), &bytes, MS2ST(100));
+    	if ((ret != MSG_OK) ||
+    		(sizeof(si) != bytes) ||
+			((si.dev_id != PHI_DEV_ID('C', 'N', 'X', '4') && (si.dev_id != PHI_DEV_ID('B', 'E', 'R', 'Y')))) // TODO
+		) {
+    		chDbgCheck(FALSE);
+    		goto err_bad_cfg;
+    	}
+
+    	// All going according to plan
+    	ctx->num_modules++;
+    }
+
+    // Verify we don't have the "holes" mentioned aboive
+    for (; mod_num < CENX4_APP_CFG_MAX_MODULES; ++mod_num)
+    {
+    	if (ctx->mod_num_to_node_id[mod_num] != CENX4_APP_CFG_INVALID_MODULE_NUM)
+    	{
+    		goto err_bad_cfg;
+    	}
+    }
+
+    switch (ctx->num_modules)
+    {
+    case 1:
         ctx->ableton_to_hw_pot_map = (const uint8_t *) &(ableton_to_hw_pot_maps[0]);
         ctx->hw_to_ableton_pot_map = (const uint8_t *) &(hw_to_ableton_pot_maps[0]);
         break;
-    case 8:
+    case 2:
         ctx->ableton_to_hw_pot_map = (const uint8_t *) &(ableton_to_hw_pot_maps[1]);
         ctx->hw_to_ableton_pot_map = (const uint8_t *) &(hw_to_ableton_pot_maps[1]);
         break;
     default:
-        chDbgCheck(FALSE);
+        goto err_bad_cfg;
     }
 
-    // Move our displays into pots mode for test
+    // Move our displays into pots mode
     for (i = 0; i < 2; ++i)
     {
         ui = cenx4_ui_lock(i);
@@ -91,9 +157,15 @@ void cenx4_app_ableton_start(void * _ctx)
     }
 
     // Move our slaves into ableton mode
-    cenx4_app_ableton_berry_enter_ableton_mode(ctx, 10);
+    for (mod_num = 0; mod_num < ctx->num_modules; ++mod_num)
+    {
+    	if (ctx->mod_num_to_node_id[mod_num] != 0)
+    	{
+    		cenx4_app_ableton_berry_enter_ableton_mode(ctx, ctx->mod_num_to_node_id[mod_num]);
+    	}
+    }
 
-    // Notify ableton we are ready, in case it's waiting for us
+    // Notify Ableton we are ready, in case it's waiting for us
     {
     	struct {
     		uint8_t cmd;
@@ -101,12 +173,18 @@ void cenx4_app_ableton_start(void * _ctx)
     	} resync_msg = {
 			.cmd =  CENX4_APP_ABLETON_SYSEX_RESYNC,
 			.data = {
-				.num_modules = 2, // TODO const
+				.num_modules = ctx->num_modules,
 			},
     	};
 
     	phi_midi_tx_sysex(PHI_MIDI_PORT_USB, CENX4_MIDI_SYSEX_APP_CMD, &resync_msg, sizeof(resync_msg));
     }
+
+    return;
+
+err_bad_cfg:
+	// TODO
+	chDbgCheck(FALSE);
 }
 
 void cenx4_app_ableton_stop(void * ctx)
@@ -116,13 +194,18 @@ void cenx4_app_ableton_stop(void * ctx)
 
 void cenx4_app_ableton_encoder_event(void * _ctx, uint8_t node_id, uint8_t encoder_num, int8_t val_change)
 {
-    // TODO this ignores node_id at the moment
     cenx4_app_ableton_context_t * ctx = (cenx4_app_ableton_context_t *) _ctx;
     phi_midi_pkt_t pkt;
+    uint8_t mod_num;
 
-    if (node_id == 10) {
-        encoder_num += 4;
+    // See if this is a node id we're working with
+    mod_num = ctx->node_id_to_mod_num[cenx4_app_cfg_get_mapped_node_id(node_id)];
+    if (mod_num == CENX4_APP_CFG_INVALID_MODULE_NUM)
+    {
+    	return;
     }
+
+    encoder_num += mod_num * 4;
 
     // Dat shitty mapping
     encoder_num = ctx->hw_to_ableton_pot_map[encoder_num];
@@ -347,19 +430,24 @@ msg_t cenx4_app_ableton_berry_update_ui(cenx4_app_ableton_context_t * ctx, uint8
 void cenx4_app_ableton_midi_sysex_set_pot_value(cenx4_app_ableton_context_t * ctx, cenx4_app_ableton_sysex_set_pot_value_t * data)
 {
     cenx4_ui_t * ui;
+    uint8_t mod_num, pot_num, node_id;
 
-    if (data->pot >= ctx->num_pots)
+    if (data->pot >= (ctx->num_modules * 4))
     {
         return;
     }
 
-    // From ableton pot number to the shitty logic below pot number
+    // From Ableton pot number to the shitty logic below pot number
     data->pot = ctx->ableton_to_hw_pot_map[data->pot];
+    mod_num = data->pot / 4;
+    pot_num = data->pot % 4;
+    node_id = ctx->mod_num_to_node_id[mod_num];
+    chDbgCheck(node_id != 0xff);
 
-    if (data->pot < 4)
+    if (node_id == 0)
     {
-        ui = cenx4_ui_lock(data->pot / 2);
-        ui->state.split_pot.pots[data->pot % 2].val = data->val;
+        ui = cenx4_ui_lock(pot_num / 2);
+        ui->state.split_pot.pots[pot_num % 2].val = data->val;
         cenx4_ui_unlock(ui);
     }
     else
@@ -368,14 +456,14 @@ void cenx4_app_ableton_midi_sysex_set_pot_value(cenx4_app_ableton_context_t * ct
 
         data->pot -= 4;
 
-        msg.disp = data->pot / 2;
-        msg.pot = data->pot % 2;
+        msg.disp = pot_num / 2;
+        msg.pot = pot_num % 2;
         msg.val = data->val;
         phi_can_xfer(
             &cenx4_can,
             PHI_CAN_PRIO_LOWEST,
             PHI_CAN_MSG_ID_CENX4_SET_SPLIT_POT_VAL,
-            10, // TODO jesus
+            node_id,
             (const uint8_t *) &msg,
             sizeof(msg),
             NULL,
@@ -389,20 +477,25 @@ void cenx4_app_ableton_midi_sysex_set_pot_value(cenx4_app_ableton_context_t * ct
 void cenx4_app_ableton_midi_sysex_set_pot_text(cenx4_app_ableton_context_t * ctx, cenx4_app_ableton_sysex_set_pot_text_t * data)
 {
     cenx4_ui_t * ui;
+    uint8_t mod_num, pot_num, node_id;
 
-    if (data->pot >= ctx->num_pots)
+    if (data->pot >= (ctx->num_modules * 4))
     {
         return;
     }
 
     // From ableton pot number to the shitty logic below pot number
     data->pot = ctx->ableton_to_hw_pot_map[data->pot];
+    mod_num = data->pot / 4;
+    pot_num = data->pot % 4;
+    node_id = ctx->mod_num_to_node_id[mod_num];
+    chDbgCheck(node_id != 0xff);
 
-    if (data->pot < 4)
+    if (node_id == 0)
     {
-        ui = cenx4_ui_lock(data->pot / 2);
-        memcpy(&(ui->state.split_pot.pots[data->pot % 2].text_top), data->text_top, CENX4_UI_MAX_LINE_TEXT_LEN);
-        memcpy(&(ui->state.split_pot.pots[data->pot % 2].text_bottom), data->text_bottom, CENX4_UI_MAX_LINE_TEXT_LEN);
+        ui = cenx4_ui_lock(pot_num / 2);
+        memcpy(&(ui->state.split_pot.pots[pot_num % 2].text_top), data->text_top, CENX4_UI_MAX_LINE_TEXT_LEN);
+        memcpy(&(ui->state.split_pot.pots[pot_num % 2].text_bottom), data->text_bottom, CENX4_UI_MAX_LINE_TEXT_LEN);
         cenx4_ui_unlock(ui);
     }
     else
@@ -410,8 +503,8 @@ void cenx4_app_ableton_midi_sysex_set_pot_text(cenx4_app_ableton_context_t * ctx
         cenx4_can_handle_set_split_pot_text_t msg;
 
         data->pot -= 4;
-        msg.disp = data->pot / 2;
-        msg.pot = data->pot % 2;
+        msg.disp = pot_num / 2;
+        msg.pot = pot_num % 2;
         memcpy(&(msg.text_top), data->text_top, CENX4_UI_MAX_LINE_TEXT_LEN);
         memcpy(&(msg.text_bottom), data->text_bottom, CENX4_UI_MAX_LINE_TEXT_LEN);
 
@@ -419,7 +512,7 @@ void cenx4_app_ableton_midi_sysex_set_pot_text(cenx4_app_ableton_context_t * ctx
             &cenx4_can,
             PHI_CAN_PRIO_LOWEST,
             PHI_CAN_MSG_ID_CENX4_SET_SPLIT_POT_TEXT,
-            10, // TODO jesus
+            node_id,
             (const uint8_t *) &msg,
             sizeof(msg),
             NULL,

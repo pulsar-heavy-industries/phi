@@ -73,33 +73,40 @@ void cenx4_app_cfg_save(cenx4_app_cfg_t * cfg)
 	chSysEnable();
 }
 
-#if 0
-// Given a CAN node_id, get the user assigned module number
-uint8_t cenx4_app_cfg_get_module_number_by_node_id(uint8_t node_id)
+void cenx4_app_cfg_get_node_id_to_mod_num_map(uint8_t * map, uint32_t max_entries)
 {
-    uint8_t i;
-    uint8_t allocator_idx;
+    uint8_t our_uid[PHI_CAN_AUTO_ID_UNIQ_ID_LEN];
+    uint8_t node_id;
+    uint8_t mod_num;
 
-    chDbgCheck(node_id >= PHI_CAN_AUTO_ID_ALLOCATOR_FIRST_DEV_ID);
-    chDbgCheck(node_id < (PHI_CAN_AUTO_ID_ALLOCATOR_FIRST_DEV_ID + PHI_CAN_AUTO_ID_ALLOCATOR_MAX_DEVS));
+	chDbgCheck(max_entries >= PHI_CAN_AUTO_ID_ALLOCATOR_MAX_DEVS + 1);
 
-    allocator_idx = node_id - PHI_CAN_AUTO_ID_ALLOCATOR_FIRST_DEV_ID;
-    if (allocator_idx >= cenx4_can.auto_alloc_num_devs)
-    {
-        // Node ID was never assigned
-        return 0;
-    }
+	memset(map, CENX4_APP_CFG_INVALID_MODULE_NUM, max_entries);
 
-    for (i = 0; i < PHI_CAN_AUTO_ID_ALLOCATOR_MAX_DEVS; ++i)
-    {
-        if (0 == memcmp(&(cenx4_can.auto_alloc_table[allocator_idx]),
-                        &(cenx4_app_cfg.cur.module_numbers[i]),
-                        PHI_CAN_AUTO_ID_UNIQ_ID_LEN))
-        {
-            return i + 1;
-        }
-    }
+	phi_can_auto_get_dev_uid(&cenx4_can, our_uid);
+	for (mod_num = 0; mod_num < PHI_CAN_AUTO_ID_ALLOCATOR_MAX_DEVS + 1; ++mod_num)
+	{
+		// If stored UID matches ours, set node id 0
+		if (memcmp(
+			&(cenx4_app_cfg.cur.mod_num_to_uid[mod_num][0]),
+			&(our_uid[0]),
+			PHI_CAN_AUTO_ID_UNIQ_ID_LEN) == 0)
+		{
+			map[0] = mod_num;
+			continue;
+		}
 
-    return 0;
+		// Get the node id of the current module
+		for (node_id = 0; node_id < cenx4_can.auto_alloc_num_devs; ++node_id)
+		{
+			if (memcmp(
+				&(cenx4_app_cfg.cur.mod_num_to_uid[mod_num][0]),
+				&(cenx4_can.auto_alloc_table[node_id][0]),
+				PHI_CAN_AUTO_ID_UNIQ_ID_LEN) == 0)
+			{
+				map[node_id + 1] = mod_num;
+				break;
+			}
+		}
+	}
 }
-#endif

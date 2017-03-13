@@ -15,9 +15,7 @@ void cenx4_app_setup_start(void * _ctx)
 {
 	cenx4_ui_t * ui;
     cenx4_app_setup_context_t * ctx = (cenx4_app_setup_context_t *) _ctx;
-    uint32_t i, mod_num;
-    uint8_t our_uid[PHI_CAN_AUTO_ID_UNIQ_ID_LEN];
-    uint8_t node_id;
+    uint32_t i;
 
 #warning MEGA HACK TODO
     cenx4_can.auto_alloc_num_devs = 1;
@@ -49,32 +47,10 @@ void cenx4_app_setup_start(void * _ctx)
     }
 
     // Load mod_num_to_uid from cfg
-    phi_can_auto_get_dev_uid(&cenx4_can, our_uid);
-    for (mod_num = 0; mod_num < PHI_CAN_AUTO_ID_ALLOCATOR_MAX_DEVS + 1; ++mod_num)
-    {
-    	// If stored UID matches ours, set node id 0
-    	if (memcmp(
-    		&(cenx4_app_cfg.cur.mod_num_to_uid[mod_num][0]),
-			&(our_uid[0]),
-			PHI_CAN_AUTO_ID_UNIQ_ID_LEN) == 0)
-    	{
-    		ctx->node_id_to_mod_num[0] = mod_num;
-    		continue;
-    	}
-
-    	// Get the node id of the current module
-    	for (node_id = 0; node_id < cenx4_can.auto_alloc_num_devs; ++node_id)
-    	{
-    		if (memcmp(
-    			&(cenx4_app_cfg.cur.mod_num_to_uid[mod_num][0]),
-				&(cenx4_can.auto_alloc_table[node_id][0]),
-				PHI_CAN_AUTO_ID_UNIQ_ID_LEN) == 0)
-    		{
-    			ctx->node_id_to_mod_num[node_id + 1] = mod_num;
-    			break;
-    		}
-    	}
-    }
+    cenx4_app_cfg_get_node_id_to_mod_num_map(
+  		ctx->node_id_to_mod_num,
+		PHI_ARRLEN(cenx4_app_cfg.cur.mod_num_to_uid)
+	);
 
 	// Move our displays into setup mode - display 0
 	ui = cenx4_ui_lock(0);

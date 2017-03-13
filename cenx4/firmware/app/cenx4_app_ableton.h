@@ -4,6 +4,7 @@
 #include "phi_lib/phi_can.h"
 #include "phi_lib/phi_app_mgr.h"
 #include "cenx4_can.h"
+#include "cenx4_app_cfg.h"
 
 typedef enum
 {
@@ -39,8 +40,14 @@ extern const phi_app_desc_t cenx4_app_ableton_desc;
 
 typedef struct cenx4_app_ableton_context_s
 {
-    // Number of pots available across all modules
-    uint8_t num_pots;
+    // Number of modules available
+    uint8_t num_modules;
+
+    // Map of node id -> module number
+    uint8_t node_id_to_mod_num[CENX4_APP_CFG_MAX_MODULES];
+
+    // Reverse map (module number -> node id)
+    uint8_t mod_num_to_node_id[CENX4_APP_CFG_MAX_MODULES];
 
     // Map of pots from ableton side to hardware side
     const uint8_t * ableton_to_hw_pot_map;
