@@ -37,7 +37,7 @@ static const phi_can_config_t can1_cfg = {
 	.drv_cfg = &cancfg_500k,
 	.handlers = can_handlers,
 	.n_handlers = sizeof(can_handlers) / sizeof(can_handlers[0]),
-	.dev_id = PHI_DEV_ID('B', 'E', 'R', 'Y'),
+	.dev_id = CENX4_DEV_ID,
 	.hw_sw_ver = CENX4_HW_SW_VER,
 };
 
