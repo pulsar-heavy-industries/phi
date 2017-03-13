@@ -151,24 +151,33 @@ void cenx4_app_ableton_start(void * _ctx)
     cenx4_app_log("CfgOk!");
 
     // Move our displays into pots mode
+    uint8_t base = (ctx->node_id_to_mod_num[cenx4_app_cfg_get_mapped_node_id(0)] * 4) + 1;
     for (i = 0; i < 2; ++i)
     {
         ui = cenx4_ui_lock(i);
 
-        ui->dispmode = CENX4_UI_DISPMODE_SPLIT_POT;
-
         memset(&(ui->state), 0, sizeof(ui->state));
 
-        ui->state.split_pot.pots[0].flags =
-                CENX4_UI_DISPMODE_POT_FLAGS_ROUND |
-                CENX4_UI_DISPMODE_POT_FLAGS_FILL |
-                CENX4_UI_DISPMODE_POT_FLAGS_TOP_FONT_AUTO;
-        chsnprintf(ui->state.split_pot.pots[0].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "Pot? %d", (i * 2) + 1);
-        ui->state.split_pot.pots[0].val = 1;
+        if (ctx->node_id_to_mod_num[cenx4_app_cfg_get_mapped_node_id(0)] != CENX4_APP_CFG_INVALID_MODULE_NUM)
+        {
+			ui->dispmode = CENX4_UI_DISPMODE_SPLIT_POT;
 
-        ui->state.split_pot.pots[1].flags = ui->state.split_pot.pots[0].flags;
-        chsnprintf(ui->state.split_pot.pots[1].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "Pot? %d", (i * 2) + 2);
-        ui->state.split_pot.pots[1].val = 1;
+			ui->state.split_pot.pots[0].flags =
+					CENX4_UI_DISPMODE_POT_FLAGS_ROUND |
+					CENX4_UI_DISPMODE_POT_FLAGS_FILL |
+					CENX4_UI_DISPMODE_POT_FLAGS_TOP_FONT_AUTO;
+			chsnprintf(ui->state.split_pot.pots[0].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "Pot? %d", base + (i * 2));
+			ui->state.split_pot.pots[0].val = 1;
+
+			ui->state.split_pot.pots[1].flags = ui->state.split_pot.pots[0].flags;
+			chsnprintf(ui->state.split_pot.pots[1].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "Pot? %d", base + (i * 2) + 1);
+			ui->state.split_pot.pots[1].val = 1;
+        }
+        else
+        {
+			ui->dispmode = CENX4_UI_DISPMODE_LOGO;
+
+        }
 
         cenx4_ui_unlock(ui);
     }
@@ -369,7 +378,7 @@ msg_t cenx4_app_ableton_berry_update_ui(cenx4_app_ableton_context_t * ctx, uint8
 {
     cenx4_can_handle_set_dispmode_state_t state;
     msg_t ret;
-    uint8_t base = (node_id - PHI_CAN_AUTO_ID_ALLOCATOR_FIRST_DEV_ID + 1) + 4;
+    uint8_t base = (ctx->node_id_to_mod_num[cenx4_app_cfg_get_mapped_node_id(node_id)] * 4) + 1;
 
     (void) ctx;
 

@@ -127,13 +127,13 @@ void cenx4_app_setup_encoder_event(void * _ctx, uint8_t node_id, uint8_t encoder
     if (encoder_num == 2)
 	{
 		ctx->node_id_to_mod_num[idx] += val_change;
-		if (ctx->node_id_to_mod_num[idx] == 0xff)
+		if (ctx->node_id_to_mod_num[idx] == (0xff - 1))
 		{
 			ctx->node_id_to_mod_num[idx] = cenx4_can.auto_alloc_num_devs;
 		}
 		else if (ctx->node_id_to_mod_num[idx] > cenx4_can.auto_alloc_num_devs)
 		{
-			ctx->node_id_to_mod_num[idx] = 0;
+			ctx->node_id_to_mod_num[idx] = 0xff;
 		}
 
 		// Lame hack: when module number changes we want to update the main
@@ -328,7 +328,7 @@ msg_t cenx4_app_setup_berry_update_ui(cenx4_app_setup_context_t * ctx, uint8_t n
     		// Assume everything is okay
     		ctx->cfg_ok = true;
 
-    		// This code checks if we have exactly one of each module number
+    		// This code checks if we have a
     		for (i = 0; i < (cenx4_can.auto_alloc_num_devs + 1); ++i)
     		{
     			cnt = 0;
@@ -343,7 +343,6 @@ msg_t cenx4_app_setup_berry_update_ui(cenx4_app_setup_context_t * ctx, uint8_t n
     			if (cnt == 0)
     			{
     				chsnprintf(ui->state.text.lines[2], CENX4_UI_MAX_LINE_TEXT_LEN-1, "Mod%d miss", i);
-    				ctx->cfg_ok = false;
     				break;
     			}
 
