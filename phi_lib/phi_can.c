@@ -232,16 +232,21 @@ void process_rx(phi_can_t * can, const CANRxFrame * rxmsg)
     // End of a recognized multi-msg transfer
     else if ((xfer_desc.end) && (NULL != xfer))
     {
-        bool error = (
+        volatile bool error = (
         	(xfer->toggle != xfer_desc.toggle_or_is_reply) ||
-			((xfer->rx_len + data_len) > sizeof(xfer->rx_data)) ||
-			(phi_crc16(xfer->rx_data, (xfer->rx_len + data_len)) != xfer->expected_crc)
+			((xfer->rx_len + data_len) > sizeof(xfer->rx_data))
 		);
 
         if (!error)
         {
             memcpy(xfer->rx_data + xfer->rx_len, data, data_len);
             xfer->rx_len += data_len;
+
+            if (phi_crc16(xfer->rx_data, xfer->rx_len) != xfer->expected_crc)
+            {
+            	error = true;
+            	++can->stat_process_rx_err;
+            }
         }
         else
         {
@@ -251,6 +256,7 @@ void process_rx(phi_can_t * can, const CANRxFrame * rxmsg)
         if (xfer->xfer_id & 1) // TODO is_reply
         {
             // signal whoever is waiting on this reply that we're done
+        	// TODO propagate error bit to the xfer object
             chBSemSignal(&(xfer->rx_done));
         }
         else
