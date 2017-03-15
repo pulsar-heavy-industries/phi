@@ -23,7 +23,7 @@ static const uint8_t vcom_device_descriptor_data[18] = {
 						 0x01,          /* bDeviceProtocol. (IAD)           */
 						 0x40,          /* bMaxPacketSize.                  */
 						 0x16CA,        /* idVendor.                        */
-						 0x4442,        /* idProduct.                       */
+						 0x4445,        /* idProduct.                       */
 						 0x0200,        /* bcdDevice.                       */
 						 1,             /* iManufacturer.                   */
 						 5,             /* iProduct.                        */
@@ -59,7 +59,7 @@ static const uint8_t vcom_configuration_descriptor_data[] = {
   0x09, 0x24, 0x01, 0x00, 0x01, 0x09, 0x00, 0x01, 0x01, // CS Interface (audio)     CLASS SPECIFIC AC INTERFACE DESC
   0x09, 0x04, 0x01, 0x00, 0x02, 0x01, 0x03, 0x00, 0x00, // Interface 1              INTERFACE DESC (bLength bDescType bInterfaceNumber bAltSetting bNumEndpoints bInterfaceClass bInterfaceSubClass bInterfaceProtocol iInterface)
   0x07, 0x24, 0x01, 0x00, 0x01, 0x41, 0x00,             // CS Interface (midi)      CLASS SPECIFIC MS INTERFACE DESC
-  0x06, 0x24, 0x02, 0x01, 0x01, 0x05,                   //   IN  Jack 1 (emb)       MIDI IN JACK DESC (bLength bDescType bDescSubType bJackType bJackID iJack)
+  0x06, 0x24, 0x02, 0x01, 0x01, 0x06,                   //   IN  Jack 1 (emb)       MIDI IN JACK DESC (bLength bDescType bDescSubType bJackType bJackID iJack)
   0x06, 0x24, 0x02, 0x02, 0x02, 0x06,                   //   IN  Jack 2 (ext)       MIDI IN JACK DESC (bLength bDescType bDescSubType bJackType bJackID iJack)
   0x09, 0x24, 0x03, 0x01, 0x03, 0x01, 0x02, 0x01, 0x06, //   OUT Jack 3 (emb)       MIDI OUT JACK DESC (bLength bDescType bDescSubType bJackType bJackID bNrInputPins baSourceID(1) baSourceID(1) iJack)
   0x09, 0x24, 0x03, 0x02, 0x04, 0x01, 0x01, 0x01, 0x02, //   OUT Jack 4 (ext)       MIDI OUT JACK DESC (bLength bDescType bDescSubType bJackType bJackID bNrInputPins baSourceID(1) baSourceID(1) iJack)

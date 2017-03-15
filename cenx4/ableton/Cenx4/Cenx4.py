@@ -27,10 +27,10 @@ class Cenx4(ControlSurface):
         self.log('Cenx4 Control Surface init success')
 
     def suggest_input_port(self):
-        return '?'
+        return 'CENX4 MIDI'
 
     def suggest_output_port(self):
-        return '?'
+        return 'CENX4 MIDI'
 
     def do_setup(self):
         Cenx4Mgr.set_log(self.log)
