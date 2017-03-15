@@ -18,7 +18,6 @@ class Cenx4EncoderElement(EncoderElement):
                 self._parameter_to_map_to.remove_value_listener(self._on_value_changed)
             except:
                 pass
-
         super(Cenx4EncoderElement, self).connect_to(param)
 
         if param is not None:
@@ -28,13 +27,18 @@ class Cenx4EncoderElement(EncoderElement):
         self._send_param_val(True)
 
     def release_parameter(self):
+        try:
+            self._parameter_to_map_to.remove_value_listener(self._on_value_changed)
+        except:
+            pass
+
         super(Cenx4EncoderElement, self).release_parameter()
+
         self._send_param_val(True)
 
     def disconnect(self):
         if self._parameter_to_map_to is not None:
-            if hasattr(self._parameter_to_map_to, 'name'):
-                self._parameter_to_map_to.remove_value_listener(self._on_value_changed)
+            self._parameter_to_map_to.remove_value_listener(self._on_value_changed)
         super(Cenx4EncoderElement, self).disconnect()
 
     def _on_value_changed(self):
@@ -58,23 +62,6 @@ class Cenx4EncoderElement(EncoderElement):
                     Cenx4Mgr.sysex.set_pot_text(pot_num, param.name, unicode(param))
                     Cenx4Mgr.sysex.set_pot_val_scaled(pot_num, param.value, param.min, param.max)
 
-                # sysex = LC2Sysex('PARAM_VALS')
-                # if self.message_type() == MIDI_PB_TYPE:
-                #     sysex.byte(16)
-                #     sysex.byte(self.message_channel())
-                # else:
-                #     sysex.byte(self.message_channel())
-                #     sysex.byte(self.message_identifier())
-                # if self._parameter_to_map_to is not None:
-                #     sysex.ascii(unicode(self._parameter_to_map_to.name))
-                #     sysex.ascii(unicode(self._parameter_to_map_to))
-                #     sysex.byte(self._parameter_to_map_to.is_enabled)
-                # else:
-                #     sysex.ascii(' ')
-                #     sysex.ascii(' ')
-                #     sysex.byte(0)
-                #     self.send_value(0)
-                # sysex.send()
             self._last_time = time.clock()
 
     def settings(self):

@@ -74,8 +74,7 @@ class Cenx4DeviceComponent(DeviceComponent):
         # index = self._bank_index * num_controls
         index = 0
         for control in self._parameter_controls:
+            control.release_parameter()
             if index < len(parameters):
                 control.connect_to(parameters[index])
-            else:
-                control.release_parameter()
             index += 1
