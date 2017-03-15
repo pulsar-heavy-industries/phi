@@ -15,18 +15,16 @@ class Cenx4DeviceComponent(DeviceComponent):
 
     def set_device(self, device):
         super(Cenx4DeviceComponent, self).set_device(device)
-        Cenx4Mgr.log_message('Cenx4DeviceComponent.set_device! %r' % (device, ))
-
-        Cenx4Mgr.dbg = self
+        Cenx4Mgr.log('Cenx4DeviceComponent.set_device! %r' % (device, ))
 
         if device:
-            #Cenx4Mgr.log_message('Cenx4DeviceComponent.set_device num banks: %d banks, %d params %r' % (self.number_of_parameter_banks(device), len(list(device.parameters)), dir(self)))
+            #Cenx4Mgr.log('Cenx4DeviceComponent.set_device num banks: %d banks, %d params %r' % (self.number_of_parameter_banks(device), len(list(device.parameters)), dir(self)))
             for i, param in enumerate(device.parameters):
             #     if i < Cenx4Mgr.cfg.num_pots:
             #         Cenx4Mgr.sysex.set_pot_text(i, param.name, unicode(param))
             #         Cenx4Mgr.sysex.set_pot_val_scaled(i, param.value, param.min, param.max)
 
-                Cenx4Mgr.log_message('Cenx4DeviceComponent.set_device param %d: %s %r %r %r %r' % (i, param.name, param.min, param.max, param.value, type(param)))
+                Cenx4Mgr.log('Cenx4DeviceComponent.set_device param %d: %s %r %r %r %r' % (i, param.name, param.min, param.max, param.value, type(param)))
 
     def number_of_parameter_banks(self, device):
         result = 0
@@ -39,11 +37,11 @@ class Cenx4DeviceComponent(DeviceComponent):
         return result
 
     def send_params(self):
-        Cenx4Mgr.log_message('Cenx4DeviceComponent.send_params!')
+        Cenx4Mgr.log('Cenx4DeviceComponent.send_params!')
         if self._parameter_controls is not None:
             for p in self._parameter_controls:
                 p._send_param_val(True)
-                Cenx4Mgr.log_message('Cenx4DeviceComponent.send_params: %r' % (p, ))
+                Cenx4Mgr.log('Cenx4DeviceComponent.send_params: %r' % (p, ))
 
         self._on_device_name_changed()
 
@@ -57,12 +55,11 @@ class Cenx4DeviceComponent(DeviceComponent):
                 pre = 'Chain'
             name = pre + ': ' + unicode(self._device.name)
 
-        Cenx4Mgr.log_message('Cenx4DeviceComponent._on_device_name_changed: ' + name)
+        Cenx4Mgr.log('Cenx4DeviceComponent._on_device_name_changed: ' + name)
 
     def _on_selected_parameter_changed(self):
         self._selected_parameter = self.song().view.selected_parameter
-        Cenx4Mgr.log_message('Cenx4DeviceComponent._on_selected_paramater_changed!')
-
+        Cenx4Mgr.log('Cenx4DeviceComponent._on_selected_paramater_changed!')
 
     def _assign_parameters(self):
         Cenx4Mgr.log('Cenx4DeviceComponent._assign_parameters!')

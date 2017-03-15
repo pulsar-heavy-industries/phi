@@ -1,5 +1,6 @@
 class Config(object):
     num_pots = 8
+    midi_ch = 2
 
 pots_data = []
 for x in range(255):
@@ -16,8 +17,8 @@ class Cenx4Mgr(object):
     cfg = Config()
 
     @classmethod
-    def set_log(cls, log_message):
-        cls.log = cls.log_message = log_message
+    def set_log(cls, log):
+        cls.log = log
 
     @classmethod
     def update_pot(cls, pot_num, param):

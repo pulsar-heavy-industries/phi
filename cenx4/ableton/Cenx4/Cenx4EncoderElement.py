@@ -51,25 +51,22 @@ class Cenx4EncoderElement(EncoderElement):
                 if self._report_name_val:
                     self.select_parameter(self._parameter_to_map_to)
 
-        #if time.clock() > self._last_time + 0.01 or force:
-        if True:
-            if hasattr(self._parameter_to_map_to, 'name'):
-                # Remember, value gets sent as CC
-                Cenx4Mgr.log('Cenx4EncoderElement _send_param_val %r :: %s :: %s :: %r' % (self._msg_identifier, unicode(self._parameter_to_map_to), self._parameter_to_map_to.name, self._parameter_to_map_to.value))
+        if hasattr(self._parameter_to_map_to, 'name'):
+            # Remember, value gets sent as CC
+            Cenx4Mgr.log('Cenx4EncoderElement _send_param_val %r :: %s :: %s :: %r' % (self._msg_identifier, unicode(self._parameter_to_map_to), self._parameter_to_map_to.name, self._parameter_to_map_to.value))
 
-                param = self._parameter_to_map_to
-                pot_num = self._msg_identifier # this is the cc number
-                if pot_num < Cenx4Mgr.cfg.num_pots:
-                    # Real-time throttled update
-                    if time.clock() > self._last_time + 0.01 or force:
-                        Cenx4Mgr.sysex.set_pot_text(pot_num, param.name, unicode(param))
-                        Cenx4Mgr.sysex.set_pot_val_scaled(pot_num, param.value, param.min, param.max)
-                        self._last_time = time.clock()
+            param = self._parameter_to_map_to
+            pot_num = self._msg_identifier # this is the cc number
+            if pot_num < Cenx4Mgr.cfg.num_pots:
+                # Real-time throttled update
+                if time.clock() > self._last_time + 0.01 or force:
+                    Cenx4Mgr.sysex.set_pot_text(pot_num, param.name, unicode(param))
+                    Cenx4Mgr.sysex.set_pot_val_scaled(pot_num, param.value, param.min, param.max)
+                    self._last_time = time.clock()
 
-                    # Periodic update, to catch the last value that sometimes gets skipped from the realtime
-                    # update
-                    Cenx4Mgr.update_pot(pot_num, param)
-
+                # Periodic update, to catch the last value that sometimes gets skipped from the realtime
+                # update
+                Cenx4Mgr.update_pot(pot_num, param)
 
     def settings(self):
         Cenx4Mgr.log('Cenx4EncoderElement.settings called!')
