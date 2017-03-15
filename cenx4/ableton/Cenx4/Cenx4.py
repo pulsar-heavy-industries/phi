@@ -100,6 +100,8 @@ class Cenx4(ControlSurface):
     def update_display(self):
         super(Cenx4, self).update_display()
 
+        Cenx4Mgr.update_display()
+
         # Telnet
 
         #Keep trying to accept a connection until someone actually connects
