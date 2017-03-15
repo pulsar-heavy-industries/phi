@@ -31,7 +31,7 @@ I am still in the process in documenting everything, but please refer to the fol
    - UART_TX: Pin 8 (currently unused)
    - SWCLK: Pin 9
    - SWDIO: Pin 10
- - If uisng an [STM32F4DISCOVERY](http://www.st.com/en/evaluation-tools/stm32f4discovery.html) board as JTAG, remove the jumpers on CN3 (labeled "ST-LINK"), and connect the following to CN2 (labeled "SWD" - pin 1 marked with a dot):
+ - If using an [STM32F4DISCOVERY](http://www.st.com/en/evaluation-tools/stm32f4discovery.html) board as JTAG, remove the jumpers on CN3 (labeled "ST-LINK"), and connect the following to CN2 (labeled "SWD" - pin 1 marked with a dot):
    - 1: VCC (Pin 1 on TagConnect flat cable)
    - 2: SWCLK (Pin 9 on TagConnect flat cable)
    - 3: GND (Pin 2 on TagConnect flat cable))
