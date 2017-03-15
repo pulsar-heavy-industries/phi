@@ -1,8 +1,6 @@
 from __future__ import with_statement
 from _Framework.ControlSurface import ControlSurface
 from _Framework.InputControlElement import *
-from Cenx4MixerComponent import Cenx4MixerComponent
-from Cenx4SessionComponent import Cenx4SessionComponent
 from Cenx4DeviceComponent import Cenx4DeviceComponent
 from Cenx4Mgr import Cenx4Mgr
 from MIDIProtocol import (
@@ -68,17 +66,6 @@ class Cenx4(ControlSurface):
         Cenx4Mgr.set_log(self.log_message)
         Cenx4Mgr.send_midi = self.__c_instance.send_midi
         Cenx4Mgr.sysex = SysExProtocol(self.__c_instance.send_midi)
-
-        # mixer_d_controls = [ Cenx4ParameterElement(MIDI_CC_TYPE, 0, i + 64) for i in range(32) ]
-
-        # TODO what is this 8?
-        self._session = Cenx4SessionComponent(8, 12)
-        self._mixer = Cenx4MixerComponent(8)
-        self._session.set_mixer(self._mixer)
-        for i in range(8):
-            ch = self._mixer.channel_strip(i)
-            self.log_message(repr(ch))
-            # ch.set_device_controls(tuple(mixer_d_controls[i * 4:i * 4 + 4]))
 
         self._ab_device_component = Cenx4DeviceComponent()
         self.set_device_component(self._ab_device_component)
