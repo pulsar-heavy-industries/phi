@@ -18,6 +18,29 @@ I am still in the process in documenting everything, but please refer to the fol
 
 # Basic steps in getting this to run
 
+## Hardware
+ - You will need the following:
+   - A JTAG adapter compatible with openocd/gdb. I use an [STM32F4DISCOVERY](http://www.st.com/en/evaluation-tools/stm32f4discovery.html) for this
+   - A [Tag-Connect TC2050-IDC](http://www.tag-connect.com/TC2050-IDC) cable
+   - A PHI Cenx4 board (TODO: create+link to board page)
+- The pinout of the Debug cable is as following (see page 2 [here](http://www.tag-connect.com/Materials/TC2050-IDC%20Datasheet.pdf) for where pin 1 is on the flat cable):
+   - VCC: Pin 1
+   - GND: Pin 2
+   - NRST: Pin 6
+   - UART_RX: Pin 7 (currently unused)
+   - UART_TX: Pin 8 (currently unused)
+   - SWCLK: Pin 9
+   - SWDIO: Pin 10
+ - If uisng an [STM32F4DISCOVERY](http://www.st.com/en/evaluation-tools/stm32f4discovery.html) board as JTAG, remove the jumpers on CN3 (labeled "ST-LINK"), and connect the following to CN2 (labeled "SWD" - pin 1 marked with a dot):
+   - 1: VCC (Pin 1 on TagConnect flat cable)
+   - 2: SWCLK (Pin 9 on TagConnect flat cable)
+   - 3: GND (Pin 2 on TagConnect flat cable))
+   - 4: SWDIO (Pin 10 on TagConnect flat cable)
+   - 5: NRST (Pin 6 on TagConnect flat cable)
+   - 6: Unused
+ - You will need at least one Cenx4 in Master configuration - this means CAN terminator jumpers installed (labeled CAN_TERM) and a USB connector soldered on 
+
+## Software
 - Download and extract [ChibiOS 16.1.7](https://sourceforge.net/projects/chibios/files/ChibiOS_RT%20stable/Version%2016.1.7/ChibiOS_16.1.7.zip/download) into `vendor/`
 - Download and extract [uGfx 2.7](https://community.ugfx.io/files/file/2-%C2%B5gfx-library/?do=download&csrfKey=8ae07e04e710333d9b25ed4ae016a4ba) info `vendor/`
 - Make you you have a working [ARM toolchain](https://launchpad.net/gcc-arm-embedded) in your path
