@@ -85,8 +85,6 @@ void cenx4_midi_in_sysex(phi_midi_port_t port, uint8_t cmd, const void * data, s
     switch (cmd)
     {
     case CENX4_MIDI_SYSEX_START_BOOTLOADER:
-        chDbgCheck(FALSE);
-        /*
         {
             const WDGConfig wdgcfg = {
                 STM32_IWDG_PR_64,
@@ -95,7 +93,7 @@ void cenx4_midi_in_sysex(phi_midi_port_t port, uint8_t cmd, const void * data, s
             };
 
             wdgStart(&WDGD1, &wdgcfg);
-        }*/
+        }
         break;
 
     case CENX4_MIDI_SYSEX_APP_CMD:
