@@ -1,0 +1,44 @@
+Stuff that requires 2+ Cenx4s:
+- adding CAN RESET cmd on slaves
+- changing knobs from 0-100 to 0-255
+- master/slave stuff (rememeber to also update docs)
+- CAN fw update
+
+Debug adapter:
+- Add to repo + picture + update README.md
+
+Documentation:
+- SysEx protocol
+- Bootloader image format
+- CAN protocol
+- Hardware (Enclosure, pots, BOM, JST cables, USB socket)
+
+Code improvements:
+- Add 1 sysex command to send both pot val and text, update ableton script to use it instead of 2 commands
+- Ableton needs to be able to read number of modules using SysEx, and configure itself accordingly
+- Need to support multiple controllers so need to get rid of Cenx4Mgr
+
+Misc:
+- Create landing page. Should include:
+  - Logo
+  - Pictures of Cenx4
+  - List of features
+  - Waiting list for 1/2/3/4 module configurations
+  - Link to blog
+- Open the github repository (BLOCKING: need landing page)
+- Obtain VID/PID through pidcodes (BLOCKING: need landing page + gh repo)
+
+
+
+diff -r ChibiOS_16.1.5/os/common/ports/ARMCMx/compilers/GCC/vectors.c /Users/eran/Documents/workspace-stm32f4/ChibiOS_16.1.5/os/common/ports/ARMCMx/compilers/GCC/vectors.c
+45a46,47
+> register void *stack_pointer asm("sp");
+> void **HARDFAULT_PSP;
+48c50,51
+<
+---
+>     asm("mrs %0, psp" : "=r"(HARDFAULT_PSP) : :);
+>     stack_pointer = HARDFAULT_PSP;
+
+
+
