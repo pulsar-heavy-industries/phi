@@ -26,7 +26,7 @@ MEMORY
      * actual app
      * (-2k config data)
      */
-    flash : org = 0x08000000 + 64k + 0x200, len = 256k - 64k - 0x200 - 2k
+    flash : org = BL_FLASH_START + BL_RESERVED_SIZE + BL_START_OFFSET, len = 256k - BL_RESERVED_SIZE - BL_START_OFFSET - 2k
     /*flash : org = 0x08000000, len = 256k - 64k - 16 - 2k/* 64k bootloader, 16 byte header, 2k config */
     ram0  : org = 0x20000000, len = 40k
     ram1  : org = 0x00000000, len = 0

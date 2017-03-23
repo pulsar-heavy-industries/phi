@@ -4,8 +4,10 @@
 #include "phi_lib/phi_lib.h"
 
 #define PHI_BL_DATA_PACKET_SIZE      128
-#define PHI_BL_HDR_MAGIC             0xC0DE1337
 
+#ifndef PHI_BL_HDR_MAGIC
+#error PHI_BL_HDR_MAGIC is not defined
+#endif
 
 typedef enum phi_bl_ret_e
 {

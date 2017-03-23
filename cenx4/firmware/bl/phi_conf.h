@@ -16,7 +16,7 @@
  * CENX4 Specific stuff
  *****************************************************************************/
 
-#define CENX4_HW_SW_VER 0x8121
+#define CENX4_HW_SW_VER 0x8122
 #define CENX4_DEV_ID     PHI_DEV_ID('C', 'N', 'X', '4')
 
 
@@ -29,8 +29,9 @@
  * Bootloader
  *****************************************************************************/
 
-#define CENX4_BL_USER_ADDR        0x08010000
-#define CENX4_BL_FLASH_PAGE_SIZE  (2 * 1024)
+// These two come from a phi_bl.mk compilation flag
+#define CENX4_BL_USER_ADDR        PHI_BL_USER_ADDR
+#define CENX4_BL_FLASH_PAGE_SIZE  PHI_BL_PAGE_SIZE
 
 #include "phi_lib/st/stm32f3xx_hal_flash_ex.h"
 #if FLASH_PAGE_SIZE != CENX4_BL_FLASH_PAGE_SIZE

@@ -252,7 +252,7 @@ ULIBS =
 RULESPATH = $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC
 include $(RULESPATH)/rules.mk
 
-POST_MAKE_ALL_RULE_HOOK: build/$(PROJECT).bin build/$(PROJECT).elf
-	/Users/eran/tmp/env/bin/python bootloader-glue/make_fw_img.py
-	$(TRGT)objcopy -I binary -O elf32-littlearm --binary-architecture arm build/fw.bin build/fw.o
-	$(TRGT)ld build/fw.o -T bootloader-glue/fw.ld -o build/fw.elf
+include ../bl-settings.mk
+include $(PHI_LIB)/phi_bl.mk
+
+POST_MAKE_ALL_RULE_HOOK: $(BUILDDIR)/bl-$(PROJECT).bin $(BUILDDIR)/bl-$(PROJECT).elf

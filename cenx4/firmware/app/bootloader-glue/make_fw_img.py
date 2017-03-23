@@ -1,11 +1,12 @@
 import struct
 import crcmod
+import sys
 
 phi_crc32 = crcmod.mkCrcFun(0x104c11db7, initCrc=0, xorOut=0xFFFFFFFF)
 
 magic = 0xC0DE1337
 sector_size = 2 * 1024
-data = file('build/ch.bin', 'r').read()
+data = file(sys.argv[1], 'r').read()
 
 # Pad from image start till when vectors actually start (due to alignment)
 data = ('\x00' * (0x200 - 16)) + data
@@ -21,9 +22,8 @@ hdr = struct.pack(
     0x8010200
 )
 
-file('build/fw.hdr', 'w').write(hdr)
 
-file('build/fw.bin', 'w').write(
+file(sys.argv[2], 'w').write(
     hdr +
     data
 )

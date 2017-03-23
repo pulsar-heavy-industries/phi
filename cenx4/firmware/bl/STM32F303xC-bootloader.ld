@@ -19,7 +19,7 @@
  */
 MEMORY
 {
-    flash : org = 0x08000000, len = 64k
+    flash : org = BL_FLASH_START, len = BL_RESERVED_SIZE
     ram0  : org = 0x20000000, len = 40k
     ram1  : org = 0x00000000, len = 0
     ram2  : org = 0x00000000, len = 0

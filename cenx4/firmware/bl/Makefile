@@ -239,3 +239,6 @@ ULIBS =
 
 RULESPATH = $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC
 include $(RULESPATH)/rules.mk
+
+include ../bl-settings.mk
+include $(PHI_LIB)/phi_bl.mk
