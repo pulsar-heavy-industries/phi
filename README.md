@@ -79,7 +79,7 @@ I am still in the process in documenting everything, but please refer to the fol
  - The bootloader should now be running.
  - TODO: Instructions on how to use it to load the firmware
  - Build the application by running `make` inside `cenx4/firmware/app`
- - Once again use gdb, similar to the bootloader but use the ELF file `build/fw.elf` (unlike `build/ch.elf`, `fw.elf` is in the format the bootloader expects, so your application would run even when not using the debugger)
+ - Once again use gdb, similar to the bootloader but use the ELF file `build/bl-ch.elf` (unlike `build/ch.elf`, `bl-ch.elf` is in the format the bootloader expects, so your application would run even when not using the debugger)
  - Copy `cenx4/ableton/Cenx4` into Ableton's Remote Scripts directory. On Mac, this would be `/Applications/Ableton Live 9 Suite.app/Contents/App-Resources/MIDI Remote Scripts`.
  - Start Ableton, and configure the MIDI devide. Make sure to use the Cenx4 remote script.
  
