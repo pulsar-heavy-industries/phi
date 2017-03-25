@@ -13,7 +13,7 @@ Documentation:
 Code improvements:
 - Ableton needs to be able to read number of modules using SysEx, and configure itself accordingly
 - Need to support multiple controllers so need to get rid of Cenx4Mgr (in Ableton scripts)
-- Search for 'data->pot -= 4;' - that logic is broken
+- Add CAN command set both pot val and text at same time
 
 Misc:
 - Create landing page. Should include:

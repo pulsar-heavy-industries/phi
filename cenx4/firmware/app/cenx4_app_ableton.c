@@ -484,8 +484,6 @@ void cenx4_app_ableton_midi_sysex_set_pot_value(cenx4_app_ableton_context_t * ct
     {
         cenx4_can_handle_set_split_pot_val_t msg;
 
-        data->pot -= 4;
-
         msg.disp = pot_num / 2;
         msg.pot = pot_num % 2;
         msg.val = data->val;
@@ -532,7 +530,6 @@ void cenx4_app_ableton_midi_sysex_set_pot_text(cenx4_app_ableton_context_t * ctx
     {
         cenx4_can_handle_set_split_pot_text_t msg;
 
-        data->pot -= 4;
         msg.disp = pot_num / 2;
         msg.pot = pot_num % 2;
         memcpy(&(msg.text_top), data->text_top, CENX4_UI_MAX_LINE_TEXT_LEN);
@@ -582,8 +579,6 @@ void cenx4_app_ableton_midi_sysex_set_pot_all(cenx4_app_ableton_context_t * ctx,
     {
         cenx4_can_handle_set_split_pot_val_t msg_val;
         cenx4_can_handle_set_split_pot_text_t msg_text;
-
-        data->pot -= 4;
 
         msg_val.disp = pot_num / 2;
         msg_val.pot = pot_num % 2;
