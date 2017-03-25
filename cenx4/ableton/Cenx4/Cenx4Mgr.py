@@ -35,7 +35,6 @@ class Cenx4Mgr(object):
     def update_display(cls):
         for pot_num, data in enumerate(pots_data):
             if data['needs_update']:
-                cls.sysex.set_pot_text(pot_num, data['name'], data['value_str'])
-                cls.sysex.set_pot_val_scaled(pot_num, data['value'], data['value_min'], data['value_max'])
+                cls.sysex.set_pot_all_scaled(pot_num, data['value'], data['value_min'], data['value_max'], data['name'], data['value_str'])
                 data['needs_update'] = False
 

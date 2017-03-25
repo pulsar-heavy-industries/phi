@@ -11,9 +11,9 @@ Documentation:
 - Hardware (Enclosure, pots, BOM, JST cables, USB socket)
 
 Code improvements:
-- Add 1 sysex command to send both pot val and text, update ableton script to use it instead of 2 commands
 - Ableton needs to be able to read number of modules using SysEx, and configure itself accordingly
 - Need to support multiple controllers so need to get rid of Cenx4Mgr (in Ableton scripts)
+- Search for 'data->pot -= 4;' - that logic is broken
 
 Misc:
 - Create landing page. Should include:

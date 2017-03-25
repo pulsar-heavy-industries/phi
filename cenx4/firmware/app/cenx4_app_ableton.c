@@ -309,6 +309,13 @@ void cenx4_app_ableton_midi_sysex(void * _ctx, phi_midi_port_t port, uint8_t cmd
         }
         break;
 
+    case CENX4_APP_ABLETON_SYSEX_SET_POT_ALL:
+        if (data_len == sizeof(cenx4_app_ableton_sysex_set_pot_all_t))
+        {
+            cenx4_app_ableton_midi_sysex_set_pot_all(ctx, (cenx4_app_ableton_sysex_set_pot_all_t *) data);
+        }
+        break;
+
     case CENX4_APP_ABLETON_SYSEX_INVALID:
     default:
         break;
@@ -545,3 +552,72 @@ void cenx4_app_ableton_midi_sysex_set_pot_text(cenx4_app_ableton_context_t * ctx
         );
     }
 }
+
+void cenx4_app_ableton_midi_sysex_set_pot_all(cenx4_app_ableton_context_t * ctx, cenx4_app_ableton_sysex_set_pot_all_t * data)
+{
+    cenx4_ui_t * ui;
+    uint8_t mod_num, pot_num, node_id;
+
+    if (data->pot >= (ctx->num_modules * 4))
+    {
+        return;
+    }
+
+    // From Ableton pot number to the shitty logic below pot number
+    data->pot = ctx->ableton_to_hw_pot_map[data->pot];
+    mod_num = data->pot / 4;
+    pot_num = data->pot % 4;
+    node_id = ctx->mod_num_to_node_id[mod_num];
+    chDbgCheck(node_id != 0xff);
+
+    if (node_id == 0)
+    {
+        ui = cenx4_ui_lock(pot_num / 2);
+        ui->state.split_pot.pots[pot_num % 2].val = data->val;
+        memcpy(&(ui->state.split_pot.pots[pot_num % 2].text_top), data->text_top, CENX4_UI_MAX_LINE_TEXT_LEN);
+        memcpy(&(ui->state.split_pot.pots[pot_num % 2].text_bottom), data->text_bottom, CENX4_UI_MAX_LINE_TEXT_LEN);
+        cenx4_ui_unlock(ui);
+    }
+    else
+    {
+        cenx4_can_handle_set_split_pot_val_t msg_val;
+        cenx4_can_handle_set_split_pot_text_t msg_text;
+
+        data->pot -= 4;
+
+        msg_val.disp = pot_num / 2;
+        msg_val.pot = pot_num % 2;
+        msg_val.val = data->val;
+        phi_can_xfer(
+            &cenx4_can,
+            PHI_CAN_PRIO_LOWEST,
+            PHI_CAN_MSG_ID_CENX4_SET_SPLIT_POT_VAL,
+            node_id,
+            (const uint8_t *) &msg_val,
+            sizeof(msg_val),
+            NULL,
+            0,
+            NULL,
+            PHI_CAN_DEFAULT_TIMEOUT
+        );
+
+		msg_text.disp = pot_num / 2;
+		msg_text.pot = pot_num % 2;
+		memcpy(&(msg_text.text_top), data->text_top, CENX4_UI_MAX_LINE_TEXT_LEN);
+		memcpy(&(msg_text.text_bottom), data->text_bottom, CENX4_UI_MAX_LINE_TEXT_LEN);
+
+		phi_can_xfer(
+			&cenx4_can,
+			PHI_CAN_PRIO_LOWEST,
+			PHI_CAN_MSG_ID_CENX4_SET_SPLIT_POT_TEXT,
+			node_id,
+			(const uint8_t *) &msg_text,
+			sizeof(msg_text),
+			NULL,
+			0,
+			NULL,
+			PHI_CAN_DEFAULT_TIMEOUT
+		);
+    }
+}
+

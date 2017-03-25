@@ -48,7 +48,8 @@ CENX4_MAIN_MIDI_SYSEX_APP_CMD = CENX4_MIDI_SYSEX_CMD_USER + 1
 CENX4_APP_ABLETON_SYSEX_INVALID = 0
 CENX4_APP_ABLETON_SYSEX_SET_POT_VAL = 1
 CENX4_APP_ABLETON_SYSEX_SET_POT_TEXT = 2
-CENX4_APP_ABLETON_SYSEX_RESYNC = 3
+CENX4_APP_ABLETON_SYSEX_SET_POT_ALL = 3
+CENX4_APP_ABLETON_SYSEX_RESYNC = 4
 CENX4_UI_MAX_LINE_TEXT_LEN = 16
 
 
@@ -130,7 +131,26 @@ class SysExProtocol(object):
         ]
         self.send_midi(buf)
 
-    def set_pot_val_scaled(self, pot, val, val_min, val_max):
+    def set_pot_text(self, pot, top, bottom):
+        assert pot < Cenx4Mgr.cfg.num_pots, pot
+        buf = [
+            CENX4_MAIN_MIDI_SYSEX_APP_CMD,
+            CENX4_APP_ABLETON_SYSEX_SET_POT_TEXT,
+            pot,
+        ] + self.c_str(top, CENX4_UI_MAX_LINE_TEXT_LEN) + self.c_str(bottom, CENX4_UI_MAX_LINE_TEXT_LEN)
+        self.send_midi(buf)
+
+    def set_pot_all(self, pot, val, top, bottom):
+        assert pot < Cenx4Mgr.cfg.num_pots, pot
+        buf = [
+            CENX4_MAIN_MIDI_SYSEX_APP_CMD,
+            CENX4_APP_ABLETON_SYSEX_SET_POT_ALL,
+            pot,
+            val,
+        ] + self.c_str(top, CENX4_UI_MAX_LINE_TEXT_LEN) + self.c_str(bottom, CENX4_UI_MAX_LINE_TEXT_LEN)
+        self.send_midi(buf)
+
+    def set_pot_all_scaled(self, pot, val, val_min, val_max, top, bottom):
         # Figure out how 'wide' each range is
         val_span = val_max - val_min
         rightSpan = 100 - 0
@@ -140,13 +160,6 @@ class SysExProtocol(object):
 
         # Convert the 0-1 range into a value in the right range.
         val = int(0 + (valueScaled * rightSpan))
-        self.set_pot_val(pot, val)
+        self.set_pot_all(pot, val, top, bottom)
 
-    def set_pot_text(self, pot, top, bottom):
-        assert pot < Cenx4Mgr.cfg.num_pots, pot
-        buf = [
-            CENX4_MAIN_MIDI_SYSEX_APP_CMD,
-            CENX4_APP_ABLETON_SYSEX_SET_POT_TEXT,
-            pot,
-        ] + self.c_str(top, CENX4_UI_MAX_LINE_TEXT_LEN) + self.c_str(bottom, CENX4_UI_MAX_LINE_TEXT_LEN)
-        self.send_midi(buf)
+

@@ -11,6 +11,7 @@ typedef enum
     CENX4_APP_ABLETON_SYSEX_INVALID = 0,
     CENX4_APP_ABLETON_SYSEX_SET_POT_VALUE,
     CENX4_APP_ABLETON_SYSEX_SET_POT_TEXT,
+	CENX4_APP_ABLETON_SYSEX_SET_POT_ALL,
 	CENX4_APP_ABLETON_SYSEX_RESYNC,
 } cenx4_app_ableton_sysex_cmd_t;
 
@@ -28,6 +29,15 @@ typedef struct
     char text_top[CENX4_UI_MAX_LINE_TEXT_LEN];
     char text_bottom[CENX4_UI_MAX_LINE_TEXT_LEN];
 } cenx4_app_ableton_sysex_set_pot_text_t;
+
+typedef struct
+{
+    uint8_t pot;
+    uint8_t val;
+    char text_top[CENX4_UI_MAX_LINE_TEXT_LEN];
+    char text_bottom[CENX4_UI_MAX_LINE_TEXT_LEN];
+} cenx4_app_ableton_sysex_set_pot_all_t;
+
 
 typedef struct
 {
@@ -66,6 +76,6 @@ msg_t cenx4_app_ableton_berry_update_ui(cenx4_app_ableton_context_t * ctx, uint8
 
 void cenx4_app_ableton_midi_sysex_set_pot_value(cenx4_app_ableton_context_t * ctx, cenx4_app_ableton_sysex_set_pot_value_t * data);
 void cenx4_app_ableton_midi_sysex_set_pot_text(cenx4_app_ableton_context_t * ctx, cenx4_app_ableton_sysex_set_pot_text_t * data);
-
+void cenx4_app_ableton_midi_sysex_set_pot_all(cenx4_app_ableton_context_t * ctx, cenx4_app_ableton_sysex_set_pot_all_t * data);
 
 #endif /* CENX4_APP_ABLETON_H_ */

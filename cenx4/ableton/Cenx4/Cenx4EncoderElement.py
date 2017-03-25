@@ -60,8 +60,7 @@ class Cenx4EncoderElement(EncoderElement):
             if pot_num < Cenx4Mgr.cfg.num_pots:
                 # Real-time throttled update
                 if time.clock() > self._last_time + 0.01 or force:
-                    Cenx4Mgr.sysex.set_pot_text(pot_num, param.name, unicode(param))
-                    Cenx4Mgr.sysex.set_pot_val_scaled(pot_num, param.value, param.min, param.max)
+                    Cenx4Mgr.sysex.set_pot_all_scaled(pot_num, param.value, param.min, param.max, param.name, unicode(param))
                     self._last_time = time.clock()
 
                 # Periodic update, to catch the last value that sometimes gets skipped from the realtime
