@@ -8,3 +8,7 @@
 build/
 .DS_Store
 *.pyc
+
+# Eagle
+*.s#*
+*.b#*
