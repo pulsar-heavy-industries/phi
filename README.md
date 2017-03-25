@@ -38,7 +38,8 @@ I am still in the process in documenting everything, but please refer to the fol
    - 4: SWDIO (Pin 10 on TagConnect flat cable)
    - 5: NRST (Pin 6 on TagConnect flat cable)
    - 6: Unused
- - You will need at least one Cenx4 in Master configuration - this means CAN terminator jumpers installed (labeled CAN_TERM) and a USB connector soldered on 
+ - There is a tiny adapter board `misc/st-tag-adapter` inside that makes it easier. You can order it from [OSH Park](https://oshpark.com/shared_projects/iMHjB8kG).
+ - You will need at least one Cenx4 in Master configuration - this means CAN terminator jumpers installed (labeled CAN_TERM) and a USB connector soldered on.
 
 ## Software
 - Download and extract [ChibiOS 16.1.7](https://sourceforge.net/projects/chibios/files/ChibiOS_RT%20stable/Version%2016.1.7/ChibiOS_16.1.7.zip/download) into `vendor/`

@@ -4,9 +4,6 @@ Stuff that requires 2+ Cenx4s:
 - master/slave stuff (rememeber to also update docs)
 - CAN fw update
 
-Debug adapter:
-- Add to repo + picture + update README.md
-
 Documentation:
 - SysEx protocol
 - Bootloader image format
