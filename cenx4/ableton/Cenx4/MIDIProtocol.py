@@ -1,5 +1,3 @@
-from Cenx4Mgr import Cenx4Mgr
-
 CRC16_TABLE = [
     0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
     0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef,
@@ -54,11 +52,11 @@ CENX4_UI_MAX_LINE_TEXT_LEN = 16
 
 
 class SysExProtocol(object):
-    def __init__(self, send_midi):
-        self._send_midi = send_midi
+    def __init__(self, cenx4):
+        self.cenx4 = cenx4
 
     def send_midi(self, data):
-        self._send_midi(tuple(self.encode(data)))
+        self.cenx4.send_midi(tuple(self.encode(data)))
 
     def decode(self, data):
         # 240, 65, 18, 0, 123, 8, 33, 3, 2, 247)
@@ -122,7 +120,7 @@ class SysExProtocol(object):
         return [ord(ch) for ch in s[:l - 1].ljust(l, '\x00')]
 
     def set_pot_val(self, pot, val):
-        assert pot < Cenx4Mgr.cfg.num_pots, pot
+        assert pot < self.cenx4.cfg.num_pots, pot
         buf = [
             CENX4_MAIN_MIDI_SYSEX_APP_CMD,
             CENX4_APP_ABLETON_SYSEX_SET_POT_VAL,
@@ -132,7 +130,7 @@ class SysExProtocol(object):
         self.send_midi(buf)
 
     def set_pot_text(self, pot, top, bottom):
-        assert pot < Cenx4Mgr.cfg.num_pots, pot
+        assert pot < self.cenx4.cfg.num_pots, pot
         buf = [
             CENX4_MAIN_MIDI_SYSEX_APP_CMD,
             CENX4_APP_ABLETON_SYSEX_SET_POT_TEXT,
@@ -141,7 +139,7 @@ class SysExProtocol(object):
         self.send_midi(buf)
 
     def set_pot_all(self, pot, val, top, bottom):
-        assert pot < Cenx4Mgr.cfg.num_pots, pot
+        assert pot < self.cenx4.cfg.num_pots, pot
         buf = [
             CENX4_MAIN_MIDI_SYSEX_APP_CMD,
             CENX4_APP_ABLETON_SYSEX_SET_POT_ALL,

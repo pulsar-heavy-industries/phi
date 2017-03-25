@@ -1,12 +1,12 @@
 from _Framework.DeviceComponent import DeviceComponent
-from Cenx4Mgr import Cenx4Mgr
 
 # LOOK AT https://github.com/gluon/AbletonLive9_RemoteScripts/blob/3bda4608810249b9be3034d3e8eb77fbb0d7c39f/_Generic/Devices.py
 
 
 class Cenx4DeviceComponent(DeviceComponent):
-    def __init__(self):
+    def __init__(self, cenx4):
         super(Cenx4DeviceComponent, self).__init__()
+        self.cenx4 = cenx4
         self.song().view.add_selected_parameter_listener(self._on_selected_parameter_changed)
 
     def disconnect(self):
@@ -15,16 +15,15 @@ class Cenx4DeviceComponent(DeviceComponent):
 
     def set_device(self, device):
         super(Cenx4DeviceComponent, self).set_device(device)
-        Cenx4Mgr.log('Cenx4DeviceComponent.set_device! %r' % (device, ))
+        self.cenx4.log('Cenx4DeviceComponent.set_device! %r' % (device, ))
 
-        if device:
-            #Cenx4Mgr.log('Cenx4DeviceComponent.set_device num banks: %d banks, %d params %r' % (self.number_of_parameter_banks(device), len(list(device.parameters)), dir(self)))
-            for i, param in enumerate(device.parameters):
-            #     if i < Cenx4Mgr.cfg.num_pots:
-            #         Cenx4Mgr.sysex.set_pot_text(i, param.name, unicode(param))
-            #         Cenx4Mgr.sysex.set_pot_val_scaled(i, param.value, param.min, param.max)
-
-                Cenx4Mgr.log('Cenx4DeviceComponent.set_device param %d: %s %r %r %r %r' % (i, param.name, param.min, param.max, param.value, type(param)))
+        # if device:
+        #     elf.cenx4.log('Cenx4DeviceComponent.set_device num banks: %d banks, %d params %r' % (self.number_of_parameter_banks(device), len(list(device.parameters)), dir(self)))
+        #     for i, param in enumerate(device.parameters):
+        #         if i < self.cenx4.cfg.num_pots:
+        #             self.cenx4.sysex.set_pot_text(i, param.name, unicode(param))
+        #             self.cenx4.sysex.set_pot_val_scaled(i, param.value, param.min, param.max)
+        #         self.cenx4.log('Cenx4DeviceComponent.set_device param %d: %s %r %r %r %r' % (i, param.name, param.min, param.max, param.value, type(param)))
 
     def number_of_parameter_banks(self, device):
         result = 0
@@ -37,11 +36,11 @@ class Cenx4DeviceComponent(DeviceComponent):
         return result
 
     def send_params(self):
-        Cenx4Mgr.log('Cenx4DeviceComponent.send_params!')
+        self.cenx4.log('Cenx4DeviceComponent.send_params!')
         if self._parameter_controls is not None:
             for p in self._parameter_controls:
                 p._send_param_val(True)
-                Cenx4Mgr.log('Cenx4DeviceComponent.send_params: %r' % (p, ))
+                self.cenx4.log('Cenx4DeviceComponent.send_params: %r' % (p, ))
 
         self._on_device_name_changed()
 
@@ -55,14 +54,14 @@ class Cenx4DeviceComponent(DeviceComponent):
                 pre = 'Chain'
             name = pre + ': ' + unicode(self._device.name)
 
-        Cenx4Mgr.log('Cenx4DeviceComponent._on_device_name_changed: ' + name)
+        self.cenx4.log('Cenx4DeviceComponent._on_device_name_changed: ' + name)
 
     def _on_selected_parameter_changed(self):
         self._selected_parameter = self.song().view.selected_parameter
-        Cenx4Mgr.log('Cenx4DeviceComponent._on_selected_paramater_changed!')
+        self.cenx4.log('Cenx4DeviceComponent._on_selected_paramater_changed!')
 
     def _assign_parameters(self):
-        Cenx4Mgr.log('Cenx4DeviceComponent._assign_parameters!')
+        self.cenx4.log('Cenx4DeviceComponent._assign_parameters!')
         assert self.is_enabled()
         assert self._device != None
         assert self._parameter_controls != None
