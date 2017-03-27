@@ -61,17 +61,8 @@ void cenx4_midi_in_handler(phi_midi_port_t port, const phi_midi_pkt_t * pkt)
 		break;
 
 	case 0x0B: //MIDI_CONTROL_CHANGE:
-	    // TODO
-	    switch (pkt->chn)
-	    {
-	    case 2:
-	        phi_app_mgr_notify_midi_cc(PHI_MIDI_PORT_USB, pkt->chn, pkt->val1, pkt->val2);
-	        break;
-
-	    default:
-		    // phi_daw_midi_cc(PHI_MIDI_PORT_USB, pkt->chn, pkt->val1, pkt->val2);
-		    break;
-	    }
+		phi_app_mgr_notify_midi_cc(PHI_MIDI_PORT_USB, pkt->chn, pkt->val1, pkt->val2);
+		break;
 	}
 }
 

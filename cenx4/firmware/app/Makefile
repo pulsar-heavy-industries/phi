@@ -143,6 +143,7 @@ CSRC = $(STARTUPSRC) \
 	   cenx4_app_cfg.c \
 	   cenx4_app_setup.c \
 	   cenx4_app_test.c \
+	   cenx4_app_traktor.c \
 	   cenx4_midi.c \
        cenx4_can.c \
        cenx4_ui.c \

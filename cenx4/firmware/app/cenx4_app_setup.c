@@ -237,6 +237,10 @@ void cenx4_app_setup_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, ph
             }
             break;
 
+        case CENX4_APP_SETUP_ACTION_TRAKTOR:
+			phi_app_mgr_switch_app(&cenx4_app_traktor_desc, &(cenx4_app_contexts.traktor));
+			break;
+
 		default:
 			break;
 		}
@@ -317,6 +321,7 @@ msg_t cenx4_app_setup_berry_update_ui(cenx4_app_setup_context_t * ctx, uint8_t n
 			"Test",
 			"Log",
 			"BL",
+			"Traktor",
     	};
 
     	ui = cenx4_ui_lock(0);
