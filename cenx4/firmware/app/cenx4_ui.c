@@ -94,13 +94,13 @@ cenx4_ui_t * cenx4_ui_lock(uint8_t idx)
 {
 	cenx4_ui_t * ui = &(uis[idx]);
 	chDbgCheck(idx < CENX4_UI_NUM_DISPS);
-	//chMtxLock(&(ui->lock));
+	chMtxLock(&(ui->lock));
 	return ui;
 }
 void cenx4_ui_unlock(cenx4_ui_t * ui)
 {
 	chDbgCheck(ui);
-	//chMtxUnlock(&(ui->lock));
+	chMtxUnlock(&(ui->lock));
 }
 
 void cenx4_ui_text(cenx4_ui_t * ui, coord_t x, coord_t y, coord_t w, uint8_t font_idx, uint8_t justify, const char * text)
