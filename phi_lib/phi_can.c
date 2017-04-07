@@ -152,6 +152,8 @@ void process_rx(phi_can_t * can, const CANRxFrame * rxmsg)
                     // if no reply, our work here is done. if it does want to send a reply
                     // that reply may be single or multi msg. it needs to get replied
                     // to the same xfer id that sent it.
+                    chMtxUnlock(&(can->xfer_lock));
+
                     if (eid.src == PHI_CAN_AUTO_ID)
                     {
                         if ((PHI_CAN_AUTO_ID_ALLOCATOR_NODE == can->node_id) &&
@@ -164,6 +166,8 @@ void process_rx(phi_can_t * can, const CANRxFrame * rxmsg)
                     {
                         phi_can_handle_incoming_msg(can, eid.prio, eid.msg_id, eid.src, xfer_desc.chan_id, data, data_len);
                     }
+
+                    chMtxLock(&(can->xfer_lock));
                 }
                 // Start of a multi-frame transfer
                 else
@@ -264,7 +268,9 @@ void process_rx(phi_can_t * can, const CANRxFrame * rxmsg)
             // Finished receiving a request
             if (!error)
             {
+            	chMtxUnlock(&(can->xfer_lock));
                 phi_can_handle_incoming_msg(can, eid.prio, eid.msg_id, eid.src, xfer_desc.chan_id, xfer->rx_data, xfer->rx_len);
+                chMtxLock(&(can->xfer_lock));
             }
             phi_can_free_xfer(can, FALSE, xfer);
         }

@@ -261,7 +261,7 @@ msg_t cenx4_app_setup_berry_enter_setup_mode(cenx4_app_setup_context_t * ctx, ui
 
     ret = phi_can_xfer(
         &cenx4_can,
-        PHI_CAN_PRIO_LOWEST,
+        PHI_CAN_PRIO_LOWEST + 1,
         PHI_CAN_MSG_ID_CENX4_SET_DISPMODE,
         node_id,
         (const uint8_t *) &dispmode,
@@ -282,7 +282,7 @@ msg_t cenx4_app_setup_berry_enter_setup_mode(cenx4_app_setup_context_t * ctx, ui
 
     ret = phi_can_xfer(
         &cenx4_can,
-        PHI_CAN_PRIO_LOWEST,
+        PHI_CAN_PRIO_LOWEST + 1,
         PHI_CAN_MSG_ID_CENX4_SET_DISPMODE,
         node_id,
         (const uint8_t *) &dispmode,
@@ -397,7 +397,7 @@ msg_t cenx4_app_setup_berry_update_ui(cenx4_app_setup_context_t * ctx, uint8_t n
 
 		ret = phi_can_xfer(
 			&cenx4_can,
-			PHI_CAN_PRIO_LOWEST,
+			PHI_CAN_PRIO_LOWEST + 1,
 			PHI_CAN_MSG_ID_CENX4_SET_DISPMODE_STATE,
 			node_id,
 			(const uint8_t *) &state,

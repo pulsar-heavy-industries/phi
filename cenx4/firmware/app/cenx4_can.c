@@ -19,6 +19,7 @@ static const CANConfig cancfg_500k = {
 static const phi_can_msg_handler_t can_handlers[] = {
 	// Built-in stuff
 	PHI_CAN_BUILTIN_MSG_HANDLERS,
+	{PHI_CAN_MSG_ID_RESET, cenx4_can_handle_reset, NULL},
 
 	// SLAVE->MASTER commands that are not app-specific
 	{PHI_CAN_MSG_ID_CENX4_ENCODER_EVENT, cenx4_can_handle_encoder_event, NULL},
@@ -30,7 +31,7 @@ static const phi_can_config_t can1_cfg = {
 	.drv_cfg = &cancfg_500k,
 	.handlers = can_handlers,
 	.default_handler = {
-		.handler = cenx4_can_handle_unknown_event,
+		.handler = cenx4_can_handle_unknown_cmd,
 	},
 	.n_handlers = sizeof(can_handlers) / sizeof(can_handlers[0]),
 	.dev_id = CENX4_DEV_ID,
@@ -80,10 +81,13 @@ void cenx4_can_init(void)
 				   break;
 			   }
 		   }
-
-		   ui->state.boot.misc_text[0] = 0;
 	   }
    }
+}
+
+void cenx4_can_handle_reset(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)
+{
+	NVIC_SystemReset();
 }
 
 void cenx4_can_handle_encoder_event(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)
@@ -120,7 +124,7 @@ void cenx4_can_handle_btn_event(phi_can_t * can, void * context, uint8_t prio, u
     }
 }
 
-void cenx4_can_handle_unknown_event(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)
+void cenx4_can_handle_unknown_cmd(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)
 {
 	// Forward unknown events to current app
 	phi_app_mgr_notify_can_cmd(prio, msg_id, src, chan_id, data, len);

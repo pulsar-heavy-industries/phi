@@ -48,6 +48,9 @@ enum {
 	PHI_CAN_MSG_ID_ECHO,
 	PHI_CAN_MSG_ID_AUTO_ID_ACK,
 
+	// Up to the app to implement a handler for this
+	PHI_CAN_MSG_ID_RESET,
+
 	PHI_CAN_MSG_BL_START,
 	PHI_CAN_MSG_BL_DATA,
 	PHI_CAN_MSG_BL_DONE,

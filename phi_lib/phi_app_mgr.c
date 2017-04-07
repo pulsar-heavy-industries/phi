@@ -194,9 +194,9 @@ void phi_app_mgr_notify_can_cmd(uint8_t prio, uint8_t msg_id, uint8_t src, uint8
 	    if ((NULL != phi_app_cur_desc) &&
 	        (NULL != phi_app_cur_desc->can_cmd))
 	    {
-	    	phi_mtf_async_call(
+	    	/* Must be a sync call because we need to hold the buffer */
+	    	phi_mtf_call(
 	            &phi_app_mgr_mtf,
-				MS2ST(50),
 	            phi_app_cur_desc->can_cmd,
 				7,
 				phi_app_cur_ctx,

@@ -91,7 +91,7 @@ int main(void)
 	gfxInit();
 	cenx4_ui_init();
 
-	chThdSleepMilliseconds(1000);
+//	chThdSleepMilliseconds(1000);
 
 	if (cenx4_is_master)
 	{
@@ -118,7 +118,30 @@ int main(void)
 	cenx4_ui_unlock(ui);
 	cenx4_can_init();
 
-	chThdSleepMilliseconds(1000);
+	if (cenx4_is_master)
+	{
+		// HACK make debugging easier by resetting potential slaves
+		{
+			for (int i = 0; i < PHI_CAN_AUTO_ID_ALLOCATOR_MAX_DEVS; ++i)
+			{
+				phi_can_xfer(
+					&cenx4_can,
+					PHI_CAN_PRIO_LOWEST,
+					PHI_CAN_MSG_ID_RESET,
+					PHI_CAN_AUTO_ID_ALLOCATOR_FIRST_DEV_ID + i,
+					NULL,
+					0,
+					NULL,
+					0,
+					NULL,
+					PHI_CAN_DEFAULT_TIMEOUT
+				);
+			}
+		}
+
+		// Give slaves time to start?
+		chThdSleepMilliseconds(2000);
+	}
 
 	ui = cenx4_ui_lock(1);
 	strcpy(ui->state.boot.misc_text, "START");
