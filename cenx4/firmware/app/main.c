@@ -102,8 +102,8 @@ int main(void)
 	ui = cenx4_ui_lock(1);
 	strcpy(ui->state.boot.misc_text, "USB");
 	cenx4_ui_unlock(ui);
-	#define usb_lld_connect_bus(usbp)
-	#define usb_lld_disconnect_bus(usbp)
+#define usb_lld_connect_bus(usbp) palClearPad(GPIOA, GPIOA_USB_CONN)
+#define usb_lld_disconnect_bus(usbp) palSetPad(GPIOA, GPIOA_USB_CONN)
 	usbDisconnectBus(midiusbcfg.usbp);
 	chThdSleepMilliseconds(1500);
 	usbStart(midiusbcfg.usbp, &usbcfg);

@@ -65,7 +65,7 @@
 #define GPIOA_SPI1_CLK              5U
 #define GPIOA_SPI1_MISO             6U
 #define GPIOA_SPI1_MOSI             7U
-#define GPIOA_PIN8                  8U
+#define GPIOA_USB_CONN                  8U
 #define GPIOA_DBG_TX                9U
 #define GPIOA_DBG_RX                10U
 #define GPIOA_USB_DM                11U
@@ -210,7 +210,7 @@
                                      PIN_MODE_ALTERNATE(GPIOA_SPI1_CLK) |     \
                                      PIN_MODE_ALTERNATE(GPIOA_SPI1_MISO) |           \
                                      PIN_MODE_ALTERNATE(GPIOA_SPI1_MOSI) |           \
-                                     PIN_MODE_INPUT(GPIOA_PIN8) |           \
+                                     PIN_MODE_OUTPUT(GPIOA_USB_CONN) |           \
                                      PIN_MODE_ALTERNATE(GPIOA_DBG_TX) |           \
                                      PIN_MODE_ALTERNATE(GPIOA_DBG_RX) |          \
                                      PIN_MODE_ALTERNATE(GPIOA_USB_DM) |          \
@@ -226,7 +226,7 @@
                                      PIN_OTYPE_PUSHPULL(GPIOA_SPI1_CLK) |  \
                                      PIN_OTYPE_PUSHPULL(GPIOA_SPI1_MISO) |       \
                                      PIN_OTYPE_PUSHPULL(GPIOA_SPI1_MOSI) |       \
-                                     PIN_OTYPE_PUSHPULL(GPIOA_PIN8) |       \
+                                     PIN_OTYPE_PUSHPULL(GPIOA_USB_CONN) |       \
                                      PIN_OTYPE_PUSHPULL(GPIOA_DBG_TX) |       \
                                      PIN_OTYPE_PUSHPULL(GPIOA_DBG_RX) |      \
                                      PIN_OTYPE_PUSHPULL(GPIOA_USB_DM) |      \
@@ -242,7 +242,7 @@
                                      PIN_OSPEED_HIGH(GPIOA_SPI1_CLK) |      \
                                      PIN_OSPEED_HIGH(GPIOA_SPI1_MISO) |          \
                                      PIN_OSPEED_HIGH(GPIOA_SPI1_MOSI) |          \
-                                     PIN_OSPEED_HIGH(GPIOA_PIN8) |          \
+                                     PIN_OSPEED_HIGH(GPIOA_USB_CONN) |          \
                                      PIN_OSPEED_HIGH(GPIOA_DBG_TX) |          \
                                      PIN_OSPEED_HIGH(GPIOA_DBG_RX) |         \
                                      PIN_OSPEED_HIGH(GPIOA_USB_DM) |         \
@@ -258,7 +258,7 @@
                                      PIN_PUPDR_FLOATING(GPIOA_SPI1_CLK) |  \
                                      PIN_PUPDR_PULLUP(GPIOA_SPI1_MISO) |         \
                                      PIN_PUPDR_FLOATING(GPIOA_SPI1_MOSI) |         \
-                                     PIN_PUPDR_PULLUP(GPIOA_PIN8) |         \
+                                     PIN_PUPDR_PULLDOWN(GPIOA_USB_CONN) |         \
                                      PIN_PUPDR_FLOATING(GPIOA_DBG_TX) |         \
                                      PIN_PUPDR_FLOATING(GPIOA_DBG_RX) |        \
                                      PIN_PUPDR_FLOATING(GPIOA_USB_DM) |        \
@@ -274,7 +274,7 @@
                                      PIN_ODR_HIGH(GPIOA_SPI1_CLK) |         \
                                      PIN_ODR_HIGH(GPIOA_SPI1_MISO) |             \
                                      PIN_ODR_HIGH(GPIOA_SPI1_MOSI) |             \
-                                     PIN_ODR_HIGH(GPIOA_PIN8) |             \
+                                     PIN_ODR_HIGH(GPIOA_USB_CONN) |             \
                                      PIN_ODR_HIGH(GPIOA_DBG_TX) |             \
                                      PIN_ODR_HIGH(GPIOA_DBG_RX) |            \
                                      PIN_ODR_HIGH(GPIOA_USB_DM) |            \
@@ -290,7 +290,7 @@
                                      PIN_AFIO_AF(GPIOA_SPI1_CLK, 5U) |     \
                                      PIN_AFIO_AF(GPIOA_SPI1_MISO, 5U) |          \
                                      PIN_AFIO_AF(GPIOA_SPI1_MOSI, 5U))
-#define VAL_GPIOA_AFRH              (PIN_AFIO_AF(GPIOA_PIN8, 0U) |          \
+#define VAL_GPIOA_AFRH              (PIN_AFIO_AF(GPIOA_USB_CONN, 0U) |          \
                                      PIN_AFIO_AF(GPIOA_DBG_TX, 7U) |          \
                                      PIN_AFIO_AF(GPIOA_DBG_RX, 7U) |         \
                                      PIN_AFIO_AF(GPIOA_USB_DM, 14U) |         \

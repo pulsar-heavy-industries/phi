@@ -17,6 +17,7 @@ void cenx4_app_setup_start(void * _ctx)
     cenx4_app_setup_context_t * ctx = (cenx4_app_setup_context_t *) _ctx;
     uint32_t i;
 
+#if 0
 #warning MEGA HACK TODO
     cenx4_can.auto_alloc_num_devs = 1;
     cenx4_can.auto_alloc_table[0][0] = 0x59;
@@ -35,6 +36,7 @@ void cenx4_app_setup_start(void * _ctx)
 	cenx4_can.auto_alloc_table[0][13] = 0x38;
 	cenx4_can.auto_alloc_table[0][14] = 0x33;
 	cenx4_can.auto_alloc_table[0][15] = 0x20;
+#endif
 
     // Basic init
     chDbgCheck(ctx != NULL);
