@@ -17,25 +17,21 @@ static const CANConfig cancfg_500k = {
 
 
 static const phi_can_msg_handler_t can_handlers[] = {
-	// Bultin stuff
+	// Built-in stuff
 	PHI_CAN_BUILTIN_MSG_HANDLERS,
 
-	// UI
+	// SLAVE->MASTER commands that are not app-specific
 	{PHI_CAN_MSG_ID_CENX4_ENCODER_EVENT, cenx4_can_handle_encoder_event, NULL},
-#if 0
-	{PHI_CAN_MSG_ID_CENX4_SET_DISPMODE, cenx4_can_handle_set_dispmode, NULL},
-	{PHI_CAN_MSG_ID_CENX4_SET_DISPMODE_STATE, cenx4_can_handle_set_dispmode_state, NULL},
-	{PHI_CAN_MSG_ID_CENX4_SET_SPLIT_POT_VAL, cenx4_can_handle_set_split_pot_val, NULL},
-	{PHI_CAN_MSG_ID_CENX4_SET_SPLIT_POT_TEXT, cenx4_can_handle_set_split_pot_text, NULL},
-#endif
-	// ...
-
+	{PHI_CAN_MSG_ID_CENX4_BTN_EVENT, cenx4_can_handle_btn_event, NULL},
 };
 
 static const phi_can_config_t can1_cfg = {
 	.drv = &CAND1,
 	.drv_cfg = &cancfg_500k,
 	.handlers = can_handlers,
+	.default_handler = {
+		.handler = cenx4_can_handle_unknown_event,
+	},
 	.n_handlers = sizeof(can_handlers) / sizeof(can_handlers[0]),
 	.dev_id = CENX4_DEV_ID,
 	.hw_sw_ver = CENX4_HW_SW_VER,
@@ -68,7 +64,6 @@ void cenx4_can_init(void)
 
 	   {
 		   int tries = 0;
-		   char buf[16];
 		   msg_t ret;
 		   cenx4_ui_t * ui;
 
@@ -102,92 +97,31 @@ void cenx4_can_handle_encoder_event(phi_can_t * can, void * context, uint8_t pri
         return;
     }
 
-    phi_app_mgr_notify_encoder_event(src, msg->encoder_num, msg->val_change);
+    if (cenx4_is_master)
+    {
+    	phi_app_mgr_notify_encoder_event(src, msg->encoder_num, msg->val_change);
+    }
 }
 
-void cenx4_can_handle_set_dispmode(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)
+void cenx4_can_handle_btn_event(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)
 {
-	const cenx4_can_handle_set_dispmode_t * msg = (cenx4_can_handle_set_dispmode_t *) data;
-
-	(void) can; (void) context; (void) prio; (void) msg_id; (void) src; (void) chan_id;
-
-	if ((len != sizeof(*msg)) ||
-		(msg->disp >= CENX4_UI_NUM_DISPS) ||
-		(msg->dispmode >= CENX4_UI_NUM_DISPMODES))
-	{
-		return;
-	}
-
-	cenx4_ui_t * ui = cenx4_ui_lock(msg->disp);
-	memset(&(ui->state), 0, sizeof(ui->state));
-	ui->dispmode = msg->dispmode;
-	cenx4_ui_unlock(ui);
-
-	// Ack
-	// phi_can_send_reply(can, prio, msg_id, src, chan_id, NULL, 0, PHI_CAN_DEFAULT_TIMEOUT);
-}
-
-void cenx4_can_handle_set_dispmode_state(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)
-{
-	const cenx4_can_handle_set_dispmode_state_t * msg = (cenx4_can_handle_set_dispmode_state_t *) data;
-
-	(void) can; (void) context; (void) prio; (void) msg_id; (void) src; (void) chan_id;
-
-	if ((len != sizeof(*msg)) ||
-		(msg->disp >= CENX4_UI_NUM_DISPS))
-	{
-		return;
-	}
-
-	cenx4_ui_t * ui = cenx4_ui_lock(msg->disp);
-	memcpy(&(ui->state), &(msg->state), sizeof(ui->state));
-	cenx4_ui_unlock(ui);
-
-	// Ack
-	// phi_can_send_reply(can, prio, msg_id, src, chan_id, NULL, 0, PHI_CAN_DEFAULT_TIMEOUT);
-}
-
-
-void cenx4_can_handle_set_split_pot_val(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)
-{
-    const cenx4_can_handle_set_split_pot_val_t * msg = (cenx4_can_handle_set_split_pot_val_t *) data;
+    const cenx4_can_handle_btn_event_t * msg = (cenx4_can_handle_btn_event_t *) data;
 
     (void) can; (void) context; (void) prio; (void) msg_id; (void) src; (void) chan_id;
 
-    if ((len != sizeof(*msg)) ||
-        (msg->disp >= CENX4_UI_NUM_DISPS) ||
-        (msg->pot >= 2))
+    if (len != sizeof(*msg))
     {
         return;
     }
 
-    cenx4_ui_t * ui = cenx4_ui_lock(msg->disp);
-    if (ui->dispmode == CENX4_UI_DISPMODE_SPLIT_POT)
+    if (cenx4_is_master)
     {
-        ui->state.split_pot.pots[msg->pot].val = msg->val;
+    	phi_app_mgr_notify_btn_event(src, msg->btn_num, msg->event, msg->param);
     }
-    cenx4_ui_unlock(ui);
 }
 
-
-void cenx4_can_handle_set_split_pot_text(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)
+void cenx4_can_handle_unknown_event(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)
 {
-    const cenx4_can_handle_set_split_pot_text_t * msg = (cenx4_can_handle_set_split_pot_text_t *) data;
-
-    (void) can; (void) context; (void) prio; (void) msg_id; (void) src; (void) chan_id;
-
-    if ((len != sizeof(*msg)) ||
-        (msg->disp >= CENX4_UI_NUM_DISPS) ||
-        (msg->pot >= 2))
-    {
-        return;
-    }
-
-    cenx4_ui_t * ui = cenx4_ui_lock(msg->disp);
-    if (ui->dispmode == CENX4_UI_DISPMODE_SPLIT_POT)
-    {
-        memcpy(ui->state.split_pot.pots[msg->pot].text_top, msg->text_top, CENX4_UI_MAX_LINE_TEXT_LEN);
-        memcpy(ui->state.split_pot.pots[msg->pot].text_bottom, msg->text_bottom, CENX4_UI_MAX_LINE_TEXT_LEN);
-    }
-    cenx4_ui_unlock(ui);
+	// Forward unknown events to current app
+	phi_app_mgr_notify_can_cmd(prio, msg_id, src, chan_id, data, len);
 }

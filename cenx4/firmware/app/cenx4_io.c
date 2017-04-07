@@ -8,26 +8,6 @@ phi_btn_t cenx4_btns[4];
 static void encoder_event_cb(uint8_t pin, int8_t value)
 {
     phi_app_mgr_notify_encoder_event(0, pin, value);
-
-#if CENX4_IS_SLAVE
-    phi_main_can_handle_encoder_event_t msg = {
-        .encoder_num = pin,
-        .val_change = value,
-    };
-
-    phi_can_xfer(
-        &cenx4_can,
-        PHI_CAN_PRIO_LOWEST + 1,
-        PHI_CAN_MSG_ID_MAIN_ENCODER_EVENT,
-        PHI_CAN_AUTO_ID_ALLOCATOR_NODE,
-        (const uint8_t *) &msg,
-        sizeof(msg),
-        NULL,
-        0,
-        NULL,
-        PHI_CAN_DEFAULT_TIMEOUT
-    );
-#endif
 }
 
 static void btn_event_cb(uint8_t btn, phi_btn_event_t event, uint32_t param)

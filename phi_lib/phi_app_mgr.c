@@ -187,3 +187,25 @@ void phi_app_mgr_notify_midi_sysex(phi_midi_port_t port, uint8_t cmd, const void
         );
     }
 }
+
+void phi_app_mgr_notify_can_cmd(uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t xfer_id, const uint8_t * data, size_t len)
+{
+	/* This will get called from CAN thread */
+	    if ((NULL != phi_app_cur_desc) &&
+	        (NULL != phi_app_cur_desc->can_cmd))
+	    {
+	    	phi_mtf_async_call(
+	            &phi_app_mgr_mtf,
+				MS2ST(50),
+	            phi_app_cur_desc->can_cmd,
+				7,
+				phi_app_cur_ctx,
+				prio,
+				msg_id,
+				src,
+				xfer_id,
+				data,
+				len
+			);
+	    }
+}

@@ -18,6 +18,6 @@ void cenx4_app_slave_start(void * ctx);
 void cenx4_app_slave_stop(void * ctx);
 void cenx4_app_slave_encoder_event(void * ctx, uint8_t node_id, uint8_t encoder_num, int8_t val_change);
 void cenx4_app_slave_btn_event(void * ctx, uint8_t node_id, uint8_t btn_num, phi_btn_event_t event, uint32_t param);
-
+void cenx4_app_slave_can_cmd(void * ctx, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t xfer_id, const uint8_t * data, size_t len);
 
 #endif /* CENX4_APP_SLAVE_H_ */

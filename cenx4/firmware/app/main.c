@@ -82,7 +82,7 @@ int main(void)
 	cenx4_ui_t * ui;
 	halInit();
 	chSysInit();
-	cenx4_is_master = FALSE;
+	cenx4_is_master = palReadPad(GPIOC, GPIOC_MASTER_EN) ? FALSE : TRUE;
 
 	phi_rnd_init();
 
@@ -93,22 +93,25 @@ int main(void)
 
 	chThdSleepMilliseconds(1000);
 
-	cenx4_app_cfg_load();
+	if (cenx4_is_master)
+	{
+		cenx4_app_cfg_load();
 
-	bduObjectInit(&BDU1);
-	bduStart(&BDU1, &bulkusbcfg);
+		bduObjectInit(&BDU1);
+		bduStart(&BDU1, &bulkusbcfg);
 
-	cenx4_midi_init();
+		cenx4_midi_init();
 
-	ui = cenx4_ui_lock(1);
-	strcpy(ui->state.boot.misc_text, "USB");
-	cenx4_ui_unlock(ui);
-#define usb_lld_connect_bus(usbp) palClearPad(GPIOA, GPIOA_USB_CONN)
+		ui = cenx4_ui_lock(1);
+		strcpy(ui->state.boot.misc_text, "USB");
+		cenx4_ui_unlock(ui);
+		#define usb_lld_connect_bus(usbp) palClearPad(GPIOA, GPIOA_USB_CONN)
 #define usb_lld_disconnect_bus(usbp) palSetPad(GPIOA, GPIOA_USB_CONN)
-	usbDisconnectBus(midiusbcfg.usbp);
-	chThdSleepMilliseconds(1500);
-	usbStart(midiusbcfg.usbp, &usbcfg);
-	usbConnectBus(midiusbcfg.usbp);
+		usbDisconnectBus(midiusbcfg.usbp);
+		chThdSleepMilliseconds(1500);
+		usbStart(midiusbcfg.usbp, &usbcfg);
+		usbConnectBus(midiusbcfg.usbp);
+	}
 
 	ui = cenx4_ui_lock(1);
 	strcpy(ui->state.boot.misc_text, "CAN");

@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-#define PHI_MTF_MAX_ARGS 5
+#define PHI_MTF_MAX_ARGS 7
 
 typedef struct
 {

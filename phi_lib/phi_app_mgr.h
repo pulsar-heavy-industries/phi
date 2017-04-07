@@ -17,6 +17,7 @@ typedef void (* phi_app_btn_event_f)(void * ctx, uint8_t node_id, uint8_t btn_nu
 typedef void (* phi_app_pot_event_f)(void * ctx, uint8_t node_id, uint8_t pot_num, uint8_t val);
 typedef void (* phi_app_mgr_midi_cc_f)(void * ctx, phi_midi_port_t port, uint8_t ch, uint8_t cc, uint8_t val);
 typedef void (* phi_app_mgr_midi_sysex_f)(void * ctx, phi_midi_port_t port, uint8_t cmd, const void * data, size_t data_len);
+typedef void (* phi_app_mgr_can_cmd_f)(void * ctx, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t xfer_id, const uint8_t * data, size_t len);
 
 typedef struct phi_app_desc_s
 {
@@ -28,6 +29,7 @@ typedef struct phi_app_desc_s
     phi_app_pot_event_f pot_event;
     phi_app_mgr_midi_cc_f midi_cc;
     phi_app_mgr_midi_sysex_f midi_sysex;
+    phi_app_mgr_can_cmd_f can_cmd;
     systime_t tick_interval;
 } phi_app_desc_t;
 
@@ -38,6 +40,7 @@ void phi_app_mgr_notify_btn_event(uint8_t node_id, uint8_t btn_num, phi_btn_even
 void phi_app_mgr_notify_pot_event(uint8_t node_id, uint8_t pot_num, uint8_t val);
 void phi_app_mgr_notify_midi_cc(phi_midi_port_t port, uint8_t ch, uint8_t cc, uint8_t val);
 void phi_app_mgr_notify_midi_sysex(phi_midi_port_t port, uint8_t cmd, const void * data, size_t data_len);
+void phi_app_mgr_notify_can_cmd(uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t xfer_id, const uint8_t * data, size_t len);
 
 #ifdef __cplusplus
 }

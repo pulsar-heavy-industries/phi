@@ -561,8 +561,14 @@ void phi_can_handle_incoming_msg(phi_can_t * can, uint8_t prio, uint8_t msg_id, 
         if (handler->msg_id == msg_id)
         {
             handler->handler(can, handler->context, prio, msg_id, src, chan_id, data, data_len);
-            break;
+            return;
         }
+    }
+
+    /* Maybe use the default handler? */
+    if (can->cfg->default_handler.handler)
+    {
+    	can->cfg->default_handler.handler(can, can->cfg->default_handler.context, prio, msg_id, src, chan_id, data, data_len);
     }
 }
 

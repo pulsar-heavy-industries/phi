@@ -203,7 +203,7 @@ void cenx4_app_traktor_reconfigure_displays(cenx4_app_traktor_context_t * ctx)
 
 void cenx4_app_traktor_render_browse(cenx4_ui_t * ui, void * _ctx)
 {
-    cenx4_app_traktor_context_t * ctx = (cenx4_app_traktor_context_t *) _ctx;
+//    cenx4_app_traktor_context_t * ctx = (cenx4_app_traktor_context_t *) _ctx;
 
     gdispGClear(ui->g, Black);
 	cenx4_ui_text(ui, 0, 0, ui->w, 1, justifyCenter, "Browse");

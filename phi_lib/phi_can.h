@@ -148,6 +148,7 @@ typedef struct phi_can_config_s {
 	CANDriver * drv;
 	const CANConfig * drv_cfg;
 	const phi_can_msg_handler_t * handlers;
+	const phi_can_msg_handler_t default_handler;
 	uint32_t n_handlers;
 	uint32_t dev_id;
 	uint32_t hw_sw_ver;

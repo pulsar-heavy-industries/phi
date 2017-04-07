@@ -6,17 +6,19 @@ extern "C" {
 #endif
 
 #include "phi_lib/phi_can.h"
+#include "phi_lib/phi_btn.h"
 #include "cenx4_ui.h"
 
 enum {
-    // THIS IS HORRIBLE:
-    // AB-CENX4 F0 SENDS THIS ONE, BUT RECEIVES THE ONE BELOW
-    PHI_CAN_MSG_ID_CENX4_ENCODER_EVENT = PHI_CAN_MSG_ID_USER + 1,
-
+	// MASTER->SLAVE commands
 	PHI_CAN_MSG_ID_CENX4_SET_DISPMODE = PHI_CAN_MSG_ID_USER + 1,
 	PHI_CAN_MSG_ID_CENX4_SET_DISPMODE_STATE,
 	PHI_CAN_MSG_ID_CENX4_SET_SPLIT_POT_VAL,
 	PHI_CAN_MSG_ID_CENX4_SET_SPLIT_POT_TEXT,
+
+	// SLAVE->MASTER commands
+	PHI_CAN_MSG_ID_CENX4_ENCODER_EVENT,
+	PHI_CAN_MSG_ID_CENX4_BTN_EVENT,
 };
 
 #pragma pack (1)
@@ -25,6 +27,12 @@ typedef struct {
     uint8_t encoder_num;
     int8_t val_change;
 } cenx4_can_handle_encoder_event_t;
+
+typedef struct {
+	uint8_t btn_num;
+	phi_btn_event_t event;
+	uint32_t param;
+} cenx4_can_handle_btn_event_t;
 
 typedef struct {
 	uint8_t disp;
@@ -58,10 +66,8 @@ extern phi_can_t cenx4_can;
 void cenx4_can_init(void);
 
 void cenx4_can_handle_encoder_event(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len);
-void cenx4_can_handle_set_dispmode(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len);
-void cenx4_can_handle_set_dispmode_state(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len);
-void cenx4_can_handle_set_split_pot_val(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len);
-void cenx4_can_handle_set_split_pot_text(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len);
+void cenx4_can_handle_btn_event(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len);
+void cenx4_can_handle_unknown_event(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len);
 
 #ifdef __cplusplus
 }

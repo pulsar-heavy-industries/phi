@@ -154,6 +154,14 @@ void phi_mtf_thread_process_msg(phi_mtf_t * mtf, systime_t timeout)
         ((void (*)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t)) msg->func)(msg->args[0], msg->args[1], msg->args[2], msg->args[3], msg->args[4]);
         break;
 
+    case 6:
+        ((void (*)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t)) msg->func)(msg->args[0], msg->args[1], msg->args[2], msg->args[3], msg->args[4], msg->args[5]);
+        break;
+
+    case 7:
+        ((void (*)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t, uint32_t)) msg->func)(msg->args[0], msg->args[1], msg->args[2], msg->args[3], msg->args[4], msg->args[5], msg->args[6]);
+        break;
+
     default:
         chDbgCheck(FALSE);
         break;
