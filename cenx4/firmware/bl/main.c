@@ -6,6 +6,9 @@
 #include "cenx4_midi.h"
 #include "usbcfg.h"
 
+bool cenx4_is_master;
+
+
 /*===========================================================================*/
 /* Random nunmber generation
  *===========================================================================*/
@@ -150,29 +153,35 @@ int main(void)
     boot_user();
 
     chSysInit();
+	cenx4_is_master = palReadPad(GPIOC, GPIOC_MASTER_EN) ? FALSE : TRUE;
+
     rnd_init();
     gfxInit();
     cenx4_ui_init();
 
-    bduObjectInit(&BDU1);
-    bduStart(&BDU1, &bulkusbcfg);
+    if (cenx4_is_master)
+    {
+		bduObjectInit(&BDU1);
+		bduStart(&BDU1, &bulkusbcfg);
 
-    cenx4_midi_init();
+		cenx4_midi_init();
 
-    /*
-     * Activates the USB driver and then the USB bus pull-up on D+.
-     * Note, a delay is inserted in order to not have to disconnect the cable
-     * after a reset.
-     */
-    #define usb_lld_connect_bus(usbp) palClearPad(GPIOA, GPIOA_USB_CONN)
-    #define usb_lld_disconnect_bus(usbp) palSetPad(GPIOA, GPIOA_USB_CONN)
-    usbDisconnectBus(midiusbcfg.usbp);
-    chThdSleepMilliseconds(1000);
-    usbStart(midiusbcfg.usbp, &usbcfg);
-    usbConnectBus(midiusbcfg.usbp);
-
-
-//    cenx4_can_init();
+		/*
+		 * Activates the USB driver and then the USB bus pull-up on D+.
+		 * Note, a delay is inserted in order to not have to disconnect the cable
+		 * after a reset.
+		 */
+		#define usb_lld_connect_bus(usbp) palClearPad(GPIOA, GPIOA_USB_CONN)
+		#define usb_lld_disconnect_bus(usbp) palSetPad(GPIOA, GPIOA_USB_CONN)
+		usbDisconnectBus(midiusbcfg.usbp);
+		chThdSleepMilliseconds(1000);
+		usbStart(midiusbcfg.usbp, &usbcfg);
+		usbConnectBus(midiusbcfg.usbp);
+    }
+    else
+    {
+    	cenx4_can_init();
+    }
 
 
     ui = cenx4_ui_lock(1);

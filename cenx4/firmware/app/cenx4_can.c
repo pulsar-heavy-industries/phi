@@ -20,6 +20,7 @@ static const phi_can_msg_handler_t can_handlers[] = {
 	// Built-in stuff
 	PHI_CAN_BUILTIN_MSG_HANDLERS,
 	{PHI_CAN_MSG_ID_RESET, cenx4_can_handle_reset, NULL},
+	{PHI_CAN_MSG_ID_START_BOOTLOADER, cenx4_can_handle_start_bootloader, NULL},
 
 	// SLAVE->MASTER commands that are not app-specific
 	{PHI_CAN_MSG_ID_CENX4_ENCODER_EVENT, cenx4_can_handle_encoder_event, NULL},
@@ -88,6 +89,17 @@ void cenx4_can_init(void)
 void cenx4_can_handle_reset(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)
 {
 	NVIC_SystemReset();
+}
+
+void cenx4_can_handle_start_bootloader(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)
+{
+	const WDGConfig wdgcfg = {
+		STM32_IWDG_PR_64,
+		STM32_IWDG_RL(1),
+		STM32_IWDG_WIN_DISABLED
+	};
+
+	wdgStart(&WDGD1, &wdgcfg);
 }
 
 void cenx4_can_handle_encoder_event(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)

@@ -21,9 +21,6 @@ static const phi_can_msg_handler_t can_handlers[] = {
 	// Bootloader
 	CENX4_CAN_BL_MSG_HANDLERS,
 
-	// UI
-	// {PHI_CAN_MSG_ID_BERRY_SET_DISPMODE, cenx4_can_handle_set_dispmode, NULL},
-	// {PHI_CAN_MSG_ID_BERRY_SET_DISPMODE_STATE, cenx4_can_handle_set_dispmode_state, NULL},
 };
 
 static const phi_can_config_t can1_cfg = {
@@ -42,13 +39,11 @@ phi_can_t cenx4_can;
 
 void cenx4_can_init(void)
 {
-   // phi_can_init(&cenx4_can, &can1_cfg, PHI_CAN_AUTO_ID);
-	phi_can_init(&cenx4_can, &can1_cfg, PHI_CAN_AUTO_ID_ALLOCATOR_NODE);
+	phi_can_init(&cenx4_can, &can1_cfg, PHI_CAN_AUTO_ID);
 
    palSetPadMode(GPIOB, 8, PAL_MODE_ALTERNATE(9));
    palSetPadMode(GPIOB, 9, PAL_MODE_ALTERNATE(9) | PAL_STM32_OSPEED_HIGHEST);
 
-#if 0
    {
 	   int tries = 0;
 	   msg_t ret;
@@ -70,5 +65,4 @@ void cenx4_can_init(void)
 
 	   ui->state.boot.misc_text[0][0] = 0;
    }
-#endif
 }
