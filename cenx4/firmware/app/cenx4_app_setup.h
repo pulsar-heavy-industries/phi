@@ -39,7 +39,9 @@ void cenx4_app_setup_stop(void * ctx);
 void cenx4_app_setup_encoder_event(void * ctx, uint8_t node_id, uint8_t encoder_num, int8_t val_change);
 void cenx4_app_setup_btn_event(void * ctx, uint8_t node_id, uint8_t btn_num, phi_btn_event_t event, uint32_t param);
 
-msg_t cenx4_app_setup_berry_enter_setup_mode(cenx4_app_setup_context_t * ctx, uint8_t node_id);
-msg_t cenx4_app_setup_berry_update_ui(cenx4_app_setup_context_t * ctx, uint8_t node_id);
+msg_t cenx4_app_setup_enter_setup_mode(cenx4_app_setup_context_t * ctx, uint8_t node_id);
+msg_t cenx4_app_setup_update_ui(cenx4_app_setup_context_t * ctx, uint8_t node_id);
+
+void cenx4_app_setup_bootload_slave(uint8_t node_id);
 
 #endif /* CENX4_APP_SETUP_H_ */

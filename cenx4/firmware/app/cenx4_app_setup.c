@@ -1,3 +1,4 @@
+#include "phi_lib/phi_bl_common.h"
 #include "cenx4_app_cfg.h"
 #include "cenx4_app_registry.h"
 #include "cenx4_app_setup.h"
@@ -90,13 +91,13 @@ void cenx4_app_setup_start(void * _ctx)
 	cenx4_ui_unlock(ui);
 
 	// Refresh
-	cenx4_app_setup_berry_update_ui(ctx, 0);
+	cenx4_app_setup_update_ui(ctx, 0);
 
     // Move our Berry modules into setup mode
 	// TODO locks
 	for (i = 0; i < cenx4_can.auto_alloc_num_devs; ++i)
 	{
-		cenx4_app_setup_berry_enter_setup_mode(ctx, PHI_CAN_AUTO_ID_ALLOCATOR_FIRST_DEV_ID + i);
+		cenx4_app_setup_enter_setup_mode(ctx, PHI_CAN_AUTO_ID_ALLOCATOR_FIRST_DEV_ID + i);
 	}
 }
 
@@ -142,7 +143,7 @@ void cenx4_app_setup_encoder_event(void * _ctx, uint8_t node_id, uint8_t encoder
 		// module whether the change came from it or from one of the slaves
 		if (node_id != 0)
 		{
-			cenx4_app_setup_berry_update_ui(ctx, 0);
+			cenx4_app_setup_update_ui(ctx, 0);
 		}
 	}
 
@@ -153,7 +154,7 @@ void cenx4_app_setup_encoder_event(void * _ctx, uint8_t node_id, uint8_t encoder
     }
 
     // Update UI
-    cenx4_app_setup_berry_update_ui(ctx, node_id);
+    cenx4_app_setup_update_ui(ctx, node_id);
 }
 
 void cenx4_app_setup_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, phi_btn_event_t event, uint32_t param)
@@ -167,6 +168,9 @@ void cenx4_app_setup_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, ph
 	// Action button (bottom left)
 	if ((node_id == 0) && (btn_num == 1) && (event == PHI_BTN_EVENT_RELEASED))
 	{
+		cenx4_app_setup_bootload_slave(10);
+		return;
+
 		switch (ctx->cur_action)
 		{
 		case CENX4_APP_SETUP_ACTION_EXIT:
@@ -214,7 +218,7 @@ void cenx4_app_setup_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, ph
 					chThdSleepMilliseconds(200);
 				}
 
-				cenx4_app_setup_berry_update_ui(ctx, 0);
+				cenx4_app_setup_update_ui(ctx, 0);
 			}
 
 			break;
@@ -249,7 +253,7 @@ void cenx4_app_setup_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, ph
 	}
 }
 
-msg_t cenx4_app_setup_berry_enter_setup_mode(cenx4_app_setup_context_t * ctx, uint8_t node_id)
+msg_t cenx4_app_setup_enter_setup_mode(cenx4_app_setup_context_t * ctx, uint8_t node_id)
 {
     msg_t ret;
 
@@ -298,7 +302,7 @@ msg_t cenx4_app_setup_berry_enter_setup_mode(cenx4_app_setup_context_t * ctx, ui
     }
 
     // Set pots
-    ret = cenx4_app_setup_berry_update_ui(ctx, node_id);
+    ret = cenx4_app_setup_update_ui(ctx, node_id);
     if (MSG_OK != ret)
     {
         return ret;
@@ -308,7 +312,7 @@ msg_t cenx4_app_setup_berry_enter_setup_mode(cenx4_app_setup_context_t * ctx, ui
     return MSG_OK;
 }
 
-msg_t cenx4_app_setup_berry_update_ui(cenx4_app_setup_context_t * ctx, uint8_t node_id)
+msg_t cenx4_app_setup_update_ui(cenx4_app_setup_context_t * ctx, uint8_t node_id)
 {
     cenx4_can_handle_set_dispmode_state_t state;
     msg_t ret;
@@ -414,4 +418,159 @@ msg_t cenx4_app_setup_berry_update_ui(cenx4_app_setup_context_t * ctx, uint8_t n
     }
 
     return MSG_OK;
+}
+
+void cenx4_app_setup_bootload_slave(uint8_t node_id)
+{
+	char err[16];
+	phi_bl_msg_start_t msg_start;
+	const phi_bl_hdr_t * hdr = (phi_bl_hdr_t *) PHI_BL_USER_ADDR;
+	phi_bl_ret_t bl_ret;
+	msg_t ret;
+	uint32_t resp_len;
+	uint32_t offset;
+	phi_bl_msg_data_t msg_data;
+
+	cenx4_ui_t * ui;
+
+	ui=cenx4_ui_lock(0);
+	memset(&(ui->state.text), 0, sizeof(ui->state.text));
+	ui->dispmode = CENX4_UI_DISPMODE_TEXTS;
+	strcpy(ui->state.text.lines[0], "START");
+	cenx4_ui_unlock(ui);
+
+	// start bootloader on save
+	phi_can_xfer(
+		&cenx4_can,
+		PHI_CAN_PRIO_LOWEST + 1,
+		PHI_CAN_MSG_ID_START_BOOTLOADER,
+		node_id,
+		NULL,
+		0,
+		NULL,
+		0,
+		NULL,
+		PHI_CAN_DEFAULT_TIMEOUT
+	);
+	chThdSleepMilliseconds(500);
+
+	// Bootloader start command
+	memset(&msg_start, 0, sizeof(msg_start));
+	msg_start.img_size = hdr->img_size + sizeof(*hdr);
+	msg_start.img_start_addr = PHI_BL_USER_ADDR;
+	msg_start.dev_id = CENX4_DEV_ID;
+	msg_start.crc32 = phi_crc32((void *) PHI_BL_USER_ADDR, msg_start.img_size);
+
+	bl_ret = PHI_BL_RET_ERR_UNKNOWN;
+	ret = phi_can_xfer(
+		&cenx4_can,
+		PHI_CAN_PRIO_LOWEST + 1,
+		PHI_CAN_MSG_BL_START,
+		node_id,
+		(const uint8_t *) &msg_start,
+		sizeof(msg_start),
+		&bl_ret,
+		sizeof(bl_ret),
+		&resp_len,
+		PHI_CAN_DEFAULT_TIMEOUT
+	);
+	if (MSG_OK != ret)
+	{
+		chsnprintf(err, sizeof(err) - 1, "StartErr1 %d", ret);
+		goto lbl_err;
+	}
+	if (sizeof(bl_ret) != resp_len)
+	{
+		chsnprintf(err, sizeof(err) - 1, "StartErr2 %d", resp_len);
+		goto lbl_err;
+	}
+	if (PHI_BL_RET_OK != bl_ret)
+	{
+		chsnprintf(err, sizeof(err) - 1, "StartErr3 %d", bl_ret);
+		goto lbl_err;
+	}
+
+	for (offset = 0; offset < hdr->img_size + sizeof(*hdr); offset += sizeof(msg_data.buf))
+	{
+		memset(&msg_data, 0, sizeof(msg_data));
+		msg_data.offset = offset;
+		memcpy(&(msg_data.buf[0]), (const void *)(PHI_BL_USER_ADDR + offset), sizeof(msg_data.buf));
+
+		ui=cenx4_ui_lock(0);
+		chsnprintf(&(ui->state.text.lines[0][0]), 16, "%d", offset);
+		cenx4_ui_unlock(ui);
+
+		bl_ret = PHI_BL_RET_ERR_UNKNOWN;
+		ret = phi_can_xfer(
+			&cenx4_can,
+			PHI_CAN_PRIO_LOWEST + 1,
+			PHI_CAN_MSG_BL_DATA,
+			node_id,
+			(const uint8_t *) &msg_data,
+			sizeof(msg_data),
+			&bl_ret,
+			sizeof(bl_ret),
+			&resp_len,
+			MS2ST(100)
+		);
+		if (MSG_OK != ret)
+		{
+			chsnprintf(err, sizeof(err) - 1, "DataErr1 %d", ret);
+			goto lbl_err;
+		}
+		if (sizeof(bl_ret) != resp_len)
+		{
+			chsnprintf(err, sizeof(err) - 1, "DataErr2 %d", resp_len);
+			goto lbl_err;
+		}
+		if (PHI_BL_RET_OK != bl_ret)
+		{
+			chsnprintf(err, sizeof(err) - 1, "DataErr3 %d", bl_ret);
+			goto lbl_err;
+		}
+	}
+
+	bl_ret = PHI_BL_RET_ERR_UNKNOWN;
+	ret = phi_can_xfer(
+		&cenx4_can,
+		PHI_CAN_PRIO_LOWEST + 1,
+		PHI_CAN_MSG_BL_DONE,
+		node_id,
+		NULL,
+		0,
+		&bl_ret,
+		sizeof(bl_ret),
+		&resp_len,
+		PHI_CAN_DEFAULT_TIMEOUT
+	);
+	if (MSG_OK != ret)
+	{
+		chsnprintf(err, sizeof(err) - 1, "DoneErr1 %d", ret);
+		goto lbl_err;
+	}
+	if (sizeof(bl_ret) != resp_len)
+	{
+		chsnprintf(err, sizeof(err) - 1, "DoneErr2 %d", resp_len);
+		goto lbl_err;
+	}
+	if (PHI_BL_RET_OK != bl_ret)
+	{
+		chsnprintf(err, sizeof(err) - 1, "DoneErr3 %d", bl_ret);
+		goto lbl_err;
+	}
+
+	ui=cenx4_ui_lock(0);
+	memset(&(ui->state.text), 0, sizeof(ui->state.text));
+	ui->dispmode = CENX4_UI_DISPMODE_TEXTS;
+	strcpy(ui->state.text.lines[0], "WOW");
+	cenx4_ui_unlock(ui);
+
+	return;
+
+lbl_err:
+ui=cenx4_ui_lock(0);
+memset(&(ui->state.text), 0, sizeof(ui->state.text));
+ui->dispmode = CENX4_UI_DISPMODE_TEXTS;
+strcpy(ui->state.text.lines[0], err);
+cenx4_ui_unlock(ui);
 }
