@@ -1,8 +1,5 @@
 Stuff that requires 2+ Cenx4s:
-- adding CAN RESET cmd on slaves
 - changing knobs from 0-100 to 0-255
-- master/slave stuff (rememeber to also update docs)
-- CAN fw update
 
 Documentation:
 - SysEx protocol
@@ -13,14 +10,18 @@ Documentation:
 Code improvements:
 - Ableton needs to be able to read number of modules using SysEx, and configure itself accordingly
 - Add CAN command set both pot val and text at same time
+- Change hw_sw ver to 32 bit (hw 8 bit, sw 24 bit)
+- Change display commands to have one SET instead of SET_STATE and SET_DISPMODE
+- create an init app on master
+   - checks versions of available modules and update if possible
+   - when done, starts setup app (or maybe straight to ableton if config is ok?)
+
+Web:
+ - Update bootloader CAN commands
+ - update to 32 hw_sw ver
+ - make setup dialog poll/refresh available midi ports
 
 Misc:
-- Create landing page. Should include:
-  - Logo
-  - Pictures of Cenx4
-  - List of features
-  - Waiting list for 1/2/3/4 module configurations
-  - Link to blog
 - Open the github repository (BLOCKING: need landing page)
 - Obtain VID/PID through pidcodes (BLOCKING: need landing page + gh repo)
 
