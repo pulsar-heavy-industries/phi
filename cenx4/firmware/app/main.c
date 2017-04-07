@@ -7,7 +7,7 @@
 
 
 cenx4_app_contexts_t cenx4_app_contexts;
-
+bool cenx4_is_master;
 
 /*
  * Application entry point.
@@ -82,6 +82,7 @@ int main(void)
 	cenx4_ui_t * ui;
 	halInit();
 	chSysInit();
+	cenx4_is_master = FALSE;
 
 	phi_rnd_init();
 
@@ -121,9 +122,17 @@ int main(void)
 	cenx4_ui_unlock(ui);
 
 	phi_app_mgr_init();
-	phi_app_mgr_switch_app(&cenx4_app_setup_desc, &(cenx4_app_contexts.setup));
+
 	//phi_app_mgr_switch_app(&cenx4_app_ableton_desc, &(cenx4_app_contexts.ableton));
 	//phi_app_mgr_switch_app(&cenx4_app_test_desc, &(cenx4_app_contexts.test));
+	if (cenx4_is_master)
+	{
+		phi_app_mgr_switch_app(&cenx4_app_setup_desc, &(cenx4_app_contexts.setup));
+	}
+	else
+	{
+		phi_app_mgr_switch_app(&cenx4_app_slave_desc, &(cenx4_app_contexts.slave));
+	}
 
 
 	while (true) {

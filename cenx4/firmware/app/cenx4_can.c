@@ -52,58 +52,43 @@ volatile unsigned int loops=0;
 
 void cenx4_can_init(void)
 {
-   //phi_can_init(&cenx4_can, &can1_cfg, PHI_CAN_AUTO_ID);
-    phi_can_init(&cenx4_can, &can1_cfg, PHI_CAN_AUTO_ID_ALLOCATOR_NODE);
+	if (cenx4_is_master)
+	{
+		phi_can_init(&cenx4_can, &can1_cfg, PHI_CAN_AUTO_ID_ALLOCATOR_NODE);
 
-   palSetPadMode(GPIOB, 8, PAL_MODE_ALTERNATE(9));
-   palSetPadMode(GPIOB, 9, PAL_MODE_ALTERNATE(9) | PAL_STM32_OSPEED_HIGHEST);
+		palSetPadMode(GPIOB, 8, PAL_MODE_ALTERNATE(9));
+		palSetPadMode(GPIOB, 9, PAL_MODE_ALTERNATE(9) | PAL_STM32_OSPEED_HIGHEST);
+	}
+	else
+	{
+		phi_can_init(&cenx4_can, &can1_cfg, PHI_CAN_AUTO_ID);
 
-#if 0
+		palSetPadMode(GPIOB, 8, PAL_MODE_ALTERNATE(9));
+		palSetPadMode(GPIOB, 9, PAL_MODE_ALTERNATE(9) | PAL_STM32_OSPEED_HIGHEST);
 
-   {
-	   int tries = 0;
-	   char buf[16];
-	   msg_t ret;
-	   cenx4_ui_t * ui;
-
-	   for (;;)
 	   {
-		   ++tries;
-		   ui = cenx4_ui_lock(0);
-		   chsnprintf(ui->state.boot.misc_text, sizeof(ui->state.boot.misc_text)-1, "AutoId #%d", tries);
-		   cenx4_ui_unlock(ui);
+		   int tries = 0;
+		   char buf[16];
+		   msg_t ret;
+		   cenx4_ui_t * ui;
 
-		   ret = phi_can_auto_get_id(&cenx4_can);
-		   if (ret == MSG_OK)
+		   for (;;)
 		   {
-			   break;
+			   ++tries;
+			   ui = cenx4_ui_lock(0);
+			   chsnprintf(ui->state.boot.misc_text, sizeof(ui->state.boot.misc_text)-1, "AutoId #%d", tries);
+			   cenx4_ui_unlock(ui);
+
+			   ret = phi_can_auto_get_id(&cenx4_can);
+			   if (ret == MSG_OK)
+			   {
+				   break;
+			   }
 		   }
+
+		   ui->state.boot.misc_text[0] = 0;
 	   }
-
-	   ui->state.boot.misc_text[0] = 0;
    }
-
-
-
-   phi_can_msg_data_sysinfo_t si;
-   uint32_t bytes;
-   while (false)
-   {
-	   memset(&si, 0, sizeof(si));
-	   bytes = 0;
-	   msg_t ret = phi_can_xfer(&cenx4_can, 0, PHI_CAN_MSG_ID_SYSINFO, 2, NULL, 0, (uint8_t *)&si, sizeof(si), &bytes, MS2ST(100)); //TIME_INFINITE);
-	   if ((ret != MSG_OK) || (sizeof(si) != bytes)) {
-		   continue;
-	   }
-	   ++loops;
-
-	   chDbgAssert(ret == MSG_OK, "WTF");
-	   chDbgAssert(si.dev_id == 0x42455259, "WTF");
-	   chDbgAssert((si.hw_sw_ver == 0x0202) || (si.hw_sw_ver == 0x0101), "WTF");
-	   chDbgAssert(si.can_version == PHI_CAN_VERSION, "WTF");
-	   //chThdSleepMilliseconds(500);
-   }
-#endif
 }
 
 void cenx4_can_handle_encoder_event(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)

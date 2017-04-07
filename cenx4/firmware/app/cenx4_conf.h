@@ -11,9 +11,8 @@
 #define CENX4_DEV_ID     PHI_DEV_ID('C', 'N', 'X', '4')
 #define CENX4_MAX_POTS   ((PHI_CAN_AUTO_ID_ALLOCATOR_MAX_DEVS + 1) * 4) // 4 pots per module and 1 extra module for the master
 
+/* Are we a master or a slave? */
+extern bool cenx4_is_master;
 
-#ifndef CENX4_IS_SLAVE
-#define CENX4_IS_SLAVE 0
-#endif
 
 #endif /* CENX4_CONF_H_ */

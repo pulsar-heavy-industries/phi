@@ -135,7 +135,7 @@ void cenx4_ui_render_boot(cenx4_ui_t * ui)
 			&cenx4_can,
 			PHI_CAN_PRIO_LOWEST,
 			PHI_CAN_MSG_ID_ECHO,
-			10,
+			PHI_CAN_AUTO_ID_ALLOCATOR_NODE,
 			(const uint8_t *) &ping,
 			sizeof(ping),
 			(uint8_t *) &ping,

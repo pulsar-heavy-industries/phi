@@ -325,8 +325,8 @@ bool phi_can_init(phi_can_t * can, const phi_can_config_t * cfg, uint8_t node_id
 {
     int i;
 
-#if PHI_CAN_ENABLE_ALLOCATOR
-    chDbgCheck(PHI_CAN_AUTO_ID_ALLOCATOR_NODE == node_id);
+#if !PHI_CAN_ENABLE_ALLOCATOR
+    chDbgCheck(PHI_CAN_AUTO_ID_ALLOCATOR_NODE != node_id);
 #endif
 
     memset(can, 0, sizeof(*can));
