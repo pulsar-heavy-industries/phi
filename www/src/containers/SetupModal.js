@@ -29,7 +29,6 @@ const SetupForm = Form.create()(
         let defaultInput = null;
         [
             'Pulsar Heavy Industries CENX4 CENX4 MIDI',
-            'Pulsar Heavy Industries CENX4', // TODO shouldnt be here
         ].forEach((val) => {
             if (!defaultInput && inputs.indexOf(val) !== -1)
             {

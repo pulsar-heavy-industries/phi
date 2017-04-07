@@ -13,6 +13,7 @@ const mapStateToProps = (state) => {
         done: state.fwUpdate.done,
         fwImg: state.fwUpdate.fwImg,
         bytesSent: state.fwUpdate.bytesSent,
+        statusMsg: state.fwUpdate.statusMsg,
     }
 }
 
@@ -20,7 +21,10 @@ const mapDispatchToProps = (dispatch) => {
     return {
         handleStart: (fileName, buf) => dispatch(start(fileName, buf)),
         handleCancel: () => dispatch(cancel()),
-        handleContinue: () => dispatch(midiSetup()),
+        handleContinue: () => {
+            dispatch(cancel())
+            dispatch(midiSetup())
+        }
     }
 }
 
@@ -56,6 +60,7 @@ class FwUpdateModal extends React.Component {
             {this.props.fwImg && <div>
                 <strong>Firmware Image:</strong> { this.props.fwImg.fileName } ({ this.props.bytesSent }/{ this.props.fwImg.buf.length } bytes)
                 <Progress percent={Math.floor(this.props.bytesSent * 100 / this.props.fwImg.buf.length)}/>
+                <span>{ this.props.statusMsg }</span>
                 {this.busy && <strong>Do not navigate away from the app.</strong>}
             </div>}
         </Modal>

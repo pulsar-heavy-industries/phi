@@ -54,7 +54,7 @@ class Main extends React.Component {
         return (
             <div>
                 <DevInfoCard />
-                {this.props.midi.devInfo.is_bootloader && <FwUpdateModal/>}
+                <FwUpdateModal/>
                 <Button onClick={() => { this.props.onResetClick(this.props.midi.inputName, this.props.midi.outputName) }}>Reset</Button>
                 <Button onClick={this.props.onUpdateFwClick}>Update firmware</Button>
                 <Button onClick={this.props.onUpdateFwClick2}>Update firmware (server)</Button>

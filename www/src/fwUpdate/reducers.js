@@ -1,8 +1,9 @@
-import { PREPARE, CANCEL, STARTING, CHUNK_SENT, DONE } from './actions'
+import { PREPARE, UPDATE_STATUS_MSG, CANCEL, STARTING, CHUNK_SENT, DONE } from './actions'
 
 const INITIAL_STATE = {
     modalShown: false,
     busy: false,
+    statusMsg: '',
 }
 
 export default (state = INITIAL_STATE, action) => {
@@ -13,14 +14,19 @@ export default (state = INITIAL_STATE, action) => {
                 modalShown: true,
             }
 
+        case UPDATE_STATUS_MSG:
+            return {
+                ...state,
+                statusMsg: action.statusMsg,
+            }
+
         case CANCEL:
             if (state.busy) {
                 return state
             }
 
             return {
-                ...state,
-                modalShown: false,
+                ...INITIAL_STATE,
             }
 
         case STARTING:
@@ -31,6 +37,7 @@ export default (state = INITIAL_STATE, action) => {
                 fwImg: action.fwImg,
                 bytesSent: 0,
                 done: false,
+                statusMsg: 'Starting...'
             }
 
         case CHUNK_SENT:

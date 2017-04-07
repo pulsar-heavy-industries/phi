@@ -14,7 +14,6 @@ Code improvements:
    - when done, starts setup app (or maybe straight to ableton if config is ok?)
 
 Web:
- - Update bootloader CAN commands
  - update to 32 hw_sw ver
  - make setup dialog poll/refresh available midi ports
 

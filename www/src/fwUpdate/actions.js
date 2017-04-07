@@ -1,3 +1,5 @@
+import { midiSetup } from '../actions'
+
 export const PREPARE = 'FW_UPDATE_PREPARE'
 export const prepare = () => {
     return {
@@ -13,6 +15,13 @@ export const cancel = () => {
     }
 }
 
+export const UPDATE_STATUS_MSG = 'FW_UPDATE_UPDATE_STATUS_MSG'
+export const update_status_msg = (statusMsg) => {
+    return {
+        type: UPDATE_STATUS_MSG,
+        statusMsg,
+    }
+}
 
 export const STARTING = 'FW_UPDATE_STARTING'
 export const CHUNK_SENT = 'FW_UPDATE_CHUNK_SENT'
@@ -27,25 +36,70 @@ export const start = (fileName = null, buf = null) => {
             }
 
             const state = getState()
-            const bl = state.midi.dev.getBootloader()
+            const dev = state.midi.dev
 
             const chunkSent = (chunkSize) => {
+                dispatch(update_status_msg('Sending firmware...'))
                 dispatch({
                     type: CHUNK_SENT,
                     chunkSize,
                 })
             }
             const done = () => {
-                dispatch({
-                    type: DONE,
-                })
+                // Hack to give device time to re-enumerate
+                // TODO poll
+                dispatch(update_status_msg('Waiting for re-enumeration...'))
+                setTimeout(() => {
+                    dispatch(update_status_msg('Done :)'))
+                    dispatch({
+                        type: DONE,
+                    })
+                }, 5000)
             }
 
-            bl.start(
-                state.midi.devInfo.dev_id,
-                buf,
-            ).then(() => {
-                bl.sendNextChunk(chunkSent, done)
+            let start_bootloader;
+            if (!state.midi.devInfo.is_bootloader) {
+                // If we're not a bootloader device, try and send a start midi command.
+                // If it works the device will restart in bootloader mode
+                dispatch(update_status_msg('Starting bootloader...'))
+
+                dev.callSysExCmd(
+                   dev.SYSEX_CMD.USER + 0, // ab_main_bl_midi_sysex_cmd_bl_start
+                )
+
+                start_bootloader = new Promise((resolve, reject) => {
+                    setTimeout(() => {
+                        dispatch(midiSetup())
+
+                        let retries = 0
+                        const retry = () => {
+                            if (getState().midi.devInfo.is_bootloader) {
+                                dispatch(update_status_msg('Bootloader started!'))
+                                resolve()
+                            }
+
+                            ++retries
+                            if (retries === 20) {
+                                reject(new Error('Timeout while waiting for a bootloader device'))
+                            } else {
+                                setTimeout(retry, 100)
+                            }
+                        }
+                        setTimeout(retry, 100)
+                    }, 2000) // time for USB re-enumeration
+                })
+            } else {
+                start_bootloader = new Promise((resolve, reject) => { resolve() })
+            }
+
+            start_bootloader.then(() => {
+                const bl = getState().midi.dev.getBootloader()
+                bl.start(
+                    state.midi.devInfo.dev_id,
+                    buf,
+                ).then(() => {
+                    bl.sendNextChunk(chunkSent, done)
+                })
             })
         }
         return dispatch({

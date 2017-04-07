@@ -185,6 +185,7 @@ class MidiDevice {
             timeout: 500, // in msec
         }
         this.emitter = new EventEmitter()
+        this.SYSEX_CMD = SYSEX_CMD
     }
 
     open() {
@@ -335,7 +336,9 @@ class MidiDevice {
                     }
                     fields.dev_name = deviceNames[fields.dev_id] || 'Unknown'
 
-                    fields.is_bootloader = fields.hw_sw_ver & 0x8000
+                    fields.is_bootloader = fields.hw_sw_ver & 0x80000000
+                    fields.hw_ver = (fields.hw_sw_ver >> 24) & 0x7f
+                    fields.sw_ver = fields.hw_sw_ver & 0xffffff
 
                     resolve(fields);
                 },
