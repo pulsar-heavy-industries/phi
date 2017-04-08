@@ -6,8 +6,6 @@ static coord_t font_height;
 static coord_t lcd_w, lcd_h;
 #define hyperion_ui_text(x, y, w, justify, text) gdispFillStringBox(x, y, w, font_height, text, font, White, Black, justify)
 
-extern char boot_user_status[];
-
 static THD_WORKING_AREA(hyperion_ui_thread_wa, 1024);
 static THD_FUNCTION(hyperion_ui_thread, arg)
 {
@@ -41,7 +39,7 @@ void hyperion_ui_render(void)
     uint32_t        up_secs = ST2S(ping);
     msg_t           ret;
 
-    hyperion_ui_text(0, 0, lcd_w, justifyCenter, "hyperion-bl");
+    hyperion_ui_text(0, 0, lcd_w, justifyCenter, "hyperion");
     y += font_height + 5;
 
     chsnprintf(buf, sizeof(buf) - 1, "HwSw %04x", HYPERION_HW_SW_VER);
@@ -91,12 +89,10 @@ void hyperion_ui_render(void)
     hyperion_ui_text(0, y, lcd_w, justifyLeft, buf);
     y += font_height + 2;
 
-	hyperion_ui_text(0, y, lcd_w, justifyLeft, boot_user_status);
+    chsnprintf(buf, sizeof(buf) - 1, "CanOk %d", hyperion_can.stat_process_rx);
+    hyperion_ui_text(0, y, lcd_w, justifyLeft, buf);
+    y += font_height + 2;
 
-//    chsnprintf(buf, sizeof(buf) - 1, "CanOk %d", hyperion_can.stat_process_rx);
-//    hyperion_ui_text(0, y, lcd_w, justifyLeft, buf);
-//    y += font_height + 2;
-//
-//    chsnprintf(buf, sizeof(buf) - 1, "UP %02d:%02d", up_secs / 60, up_secs % 60);
-//    hyperion_ui_text(0, lcd_h - font_height - 3, lcd_w, justifyLeft, buf);
+    chsnprintf(buf, sizeof(buf) - 1, "UP %02d:%02d", up_secs / 60, up_secs % 60);
+    hyperion_ui_text(0, lcd_h - font_height - 3, lcd_w, justifyLeft, buf);
 }

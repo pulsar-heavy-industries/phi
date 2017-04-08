@@ -35,49 +35,6 @@ static uint32_t shift_in_out(uint32_t data) {
     return out;
 }
 
-#define __delay() for (volatile int delayz = 0; delayz < 100000; ++delayz) asm("nop")
-bool hyperion_io_bl_force(void)
-{
-	volatile uint32_t data = 0;
-	volatile int i;
-
-	palSetPadMode(GPIOB, GPIOB_SPI2_SCK, PAL_MODE_OUTPUT_PUSHPULL);
-	palSetPadMode(GPIOB, GPIOB_SPI2_MOSI, PAL_MODE_OUTPUT_PUSHPULL);
-	palSetPadMode(GPIOB, GPIOB_SPI2_MISO, PAL_MODE_INPUT);
-
-	palClearPad(GPIOC, RC2);
-	palClearPad(GPIOC, RC);
-
-	__delay();
-
-	palSetPad(GPIOC, RC2);
-
-	palClearPad(GPIOB, GPIOB_SPI2_MOSI);
-	palClearPad(GPIOB, GPIOB_SPI2_SCK);
-
-	for (i = 0; i < 24; ++i)
-	{
-		palSetPad(GPIOB, GPIOB_SPI2_SCK);
-		__delay();
-
-		data <<= 1;
-		data |= palReadPad(GPIOB, GPIOB_SPI2_MISO) ? 1 : 0;
-
-		palClearPad(GPIOB, GPIOB_SPI2_SCK);
-		__delay();
-	}
-
-	palSetPad(GPIOC, RC);
-
-	// Back to SPI mode
-	palSetPadMode(GPIOB, GPIOB_SPI2_SCK, PAL_MODE_ALTERNATE(5) | PAL_STM32_OSPEED_HIGHEST);
-	palSetPadMode(GPIOB, GPIOB_SPI2_MOSI, PAL_MODE_ALTERNATE(5) | PAL_STM32_OSPEED_HIGHEST);
-	palSetPadMode(GPIOB, GPIOB_SPI2_MISO, PAL_MODE_ALTERNATE(5));
-
-	// ENC1 button
-	return data & (1 << 19) ? FALSE: TRUE;
-}
-
 uint32_t data_out = 0;
 volatile int32_t rotz[2] = {0, 0};
 

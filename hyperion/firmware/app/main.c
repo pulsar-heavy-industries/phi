@@ -1,4 +1,3 @@
-#include "phi_lib/phi_bl_common.h"
 #include "hyperion_ui.h"
 #include "hyperion_can.h"
 #include "hyperion_io.h"
@@ -69,104 +68,115 @@ static const ADCConversionGroup adcgrpcfg2 = {
 };
 
 
-char boot_user_status[16];
 
-void user_jump_to_app(uint32_t address) {
-  typedef void (*pFunction)(void);
-
-  pFunction Jump_To_Application;
-
-  /* variable that will be loaded with the start address of the application */
-  volatile uint32_t * JumpAddress;
-  const volatile uint32_t * ApplicationAddress = (volatile uint32_t *) address;
-
-  /* get jump address from application vector table */
-  JumpAddress = (volatile uint32_t *) ApplicationAddress[1];
-
-  /* load this address into function pointer */
-  Jump_To_Application = (pFunction) JumpAddress;
-
-  /* reset all interrupts to default */
-  chSysDisable();
-
-  /* Clear pending interrupts just to be on the safe side*/
-  // TODO SCB_ICSR = ICSR_PENDSVCLR;
-
-  /* Disable all interrupts */
-  for (int i = WWDG_IRQn; i < 82; ++i)
-  {
-      nvicDisableVector(i);
-  }
-
-  /* set stack pointer as in application's vector table */
-  __set_MSP((uint32_t) (ApplicationAddress[0]));
-  Jump_To_Application();
-}
-
-void boot_user(void)
-{
-    const phi_bl_hdr_t * hdr = (phi_bl_hdr_t *) PHI_BL_USER_ADDR;
-
-    int is_watchdog_reset = RCC->CSR;
-    RCC->CSR |= RCC_CSR_RMVF;
-
-    if (is_watchdog_reset & RCC_CSR_WDGRSTF)
-    {
-        strcpy(boot_user_status, "Requested");
-        return;
-    }
-
-    if (hdr->magic != PHI_BL_HDR_MAGIC)
-    {
-        strcpy(boot_user_status, "BadMagic");
-        return;
-    }
-
-    if (hdr->crc32 != phi_crc32(&(hdr->data[0]), hdr->img_size))
-    {
-        strcpy(boot_user_status, "BadCrc");
-        return;
-    }
-
-    strcpy(boot_user_status, "FW OK");
-
-    user_jump_to_app(hdr->load_addr);
-}
-
-
-
-/*
- * Application entry point.
- */
 int main(void)
 {
-	bool force_bl;
-
     halInit();
-
-    force_bl = hyperion_io_bl_force();
-    if (!force_bl) {
-        boot_user();
-    } else {
-        strcpy(boot_user_status, "Forced");
-    }
-
     chSysInit();
 
     gfxInit();
 
+
     chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
     hyperion_io_init();
     hyperion_ui_init();
-    hyperion_can_init();
+    // hyperion_can_init();
 
-//    adcStart(&ADCD1, NULL);
-//    adcStartConversion(&ADCD1, &adcgrpcfg2, adc_data, ADC_GRP2_BUF_DEPTH);
+    adcStart(&ADCD1, NULL);
+    adcStartConversion(&ADCD1, &adcgrpcfg2, adc_data, ADC_GRP2_BUF_DEPTH);
+
+ 
+  /*
+   * Serves timer events.
+   */
+
+   int f = 0;
+
+   uint32_t data = 0;
+
+   // btn1 red = 1 << 9
+   // btn1 green = 1 << 10
+   // btn2 red = 1 << 1
+   // btn2 green = 1 << 2
+   // btn3 red = 1 << 11
+   // btn3 green = 1 << 12
+   // btn4 red = 1 << 3
+   // btn4 green = 1 << 4
+   // btn5 red = 1 << 13
+   // btn5 green = 1 << 8
+   // btn6 red = 1 << 5
+   // btn6 green = 1 << 6
+   // led0 = 1 << 14
+   // led1 = 1 << 15
+   // led2 = 1 << 16
+   // led3 = 1 << 17
+   // led4 = 1 << 18
+   // led5 = 1 << 19
+   // led6 = 1 << 20
+   // led7 = 1 << 21
+   // led8 = 1 << 22
+   // led9 = 1 << 23
+   uint32_t mm[] = {
+     1 << 9,
+     1 << 10,
+     1 << 9 | 1 << 10,
+
+     1 << 1,
+     1 << 2,
+     1 << 1 | 1 << 2,
+
+     1 << 11,
+     1 << 12,
+     1 << 11 | 1 << 12,
+
+     1 << 3,
+     1 << 4,
+     1 << 3 | 1 << 4,
+
+     1 << 13,
+     1 << 8,
+     1 << 13 | 1 << 8,
+
+     1 << 5,
+     1 << 6,
+     1 << 5 | 1 << 6,
+
+     // bar
+     1 << 14,
+     1 << 15,
+     1 << 16,
+     1 << 17,
+     1 << 18,
+     1 << 19,
+     1 << 20,
+     1 << 21,
+     1 << 22,
+     1 << 23,
+
+     // all,
+     0xffffff,
+     0,
+     0xffffff,
+     0,
+     0xffffff,
+     0,
 
 
-    while (true) {
-    	chThdSleepMilliseconds(600);
-    }
+   };
 
-    return 0;
+
+
+  while (true) {
+//    shift_in_out(mm[f]);
+//    ++f;
+//    if (f == AB_ARRLEN(mm))
+//    {
+//        f = 0;
+//    }
+    chThdSleepMilliseconds(600);
+  }
+
+
+
+  return 0;
 }
