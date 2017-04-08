@@ -64,12 +64,12 @@
 #define GFX_USE_GDISP                                TRUE
 
 //#define GDISP_NEED_AUTOFLUSH                         TRUE
-#define GDISP_NEED_TIMERFLUSH                        50
+//#define GDISP_NEED_TIMERFLUSH                        50
 #define GDISP_NEED_VALIDATION                        TRUE
 //#define GDISP_NEED_CLIP                              TRUE
 #define GDISP_NEED_CIRCLE                            TRUE
 //#define GDISP_NEED_ELLIPSE                           FALSE
-//#define GDISP_NEED_ARC                               FALSE
+#define GDISP_NEED_ARC                               TRUE
 //#define GDISP_NEED_ARCSECTORS                        FALSE
 //#define GDISP_NEED_CONVEX_POLYGON                    FALSE
 //#define GDISP_NEED_SCROLL                            FALSE
@@ -141,7 +141,7 @@
 // #define GDISP_DEFAULT_ORIENTATION                    GDISP_ROTATE_90    // If not defined the native hardware orientation is used.
 //#define GDISP_LINEBUF_SIZE                           128
 //#define GDISP_STARTUP_COLOR                          Black
-#define GDISP_NEED_STARTUP_LOGO                      TRUE
+#define GDISP_NEED_STARTUP_LOGO                      FALSE
 
 #define GDISP_TOTAL_DISPLAYS                         1
 
@@ -324,15 +324,18 @@
 ///////////////////////////////////////////////////////////////////////////
 // GMISC                                                                 //
 ///////////////////////////////////////////////////////////////////////////
-//#define GFX_USE_GMISC                                FALSE
+#define GFX_USE_GMISC                                TRUE
 
 //#define GMISC_NEED_ARRAYOPS                          FALSE
-//#define GMISC_NEED_FASTTRIG                          FALSE
-//#define GMISC_NEED_FIXEDTRIG                         FALSE
+#define GMISC_NEED_FASTTRIG                          TRUE
+#define GMISC_NEED_FIXEDTRIG                         TRUE
 //#define GMISC_NEED_INVSQRT                           FALSE
 //    #define GMISC_INVSQRT_MIXED_ENDIAN               FALSE
 //    #define GMISC_INVSQRT_REAL_SLOW                  FALSE
-//#define GMISC_NEED_MATRIXFLOAT2D                     FALSE
-//#define GMISC_NEED_MATRIXFIXED2D                     FALSE
+#define GMISC_NEED_MATRIXFLOAT2D                     FALSE
+#define GMISC_NEED_MATRIXFIXED2D                     FALSE
+
+#define GOS_NEED_X_THREADS FALSE
+#define GOS_NEED_X_HEAP FALSE
 
 #endif /* _GFXCONF_H */
