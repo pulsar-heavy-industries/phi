@@ -1,6 +1,9 @@
 Stuff that requires 2+ Cenx4s:
 - changing knobs from 0-100 to 0-255
 
+Hyperion:
+- main/bl need rnd init code
+
 Documentation:
 - SysEx protocol
 - Bootloader image format

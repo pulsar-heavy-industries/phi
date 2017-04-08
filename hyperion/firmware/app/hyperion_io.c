@@ -3,6 +3,49 @@
 phi_rotenc_t rotencs[2];
 phi_btn_t btns[10];
 
+#define ADC_GRP2_NUM_CHANNELS   8
+#define ADC_GRP2_BUF_DEPTH      16
+adcsample_t adc_data[ADC_GRP2_NUM_CHANNELS * ADC_GRP2_BUF_DEPTH];
+uint32_t adc_data_filtered[ADC_GRP2_NUM_CHANNELS] = {0, };
+uint8_t adc_data_lowres[ADC_GRP2_NUM_CHANNELS] = {0, };
+static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n)
+{
+    int i, j;
+
+    for (i = 0; i < ADC_GRP2_NUM_CHANNELS; ++i)
+    {
+        adc_data_filtered[i] = 0;
+        for (j = 0; j < ADC_GRP2_BUF_DEPTH; ++j)
+        {
+            int idx = (j * ADC_GRP2_NUM_CHANNELS) + i;
+            adc_data_filtered[i] += adc_data[idx];
+        }
+        adc_data_filtered[i] /= ADC_GRP2_BUF_DEPTH;
+    }
+}
+
+
+static const ADCConversionGroup adcgrpcfg2 = {
+  TRUE,
+  ADC_GRP2_NUM_CHANNELS,
+  adccallback, // adccallback,
+  NULL, // adcerrorcallback,
+  0,                        /* CR1 */
+  ADC_CR2_SWSTART,          /* CR2 */
+  0,                        /* SMPR2 */
+  ADC_SMPR2_SMP_AN0(ADC_SAMPLE_480) | ADC_SMPR2_SMP_AN1(ADC_SAMPLE_480) |
+  ADC_SMPR2_SMP_AN2(ADC_SAMPLE_480) | ADC_SMPR2_SMP_AN3(ADC_SAMPLE_480) |
+  ADC_SMPR2_SMP_AN4(ADC_SAMPLE_480) | ADC_SMPR2_SMP_AN5(ADC_SAMPLE_480) |
+  ADC_SMPR2_SMP_AN6(ADC_SAMPLE_480) | ADC_SMPR2_SMP_AN7(ADC_SAMPLE_480),
+  ADC_SQR1_NUM_CH(ADC_GRP2_NUM_CHANNELS),
+  ADC_SQR2_SQ8_N(ADC_CHANNEL_IN0) | ADC_SQR2_SQ7_N(ADC_CHANNEL_IN5),
+  ADC_SQR3_SQ6_N(ADC_CHANNEL_IN4)   | ADC_SQR3_SQ5_N(ADC_CHANNEL_IN3) |
+  ADC_SQR3_SQ4_N(ADC_CHANNEL_IN6)   | ADC_SQR3_SQ3_N(ADC_CHANNEL_IN2) |
+  ADC_SQR3_SQ2_N(ADC_CHANNEL_IN7)   | ADC_SQR3_SQ1_N(ADC_CHANNEL_IN1)
+};
+
+
+
 
 static SPIConfig spi_cfg = {
     NULL,
@@ -162,4 +205,7 @@ void hyperion_io_init(void)
     }
 
     chThdCreateStatic(hyperion_io_thread_wa, sizeof(hyperion_io_thread_wa), NORMALPRIO, hyperion_io_thread, NULL);
+
+    adcStart(&ADCD1, NULL);
+    adcStartConversion(&ADCD1, &adcgrpcfg2, adc_data, ADC_GRP2_BUF_DEPTH);
 }

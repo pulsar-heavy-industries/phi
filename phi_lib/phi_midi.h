@@ -6,7 +6,11 @@ extern "C" {
 #endif
 
 #include "phi_lib/phi_lib.h"
+
+#if HAL_USE_USB
 #include "phi_lib/phi_usb_midi.h"
+#endif
+
 
 #define PHI_MIDI_SYSEX_MAX_LEN   295  // (256 + 2) * 8 / 7 // (256 data + 2 crc)
 

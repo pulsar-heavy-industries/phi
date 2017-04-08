@@ -9,13 +9,9 @@
  * HYPERION Specific stuff
  *****************************************************************************/
 
-#define HYPERION_HW_SW_VER 0x8111
+#define HYPERION_HW_SW_VER 0x0101
 #define HYPERION_DEV_ID     PHI_DEV_ID('H', 'Y', 'P', '1')
 
-
-#ifndef HYPERION_IS_SLAVE
-#define HYPERION_IS_SLAVE 0
-#endif
 
 
 /******************************************************************************

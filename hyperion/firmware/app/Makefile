@@ -131,11 +131,15 @@ CSRC = $(STARTUPSRC) \
 	   $(PHI_LIB)/phi_lib.c \
 	   $(PHI_LIB)/phi_btn.c \
 	   $(PHI_LIB)/phi_rotenc.c \
+	   $(PHI_LIB)/phi_app_mgr.c \
+	   $(PHI_LIB)/phi_mtf.c \
+	   $(PHI_LIB)/phi_msgq.c \
 	   $(PHI_LIB)/st/stm32f4xx_flash.c \
        main.c \
        hyperion_ui.c \
 	   hyperion_can.c \
-	   hyperion_io.c
+	   hyperion_io.c \
+	   hyperion_app_test.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
