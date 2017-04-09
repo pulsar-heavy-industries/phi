@@ -4,6 +4,8 @@
 phi_rotenc_t rotencs[2];
 phi_btn_t btns[10];
 
+static force_pots_read = FALSE;
+
 #define ADC_GRP2_NUM_CHANNELS   8
 #define ADC_GRP2_BUF_DEPTH      16
 adcsample_t adc_data[ADC_GRP2_NUM_CHANNELS * ADC_GRP2_BUF_DEPTH];
@@ -198,12 +200,14 @@ static THD_FUNCTION(hyperion_io_thread, arg) {
         {
             uint8_t lowres = adc_data_filtered[i] >> 4;
             int delta = adc_data_lowres[i] - lowres;
-            if ((delta > 2) || (delta < -2))
+            if ((delta > 2) || (delta < -2) || force_pots_read)
             {
                 adc_data_lowres[i] = lowres;
-//                ab_app_mgr_notify_pot_event(0, i, lowres);
+                phi_app_mgr_notify_pot_event(0, i, lowres);
             }
         }
+
+        force_pots_read = FALSE;
 
 //        chThdSleepMicroseconds(500);
     }
@@ -284,4 +288,9 @@ void hyperion_io_set_bar_graph(uint8_t val, uint8_t fill)
         }
     }
     chSysUnlock();
+}
+
+void hyperion_io_force_pots_read(void)
+{
+	force_pots_read = TRUE;
 }

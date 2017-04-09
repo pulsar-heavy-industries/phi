@@ -192,7 +192,12 @@ void hyperion_ui_render_texts(hyperion_ui_t * ui)
 
 		ui->state.text.lines[i][HYPERION_UI_MAX_LINE_TEXT_LEN - 1] = 0;
 		hyperion_ui_text(ui, 0, y, ui->w, font_idx, justify, ui->state.text.lines[i]);
-		y += font_heights[font_idx] + 2;
+		if (i == 0)
+		{
+			y += 16;
+		} else {
+			y += font_heights[font_idx] + 2;
+		}
 	}
 
 	// Texts from the bottom

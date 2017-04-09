@@ -54,7 +54,7 @@ typedef union hyperion_ui_dispmode_state_u
 		char misc_text[HYPERION_UI_MAX_LINE_TEXT_LEN];
 	} boot;
 
-	#define HYPERION_UI_DISPMODE_TEXTS_LINES 4
+	#define HYPERION_UI_DISPMODE_TEXTS_LINES 5
 	struct
 	{
 		uint8_t flags[HYPERION_UI_DISPMODE_TEXTS_LINES];
