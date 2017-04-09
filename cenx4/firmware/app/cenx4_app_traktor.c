@@ -1,5 +1,6 @@
 #include "cenx4_app_traktor.h"
 #include "cenx4_conf.h"
+#include "../../../hyperion/firmware/app/hyperion_app_slave_can.h"
 
 const phi_app_desc_t cenx4_app_traktor_desc = {
     .start = cenx4_app_traktor_start,
@@ -121,7 +122,7 @@ void cenx4_app_traktor_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, 
 	else
 	{
 		chDbgCheck(node_id >= PHI_CAN_AUTO_ID_ALLOCATOR_FIRST_DEV_ID);
-		pkt.chn = CENX4_APP_TRAKTOR_MIDI_CH_MASTER + (node_id - PHI_CAN_AUTO_ID_ALLOCATOR_FIRST_DEV_ID); // TODO mod_num
+		pkt.chn = CENX4_APP_TRAKTOR_MIDI_CH_MASTER + 1 + (node_id - PHI_CAN_AUTO_ID_ALLOCATOR_FIRST_DEV_ID); // TODO mod_num
 		pkt.event = 0xB; // Control Change
 		pkt.val1 = btn_num + 1;
 		switch (event)
@@ -148,7 +149,7 @@ void cenx4_app_traktor_pot_event(void * ctx, uint8_t node_id, uint8_t pot_num, u
 
 	chDbgCheck(node_id >= PHI_CAN_AUTO_ID_ALLOCATOR_FIRST_DEV_ID);
 
-	pkt.chn = CENX4_APP_TRAKTOR_MIDI_CH_MASTER + (node_id - PHI_CAN_AUTO_ID_ALLOCATOR_FIRST_DEV_ID); // TODO mod_num
+	pkt.chn = CENX4_APP_TRAKTOR_MIDI_CH_MASTER + 1 + (node_id - PHI_CAN_AUTO_ID_ALLOCATOR_FIRST_DEV_ID); // TODO mod_num
 	pkt.event = 0xB; // Control Change
 	pkt.val1 = pot_num + 30;
 	pkt.val2 = val >> 1;
@@ -186,6 +187,52 @@ void cenx4_app_traktor_midi_cc(void * _ctx, phi_midi_port_t port, uint8_t ch, ui
     		break;
     	}
     	break;
+
+    	case CENX4_APP_TRAKTOR_MIDI_CH_MASTER + 1:
+			// CC 1 to 8 are button LEDs
+			if ((cc >= 1) && (cc <= 8))
+			{
+				hyperion_app_slave_msg_set_btn_led_t set_btn_led = {
+					.btn_num = cc - 1,
+					.led = val,
+				};
+
+				phi_can_xfer(
+					&cenx4_can,
+					PHI_CAN_PRIO_LOWEST,
+					HYPERION_APP_SLAVE_CAN_MSG_ID_SET_BTN_LED,
+					10,
+					(const uint8_t *) &set_btn_led,
+					sizeof(set_btn_led),
+					NULL,
+					0,
+					NULL,
+					PHI_CAN_DEFAULT_TIMEOUT
+				);
+			}
+
+			// CC 60 is bar graph
+			if (cc == 60)
+			{
+				hyperion_app_slave_msg_set_led_bar_t led_bar = {
+					.val = phi_lib_map(val, 0, 127, 0, 10),
+					.fill = 1,
+				};
+
+				phi_can_xfer(
+					&cenx4_can,
+					PHI_CAN_PRIO_LOWEST,
+					HYPERION_APP_SLAVE_CAN_MSG_ID_SET_LED_BAR,
+					10,
+					(const uint8_t *) &led_bar,
+					sizeof(led_bar),
+					NULL,
+					0,
+					NULL,
+					PHI_CAN_DEFAULT_TIMEOUT
+				);
+			}
+	    break;
     }
 }
 

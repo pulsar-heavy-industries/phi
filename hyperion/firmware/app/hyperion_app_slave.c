@@ -1,5 +1,7 @@
 #include "hyperion_app_slave.h"
+#include "hyperion_app_slave_can.h"
 #include "hyperion_ui.h"
+#include "hyperion_io.h"
 
 const phi_app_desc_t hyperion_app_slave_desc = {
     .start = hyperion_app_slave_start,
@@ -98,81 +100,32 @@ void hyperion_app_slave_can_cmd(void * ctx, uint8_t prio, uint8_t msg_id, uint8_
 {
 	switch (msg_id)
 	{
-#if 0
-	case PHI_CAN_MSG_ID_HYPERION_SET_DISPMODE:
+	case HYPERION_APP_SLAVE_CAN_MSG_ID_SET_BTN_LED:
 		{
-			const hyperion_can_handle_set_dispmode_t * msg = (hyperion_can_handle_set_dispmode_t *) data;
+			const hyperion_app_slave_msg_set_btn_led_t * msg = (hyperion_app_slave_msg_set_btn_led_t *) data;
 
 			if ((len != sizeof(*msg)) ||
-				(msg->disp >= HYPERION_UI_NUM_DISPS) ||
-				(msg->dispmode >= HYPERION_UI_NUM_DISPMODES))
+				(msg->btn_num > 7))
 			{
 				break;
 			}
 
-			hyperion_ui_t * ui = hyperion_ui_lock(msg->disp);
-			memset(&(ui->state), 0, sizeof(ui->state));
-			ui->dispmode = msg->dispmode;
-			hyperion_ui_unlock(ui);
+			hyperion_io_set_btn_leds(msg->btn_num, msg->led);
 		}
 		break;
 
-	case PHI_CAN_MSG_ID_HYPERION_SET_DISPMODE_STATE:
+	case HYPERION_APP_SLAVE_CAN_MSG_ID_SET_LED_BAR:
 		{
-			const hyperion_can_handle_set_dispmode_state_t * msg = (hyperion_can_handle_set_dispmode_state_t *) data;
+			const hyperion_app_slave_msg_set_led_bar_t * msg = (hyperion_app_slave_msg_set_led_bar_t *) data;
 
 			if ((len != sizeof(*msg)) ||
-				(msg->disp >= HYPERION_UI_NUM_DISPS))
+				(msg->val > 10))
 			{
 				break;
 			}
 
-			hyperion_ui_t * ui = hyperion_ui_lock(msg->disp);
-			memcpy(&(ui->state), &(msg->state), sizeof(ui->state));
-			hyperion_ui_unlock(ui);
+			hyperion_io_set_bar_graph(msg->val, msg->fill);
 		}
 		break;
-
-	case PHI_CAN_MSG_ID_HYPERION_SET_SPLIT_POT_VAL:
-		{
-		    const hyperion_can_handle_set_split_pot_val_t * msg = (hyperion_can_handle_set_split_pot_val_t *) data;
-
-		    if ((len != sizeof(*msg)) ||
-		        (msg->disp >= HYPERION_UI_NUM_DISPS) ||
-		        (msg->pot >= 2))
-		    {
-		        return;
-		    }
-
-		    hyperion_ui_t * ui = hyperion_ui_lock(msg->disp);
-		    if (ui->dispmode == HYPERION_UI_DISPMODE_SPLIT_POT)
-		    {
-		        ui->state.split_pot.pots[msg->pot].val = msg->val;
-		    }
-		    hyperion_ui_unlock(ui);
-		}
-		break;
-
-	case PHI_CAN_MSG_ID_HYPERION_SET_SPLIT_POT_TEXT:
-		{
-			const hyperion_can_handle_set_split_pot_text_t * msg = (hyperion_can_handle_set_split_pot_text_t *) data;
-
-		    if ((len != sizeof(*msg)) ||
-		        (msg->disp >= HYPERION_UI_NUM_DISPS) ||
-		        (msg->pot >= 2))
-		    {
-		        return;
-		    }
-
-		    hyperion_ui_t * ui = hyperion_ui_lock(msg->disp);
-		    if (ui->dispmode == HYPERION_UI_DISPMODE_SPLIT_POT)
-		    {
-		        memcpy(ui->state.split_pot.pots[msg->pot].text_top, msg->text_top, HYPERION_UI_MAX_LINE_TEXT_LEN);
-		        memcpy(ui->state.split_pot.pots[msg->pot].text_bottom, msg->text_bottom, HYPERION_UI_MAX_LINE_TEXT_LEN);
-		    }
-		    hyperion_ui_unlock(ui);
-		}
-		break;
-#endif
 	}
 }

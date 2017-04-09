@@ -1,3 +1,4 @@
+#include "phi_lib/phi_app_mgr.h"
 #include "hyperion_can.h"
 
 static const CANConfig cancfg_500k = {
@@ -28,6 +29,10 @@ static const phi_can_config_t can1_cfg = {
 	.drv_cfg = &cancfg_500k,
 	.handlers = can_handlers,
 	.n_handlers = sizeof(can_handlers) / sizeof(can_handlers[0]),
+	.default_handler = {
+		.handler = hyperion_can_handle_unknown_cmd,
+	},
+
 	.dev_id = HYPERION_DEV_ID,
 	.hw_sw_ver = HYPERION_HW_SW_VER,
 };
@@ -66,4 +71,9 @@ void hyperion_can_init(void)
 
 	   //ui->state.boot.misc_text[0][0] = 0;
    }
+}
+
+void hyperion_can_handle_unknown_cmd(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)
+{
+	phi_app_mgr_notify_can_cmd(prio, msg_id, src, chan_id, data, len);
 }

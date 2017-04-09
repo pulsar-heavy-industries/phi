@@ -37,6 +37,14 @@ typedef struct cenx4_app_traktor_context_s
 } cenx4_app_traktor_context_t;
 
 
+/**********************************************************************************************/
+
+/* interfacing with a hyperion module over CAN */
+
+
+/**********************************************************************************************/
+
+
 void cenx4_app_traktor_start(void * ctx);
 void cenx4_app_traktor_stop(void * ctx);
 void cenx4_app_traktor_tick(void * ctx);
