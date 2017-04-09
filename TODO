@@ -11,6 +11,7 @@ Documentation:
 - Hardware (Enclosure, pots, BOM, JST cables, USB socket)
 
 Code improvements:
+- cenx4_ui_render_logo contains junk
 - Ableton needs to be able to read number of modules using SysEx, and configure itself accordingly
 - Add CAN command set both pot val and text at same time
 - Change hw_sw ver to 32 bit (hw 8 bit, sw 24 bit)

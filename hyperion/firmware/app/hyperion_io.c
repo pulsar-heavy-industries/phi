@@ -1,4 +1,5 @@
 #include "hyperion_io.h"
+#include "phi_lib/phi_app_mgr.h"
 
 phi_rotenc_t rotencs[2];
 phi_btn_t btns[10];
@@ -11,6 +12,8 @@ uint8_t adc_data_lowres[ADC_GRP2_NUM_CHANNELS] = {0, };
 static void adccallback(ADCDriver *adcp, adcsample_t *buffer, size_t n)
 {
     int i, j;
+
+    (void) adcp; (void) buffer; (void) n;
 
     for (i = 0; i < ADC_GRP2_NUM_CHANNELS; ++i)
     {
@@ -38,10 +41,10 @@ static const ADCConversionGroup adcgrpcfg2 = {
   ADC_SMPR2_SMP_AN4(ADC_SAMPLE_480) | ADC_SMPR2_SMP_AN5(ADC_SAMPLE_480) |
   ADC_SMPR2_SMP_AN6(ADC_SAMPLE_480) | ADC_SMPR2_SMP_AN7(ADC_SAMPLE_480),
   ADC_SQR1_NUM_CH(ADC_GRP2_NUM_CHANNELS),
-  ADC_SQR2_SQ8_N(ADC_CHANNEL_IN0) | ADC_SQR2_SQ7_N(ADC_CHANNEL_IN5),
-  ADC_SQR3_SQ6_N(ADC_CHANNEL_IN4)   | ADC_SQR3_SQ5_N(ADC_CHANNEL_IN3) |
-  ADC_SQR3_SQ4_N(ADC_CHANNEL_IN6)   | ADC_SQR3_SQ3_N(ADC_CHANNEL_IN2) |
-  ADC_SQR3_SQ2_N(ADC_CHANNEL_IN7)   | ADC_SQR3_SQ1_N(ADC_CHANNEL_IN1)
+  ADC_SQR2_SQ8_N(ADC_CHANNEL_IN6) | ADC_SQR2_SQ7_N(ADC_CHANNEL_IN5),
+  ADC_SQR3_SQ6_N(ADC_CHANNEL_IN4)   | ADC_SQR3_SQ5_N(ADC_CHANNEL_IN7) |
+  ADC_SQR3_SQ4_N(ADC_CHANNEL_IN2)   | ADC_SQR3_SQ3_N(ADC_CHANNEL_IN1) |
+  ADC_SQR3_SQ2_N(ADC_CHANNEL_IN3)   | ADC_SQR3_SQ1_N(ADC_CHANNEL_IN0)
 };
 
 
@@ -79,15 +82,16 @@ static uint32_t shift_in_out(uint32_t data) {
 }
 
 uint32_t data_out = 0;
-volatile int32_t rotz[2] = {0, 0};
 
 static void rotenc_callback(uint8_t rotenc, int8_t value)
 {
-    rotz[rotenc] += value;
+	phi_app_mgr_notify_encoder_event(0, rotenc, value);
 }
 
 static void btn_callback(uint8_t btn, phi_btn_event_t event, uint32_t param)
 {
+	phi_app_mgr_notify_btn_event(0, btn, event, param);
+#if 0
 // bar graph leds
 //	1 << 22,
 //	1 << 23,
@@ -144,12 +148,14 @@ static void btn_callback(uint8_t btn, phi_btn_event_t event, uint32_t param)
     default:
     	break;
     }
+#endif
 }
 
 static THD_WORKING_AREA(hyperion_io_thread_wa, 512);
 static THD_FUNCTION(hyperion_io_thread, arg) {
     systime_t now;
     uint32_t data_in = 0;
+    int i;
 
     (void)arg;
     chRegSetThreadName("gpio");
@@ -188,6 +194,17 @@ static THD_FUNCTION(hyperion_io_thread, arg) {
             MS2ST(100)
         );
 
+        for (i = 0; i < ADC_GRP2_NUM_CHANNELS; ++i)
+        {
+            uint8_t lowres = adc_data_filtered[i] >> 4;
+            int delta = adc_data_lowres[i] - lowres;
+            if ((delta > 2) || (delta < -2))
+            {
+                adc_data_lowres[i] = lowres;
+//                ab_app_mgr_notify_pot_event(0, i, lowres);
+            }
+        }
+
 //        chThdSleepMicroseconds(500);
     }
 }
@@ -208,4 +225,63 @@ void hyperion_io_init(void)
 
     adcStart(&ADCD1, NULL);
     adcStartConversion(&ADCD1, &adcgrpcfg2, adc_data, ADC_GRP2_BUF_DEPTH);
+}
+
+void hyperion_io_set_btn_leds(uint8_t btn, uint8_t leds)
+{
+    const uint32_t red[] = {
+		1 << 8,		// BTN 1 BLUE
+		1 << 9,		// BTN 2 BLUE
+		1 << 12,	// BTN 3 RED
+		1 << 10,	// BTN 4 RED
+		1 << 2,		// BTN 5 RED
+		1 << 1,		// BTN 6 RED
+		1 << 6,		// BTN 7 RED
+		1 << 5,		// BTN 8 RED
+    };
+    const uint32_t green[] = {
+		1 << 8,		// BTN 1 BLUE
+		1 << 9,		// BTN 2 BLUE
+		1 << 13,	// BTN 3 GREEN
+		1 << 11,	// BTN 4 GREEN
+		1 << 3,		// BTN 5 GREEN
+		1 << 4,		// BTN 6 GREEN
+		1 << 7,		// BTN 7 GREEN
+		1 << 0,		// BTN 8 GREEN
+    };
+
+    chDbgCheck(btn < 8);
+
+    chSysLock();
+    data_out &= ~(red[btn] | green[btn]);
+    if (leds & HYPERION_IO_BTN_LED_RED)
+    {
+        data_out |= red[btn];
+    }
+    if (leds & HYPERION_IO_BTN_LED_GREEN)
+    {
+        data_out |= green[btn];
+    }
+    chSysUnlock();
+}
+
+void hyperion_io_set_bar_graph(uint8_t val, uint8_t fill)
+{
+    chDbgCheck(val < 11);
+    chSysLock();
+    data_out &= ~0xffc000;
+    if (val)
+    {
+        val--;
+
+        if (fill)
+        {
+            data_out |= ((1 << (val + 1)) - 1) << 14;
+        }
+        else
+        {
+            data_out |= (1 << val) << 14;
+        }
+    }
+    chSysUnlock();
 }

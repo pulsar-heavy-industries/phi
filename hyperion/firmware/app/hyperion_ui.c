@@ -10,7 +10,6 @@ static coord_t font_heights[3];
 void (*hyperion_ui_renderers[])(hyperion_ui_t *) = {
 	hyperion_ui_render_boot,
 	hyperion_ui_render_texts,
-	hyperion_ui_render_split_pot,
 	hyperion_ui_render_logo,
 	hyperion_ui_render_callback,
 };
@@ -78,10 +77,10 @@ hyperion_ui_t * hyperion_ui_lock(void)
 	chMtxLock(&(ui.lock));
 	return &ui;
 }
-void hyperion_ui_unlock(hyperion_ui_t * ui)
+void hyperion_ui_unlock(hyperion_ui_t * _ui)
 {
-	chDbgCheck(ui);
-	chMtxUnlock(&(ui->lock));
+	chDbgCheck(_ui == &ui);
+	chMtxUnlock(&(ui.lock));
 }
 
 void hyperion_ui_text(hyperion_ui_t * ui, coord_t x, coord_t y, coord_t w, uint8_t font_idx, uint8_t justify, const char * text)
@@ -222,194 +221,6 @@ void hyperion_ui_render_texts(hyperion_ui_t * ui)
 		hyperion_ui_text(ui, 0, y, ui->w, font_idx, justify, ui->state.text.lines[i]);
 		y -= font_heights[font_idx] + 2;
 	}
-}
-
-void hyperion_ui_render_split_pot_helper(hyperion_ui_t * ui, struct hyperion_ui_dispmode_state_split_pot_s * pot, coord_t y)
-{
-	int top_font = (pot->flags & (3 << 5)) >> 5;
-	const int bot_font = 0;
-
-	char    buf[HYPERION_UI_MAX_LINE_TEXT_LEN];
-
-	// TODO might not be needed
-	gdispGFillArea(ui->g, 0, y, ui->w,  (ui->h / 2), Black);
-
-	if (top_font == 0)
-	{
-		top_font = hyperion_ui_get_biggest_possible_font_idx(ui, pot->text_top);
-	}
-	else
-	{
-		top_font--;
-	}
-	hyperion_ui_text(ui, 0, y, ui->w, top_font, justifyCenter, pot->text_top);
-
-	if (pot->flags & HYPERION_UI_DISPMODE_POT_FLAGS_ROUND)
-	{
-		gdispGDrawCircle(ui->g, ui->w / 2, y + (ui->h / 4), (ui->w / 2) - 20, White);
-
-		if (pot->flags & HYPERION_UI_DISPMODE_POT_FLAGS_FILL)
-		{
-			if (pot->flags & HYPERION_UI_DISPMODE_POT_FLAGS_CENTERED)
-			{
-				if (pot->val > 50)
-				{
-					int m = 225 - phi_lib_map(pot->val, 0, 99, 10, 270);
-					gdispGDrawThickArc(ui->g, ui->w / 2, y + (ui->h / 4), 7, 10, m, 90, White);
-				}
-				else
-				{
-					int m = (90 + phi_lib_map(50 - pot->val, 0, 99, 10, 270));
-					gdispGDrawThickArc(ui->g, ui->w / 2, y + (ui->h / 4), 7, 10, 90, m, White);
-				}
-
-			}
-			else
-			{
-				int m = 225 - phi_lib_map(pot->val, 0, 99, 5, 270);
-				gdispGDrawThickArc(ui->g, ui->w / 2, y + (ui->h / 4), 7, 10, m, 225, White);
-			}
-		}
-		else
-		{
-			coord_t center_x = ui->w / 2;
-			coord_t center_y = y + (ui->h / 4);
-			int deg = 135 + phi_lib_map(pot->val, 0, 99, 0, 270);
-
-			fixed cos_m = ffcos(deg);
-			fixed sin_m = ffsin(deg);
-
-			int x1 = center_x + NONFIXED(FIXEDMUL(FIXED(5), cos_m));
-			int y1 = center_y + NONFIXED(FIXEDMUL(FIXED(5), sin_m));
-
-			int x2 = center_x + NONFIXED(FIXEDMUL(FIXED(10), cos_m));
-			int y2 = center_y + NONFIXED(FIXEDMUL(FIXED(10), sin_m));
-
-			gdispGDrawLine(ui->g, x1, y1, x2, y2, White);
-
-		}
-
-		y = y + (ui->h / 4) + ((ui->w / 2) - 20) + 2;
-	}
-	else
-	{
-		y += font_heights[top_font] + 4;
-
-		gdispGFillArea(ui->g, 5, y, ui->w - 10, 8, Black);
-		gdispGDrawBox(ui->g, 5, y, ui->w - 10, 8, White);
-		if (pot->flags & HYPERION_UI_DISPMODE_POT_FLAGS_CENTERED)
-		{
-			coord_t c = ui->w / 2;
-			uint8_t val = pot->val;
-
-			gdispGDrawLine(ui->g, ui->w / 2, y, ui->w / 2, y + 7, White);
-
-			if (val < 50)
-			{
-				coord_t from = phi_lib_map(49 - val, 0, 49, 0, c - 5);
-				if (pot->flags & HYPERION_UI_DISPMODE_POT_FLAGS_FILL) {
-					gdispGFillArea(ui->g, c - from, y + 3, from, 2, White);
-				} else {
-					gdispGDrawLine(ui->g, c - from, y + 2, c-from, y + 5, White);
-				}
-			}
-			else
-			{
-				coord_t to = phi_lib_map(val - 50, 0, 49, 0, c - 5);
-				if (pot->flags & HYPERION_UI_DISPMODE_POT_FLAGS_FILL) {
-					gdispGFillArea(ui->g, c, y + 3, to, 2, White);
-				} else {
-					gdispGDrawLine(ui->g, c + to, y + 2, c + to, y + 5, White);
-				}
-			}
-		}
-		else
-		{
-			coord_t to = phi_lib_map(pot->val, 0, 99, 0, ui->w - 10);
-
-			if (pot->flags & HYPERION_UI_DISPMODE_POT_FLAGS_FILL) {
-				gdispGFillArea(ui->g, 5, y + 3, to, 2, White);
-			} else {
-				gdispGDrawLine(ui->g, 5 + to, y + 2, 5 + to, y + 5, White);
-			}
-		}
-		y += 13;
-	}
-
-	// Bottom text
-	if (pot->flags & HYPERION_UI_DISPMODE_POT_FLAGS_RENDER_VAL)
-	{
-		chsnprintf(buf, sizeof(buf) - 1, "%02d", pot->val);
-		hyperion_ui_text(ui, 0, y, ui->w, bot_font, (pot->flags & HYPERION_UI_DISPMODE_POT_FLAGS_MERGE_BOTTOM) ? justifyRight : justifyCenter, buf);
-		y += (pot->flags & HYPERION_UI_DISPMODE_POT_FLAGS_MERGE_BOTTOM) ? 0 : font_heights[bot_font] + 2;
-	}
-
-	hyperion_ui_text(
-		ui,
-		0,
-		y,
-		(pot->flags & HYPERION_UI_DISPMODE_POT_FLAGS_MERGE_BOTTOM) ? gdispGetStringWidth(pot->text_bottom, fonts[bot_font]) + 2 : ui->w,
-		bot_font,
-		(pot->flags & HYPERION_UI_DISPMODE_POT_FLAGS_MERGE_BOTTOM) ? justifyLeft : justifyCenter,
-		pot->text_bottom);
-
-	return;
-
-	hyperion_ui_text(ui, 0, y, ui->w, top_font, justifyCenter, pot->text_top);
-	y += font_heights[top_font] + 4;
-
-	gdispGFillArea(ui->g, 5, y, ui->w - 10, 8, Black);
-	gdispGDrawBox(ui->g, 5, y, ui->w - 10, 8, White);
-	if (pot->flags & HYPERION_UI_DISPMODE_POT_FLAGS_CENTERED)
-	{
-		coord_t c = ui->w / 2;
-		uint8_t val = pot->val;
-
-		gdispGDrawLine(ui->g, ui->w / 2, y, ui->w / 2, y + 7, White);
-
-		if (val < 50)
-		{
-			coord_t from = phi_lib_map(49 - val, 0, 49, 0, c - 5);
-			gdispGFillArea(ui->g, c - from, y + 3, from, 2, White);
-		}
-		else
-		{
-			coord_t to = phi_lib_map(val - 50, 0, 49, 0, c - 5);
-			gdispGFillArea(ui->g, c, y + 3, to, 2, White);
-		}
-	}
-	else
-	{
-		gdispGFillArea(ui->g, 5, y + 3, phi_lib_map(pot->val, 0, 99, 0, ui->w - 10), 2, White);
-	}
-	y += 13;
-
-	if (pot->flags & HYPERION_UI_DISPMODE_POT_FLAGS_RENDER_VAL)
-	{
-		chsnprintf(buf, sizeof(buf) - 1, "%02d", pot->val);
-		hyperion_ui_text(ui, 0, y, ui->w, bot_font, (pot->flags & HYPERION_UI_DISPMODE_POT_FLAGS_MERGE_BOTTOM) ? justifyRight : justifyCenter, buf);
-		y += (pot->flags & HYPERION_UI_DISPMODE_POT_FLAGS_MERGE_BOTTOM) ? 0 : font_heights[bot_font] + 2;
-	}
-
-	hyperion_ui_text(
-		ui,
-		0,
-		y,
-		(pot->flags & HYPERION_UI_DISPMODE_POT_FLAGS_MERGE_BOTTOM) ? gdispGetStringWidth(pot->text_bottom, fonts[bot_font]) : ui->w,
-		bot_font,
-		(pot->flags & HYPERION_UI_DISPMODE_POT_FLAGS_MERGE_BOTTOM) ? justifyLeft : justifyCenter,
-		pot->text_bottom);
-}
-
-void hyperion_ui_render_split_pot(hyperion_ui_t * ui)
-{
-	hyperion_ui_render_split_pot_helper(ui, &(ui->state.split_pot.pots[0]), 0);
-
-	if (ui->state.split_pot.flags & HYPERION_UI_DISPMODE_POT_FLAGS_DIVIDER_LINE) {
-		gdispGDrawLine(ui->g, 0, ui->h / 2, ui->w, ui->h / 2, White);
-	}
-
-	hyperion_ui_render_split_pot_helper(ui, &(ui->state.split_pot.pots[1]), ui->h / 2 + 2);
 }
 
 uint8_t hyperion_ui_get_biggest_possible_font_idx(hyperion_ui_t * ui, const char * s)

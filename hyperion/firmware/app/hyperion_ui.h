@@ -39,7 +39,6 @@ typedef enum hyperion_ui_dispmode_e
 {
 	HYPERION_UI_DISPMODE_BOOT = 0,
 	HYPERION_UI_DISPMODE_TEXTS,
-	HYPERION_UI_DISPMODE_SPLIT_POT,
 	HYPERION_UI_DISPMODE_LOGO,
 	HYPERION_UI_DISPMODE_CALLBACK,
 	HYPERION_UI_NUM_DISPMODES,
@@ -62,17 +61,6 @@ typedef union hyperion_ui_dispmode_state_u
 		char lines[HYPERION_UI_DISPMODE_TEXTS_LINES][HYPERION_UI_MAX_LINE_TEXT_LEN];
 	} text;
 
-	struct
-	{
-		struct hyperion_ui_dispmode_state_split_pot_s {
-			uint16_t flags;
-			char text_top[HYPERION_UI_MAX_LINE_TEXT_LEN];
-			uint8_t val; // 0 - 99
-			char text_bottom[HYPERION_UI_MAX_LINE_TEXT_LEN];
-		} pots[2];
-
-		uint8_t flags;
-	} split_pot;
 
 	struct
 	{
@@ -103,7 +91,6 @@ void hyperion_ui_text(hyperion_ui_t * ui, coord_t x, coord_t y, coord_t w, uint8
 
 void hyperion_ui_render_boot(hyperion_ui_t * ui);
 void hyperion_ui_render_texts(hyperion_ui_t * ui);
-void hyperion_ui_render_split_pot(hyperion_ui_t * ui);
 uint8_t hyperion_ui_get_biggest_possible_font_idx(hyperion_ui_t * ui, const char * s);
 
 void hyperion_ui_render_logo(hyperion_ui_t * ui);

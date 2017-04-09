@@ -37,6 +37,8 @@ int main(void)
     hyperion_ui_init();
     hyperion_can_init();
 
+    chThdSleepMilliseconds(500);
+
     phi_app_mgr_init();
     phi_app_mgr_switch_app(&hyperion_app_test_desc, &(hyperion_app_contexts.test));
 

@@ -11,7 +11,7 @@ endif
 
 # C specific options here (added to USE_OPT).
 ifeq ($(USE_COPT),)
-  USE_COPT =
+  USE_COPT = -Wno-unused-parameter
 endif
 
 # C++ specific options here (added to USE_OPT).
