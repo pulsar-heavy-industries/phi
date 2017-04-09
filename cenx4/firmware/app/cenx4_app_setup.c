@@ -168,8 +168,8 @@ void cenx4_app_setup_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, ph
 	// Action button (bottom left)
 	if ((node_id == 0) && (btn_num == 1) && (event == PHI_BTN_EVENT_RELEASED))
 	{
-		cenx4_app_setup_bootload_slave(10);
-		return;
+//		cenx4_app_setup_bootload_slave(10);
+//		return;
 
 		switch (ctx->cur_action)
 		{

@@ -54,8 +54,6 @@ void hyperion_ui_init_obj(hyperion_ui_t * ui, GDisplay * g)
 
 void hyperion_ui_init(void)
 {
-	int i;
-
 	hyperion_ui_init_obj(&ui, gdispGetDisplay(0));
 
 	fonts[0] = gdispOpenFont("DejaVuSans10");

@@ -8,6 +8,7 @@ const phi_app_desc_t cenx4_app_traktor_desc = {
 	.tick_interval = MS2ST(10),
     .encoder_event = cenx4_app_traktor_encoder_event,
 	.btn_event = cenx4_app_traktor_btn_event,
+	.pot_event = cenx4_app_traktor_pot_event,
 	.midi_cc = cenx4_app_traktor_midi_cc,
 };
 
@@ -117,6 +118,41 @@ void cenx4_app_traktor_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, 
 			}
 		}
 	}
+	else
+	{
+		chDbgCheck(node_id >= PHI_CAN_AUTO_ID_ALLOCATOR_FIRST_DEV_ID);
+		pkt.chn = CENX4_APP_TRAKTOR_MIDI_CH_MASTER + (node_id - PHI_CAN_AUTO_ID_ALLOCATOR_FIRST_DEV_ID); // TODO mod_num
+		pkt.event = 0xB; // Control Change
+		pkt.val1 = btn_num + 1;
+		switch (event)
+		{
+		case PHI_BTN_EVENT_PRESSED:
+			pkt.val2 = 0x7f;
+			phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
+			break;
+
+		case PHI_BTN_EVENT_RELEASED:
+			pkt.val2 = 0;
+			phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
+			break;
+
+		default:
+			break;
+		}
+	}
+}
+
+void cenx4_app_traktor_pot_event(void * ctx, uint8_t node_id, uint8_t pot_num, uint8_t val)
+{
+	phi_midi_pkt_t pkt;
+
+	chDbgCheck(node_id >= PHI_CAN_AUTO_ID_ALLOCATOR_FIRST_DEV_ID);
+
+	pkt.chn = CENX4_APP_TRAKTOR_MIDI_CH_MASTER + (node_id - PHI_CAN_AUTO_ID_ALLOCATOR_FIRST_DEV_ID); // TODO mod_num
+	pkt.event = 0xB; // Control Change
+	pkt.val1 = pot_num + 30;
+	pkt.val2 = val >> 1;
+	phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
 }
 
 void cenx4_app_traktor_midi_cc(void * _ctx, phi_midi_port_t port, uint8_t ch, uint8_t cc, uint8_t val)

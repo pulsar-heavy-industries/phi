@@ -139,7 +139,8 @@ CSRC = $(STARTUPSRC) \
        hyperion_ui.c \
 	   hyperion_can.c \
 	   hyperion_io.c \
-	   hyperion_app_test.c
+	   hyperion_app_test.c \
+	   hyperion_app_slave.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.

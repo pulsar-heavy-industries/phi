@@ -2,6 +2,7 @@
 #define PHI_LIB_PHI_CAN_H_
 
 #include "phi_lib/phi_lib.h"
+#include "phi_lib/phi_btn.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,34 +49,22 @@ enum {
 	PHI_CAN_MSG_ID_ECHO,
 	PHI_CAN_MSG_ID_AUTO_ID_ACK,
 
-	// Up to the app to implement a handler for this
-	PHI_CAN_MSG_ID_RESET,
-	PHI_CAN_MSG_ID_START_BOOTLOADER,
-
-	// Some reserved commands
-	PHI_CAN_MSG_ID_RESERVED6,
-	PHI_CAN_MSG_ID_RESERVED7,
-	PHI_CAN_MSG_ID_RESERVED8,
-	PHI_CAN_MSG_ID_RESERVED9,
-	PHI_CAN_MSG_ID_RESERVED10,
-	PHI_CAN_MSG_ID_RESERVED11,
-	PHI_CAN_MSG_ID_RESERVED12,
-	PHI_CAN_MSG_ID_RESERVED13,
-	PHI_CAN_MSG_ID_RESERVED14,
-	PHI_CAN_MSG_ID_RESERVED15,
-	PHI_CAN_MSG_ID_RESERVED16,
-	PHI_CAN_MSG_ID_RESERVED17,
-	PHI_CAN_MSG_ID_RESERVED18,
-	PHI_CAN_MSG_ID_RESERVED19,
-	PHI_CAN_MSG_ID_RESERVED20,
-
 	// Bootloader commands (implemented inside bootloader)
 	PHI_CAN_MSG_BL_START,
 	PHI_CAN_MSG_BL_DATA,
 	PHI_CAN_MSG_BL_DONE,
 
+	// Up to the app to implement a handler for this
+	PHI_CAN_MSG_ID_RESET,
+	PHI_CAN_MSG_ID_START_BOOTLOADER,
+	PHI_CAN_MSG_ID_IO_ENCODER_EVENT,
+	PHI_CAN_MSG_ID_IO_BTN_EVENT,
+	PHI_CAN_MSG_ID_IO_POT_EVENT,
+
 	PHI_CAN_MSG_ID_USER = 100,
 };
+
+#pragma pack(1)
 
 typedef struct phi_can_msg_data_sysinfo_s {
 	uint32_t can_version;
@@ -83,6 +72,24 @@ typedef struct phi_can_msg_data_sysinfo_s {
 	uint32_t hw_sw_ver;
 	uint32_t reserved[4];
 } phi_can_msg_data_sysinfo_t;
+
+typedef struct {
+    uint8_t encoder_num;
+    int8_t val_change;
+} phi_can_msg_data_io_encoder_event_t;
+
+typedef struct {
+	uint8_t btn_num;
+	phi_btn_event_t event;
+	uint32_t param;
+} phi_can_msg_data_io_btn_event_t;
+
+typedef struct {
+    uint8_t pot_num;
+    uint8_t val;
+} phi_can_msg_data_io_pot_event_t;
+
+#pragma pack()
 
 struct phi_can_s;
 

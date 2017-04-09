@@ -36,7 +36,7 @@ void cenx4_app_slave_stop(void * ctx)
 
 void cenx4_app_slave_encoder_event(void * _ctx, uint8_t node_id, uint8_t encoder_num, int8_t val_change)
 {
-	cenx4_can_handle_encoder_event_t msg = {
+	phi_can_msg_data_io_encoder_event_t msg = {
         .encoder_num = encoder_num,
         .val_change = val_change,
     };
@@ -44,7 +44,7 @@ void cenx4_app_slave_encoder_event(void * _ctx, uint8_t node_id, uint8_t encoder
     phi_can_xfer(
         &cenx4_can,
         PHI_CAN_PRIO_LOWEST + 1,
-		PHI_CAN_MSG_ID_CENX4_ENCODER_EVENT,
+		PHI_CAN_MSG_ID_IO_ENCODER_EVENT,
         PHI_CAN_AUTO_ID_ALLOCATOR_NODE,
         (const uint8_t *) &msg,
         sizeof(msg),
@@ -57,7 +57,7 @@ void cenx4_app_slave_encoder_event(void * _ctx, uint8_t node_id, uint8_t encoder
 
 void cenx4_app_slave_btn_event(void * ctx, uint8_t node_id, uint8_t btn_num, phi_btn_event_t event, uint32_t param)
 {
-	cenx4_can_handle_btn_event_t msg = {
+	phi_can_msg_data_io_btn_event_t msg = {
 		.btn_num = btn_num,
 		.event = event,
 		.param = param,
@@ -66,7 +66,7 @@ void cenx4_app_slave_btn_event(void * ctx, uint8_t node_id, uint8_t btn_num, phi
     phi_can_xfer(
         &cenx4_can,
         PHI_CAN_PRIO_LOWEST + 1,
-		PHI_CAN_MSG_ID_CENX4_BTN_EVENT,
+		PHI_CAN_MSG_ID_IO_BTN_EVENT,
         PHI_CAN_AUTO_ID_ALLOCATOR_NODE,
         (const uint8_t *) &msg,
         sizeof(msg),

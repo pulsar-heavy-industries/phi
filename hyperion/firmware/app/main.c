@@ -40,8 +40,8 @@ int main(void)
     chThdSleepMilliseconds(500);
 
     phi_app_mgr_init();
-    phi_app_mgr_switch_app(&hyperion_app_test_desc, &(hyperion_app_contexts.test));
-
+//    phi_app_mgr_switch_app(&hyperion_app_test_desc, &(hyperion_app_contexts.test));
+    phi_app_mgr_switch_app(&hyperion_app_slave_desc, &(hyperion_app_contexts.slave));
 
     while (true) {
     	chThdSleepMilliseconds(600);

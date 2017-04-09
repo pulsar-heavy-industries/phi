@@ -4,7 +4,7 @@
 phi_rotenc_t rotencs[2];
 phi_btn_t btns[10];
 
-static force_pots_read = FALSE;
+static bool force_pots_read = FALSE;
 
 #define ADC_GRP2_NUM_CHANNELS   8
 #define ADC_GRP2_BUF_DEPTH      16

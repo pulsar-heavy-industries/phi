@@ -42,6 +42,7 @@ void cenx4_app_traktor_stop(void * ctx);
 void cenx4_app_traktor_tick(void * ctx);
 void cenx4_app_traktor_encoder_event(void * ctx, uint8_t node_id, uint8_t encoder_num, int8_t val_change);
 void cenx4_app_traktor_btn_event(void * ctx, uint8_t node_id, uint8_t btn_num, phi_btn_event_t event, uint32_t param);
+void cenx4_app_traktor_pot_event(void * ctx, uint8_t node_id, uint8_t pot_num, uint8_t val);
 void cenx4_app_traktor_midi_cc(void * ctx, phi_midi_port_t port, uint8_t ch, uint8_t cc, uint8_t val);
 void cenx4_app_traktor_reconfigure_displays(cenx4_app_traktor_context_t * ctx);
 void cenx4_app_traktor_render_browse(cenx4_ui_t * ui, void * _ctx);

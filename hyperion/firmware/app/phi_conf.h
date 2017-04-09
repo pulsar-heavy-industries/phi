@@ -2,7 +2,6 @@
 #define PHI_CONF_H_
 
 #include "phi_lib/phi_lib.h"
-#include "phi_lib/phi_can.h"
 
 
 /******************************************************************************

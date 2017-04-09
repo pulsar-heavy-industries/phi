@@ -23,8 +23,9 @@ static const phi_can_msg_handler_t can_handlers[] = {
 	{PHI_CAN_MSG_ID_START_BOOTLOADER, cenx4_can_handle_start_bootloader, NULL},
 
 	// SLAVE->MASTER commands that are not app-specific
-	{PHI_CAN_MSG_ID_CENX4_ENCODER_EVENT, cenx4_can_handle_encoder_event, NULL},
-	{PHI_CAN_MSG_ID_CENX4_BTN_EVENT, cenx4_can_handle_btn_event, NULL},
+	{PHI_CAN_MSG_ID_IO_ENCODER_EVENT, cenx4_can_handle_encoder_event, NULL},
+	{PHI_CAN_MSG_ID_IO_BTN_EVENT, cenx4_can_handle_btn_event, NULL},
+	{PHI_CAN_MSG_ID_IO_POT_EVENT, cenx4_can_handle_pot_event, NULL},
 };
 
 static const phi_can_config_t can1_cfg = {
@@ -104,7 +105,7 @@ void cenx4_can_handle_start_bootloader(phi_can_t * can, void * context, uint8_t 
 
 void cenx4_can_handle_encoder_event(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)
 {
-    const cenx4_can_handle_encoder_event_t * msg = (cenx4_can_handle_encoder_event_t *) data;
+    const phi_can_msg_data_io_encoder_event_t * msg = (phi_can_msg_data_io_encoder_event_t *) data;
 
     (void) can; (void) context; (void) prio; (void) msg_id; (void) src; (void) chan_id;
 
@@ -121,7 +122,7 @@ void cenx4_can_handle_encoder_event(phi_can_t * can, void * context, uint8_t pri
 
 void cenx4_can_handle_btn_event(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)
 {
-    const cenx4_can_handle_btn_event_t * msg = (cenx4_can_handle_btn_event_t *) data;
+    const phi_can_msg_data_io_btn_event_t * msg = (phi_can_msg_data_io_btn_event_t *) data;
 
     (void) can; (void) context; (void) prio; (void) msg_id; (void) src; (void) chan_id;
 
@@ -135,6 +136,24 @@ void cenx4_can_handle_btn_event(phi_can_t * can, void * context, uint8_t prio, u
     	phi_app_mgr_notify_btn_event(src, msg->btn_num, msg->event, msg->param);
     }
 }
+
+void cenx4_can_handle_pot_event(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)
+{
+    const phi_can_msg_data_io_pot_event_t * msg = (phi_can_msg_data_io_pot_event_t *) data;
+
+    (void) can; (void) context; (void) prio; (void) msg_id; (void) src; (void) chan_id;
+
+    if (len != sizeof(*msg))
+    {
+        return;
+    }
+
+    if (cenx4_is_master)
+    {
+    	phi_app_mgr_notify_pot_event(src, msg->pot_num, msg->val);
+    }
+}
+
 
 void cenx4_can_handle_unknown_cmd(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)
 {

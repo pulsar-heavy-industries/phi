@@ -15,24 +15,9 @@ enum {
 	PHI_CAN_MSG_ID_CENX4_SET_DISPMODE_STATE,
 	PHI_CAN_MSG_ID_CENX4_SET_SPLIT_POT_VAL,
 	PHI_CAN_MSG_ID_CENX4_SET_SPLIT_POT_TEXT,
-
-	// SLAVE->MASTER commands
-	PHI_CAN_MSG_ID_CENX4_ENCODER_EVENT,
-	PHI_CAN_MSG_ID_CENX4_BTN_EVENT,
 };
 
 #pragma pack (1)
-
-typedef struct {
-    uint8_t encoder_num;
-    int8_t val_change;
-} cenx4_can_handle_encoder_event_t;
-
-typedef struct {
-	uint8_t btn_num;
-	phi_btn_event_t event;
-	uint32_t param;
-} cenx4_can_handle_btn_event_t;
 
 typedef struct {
 	uint8_t disp;
@@ -69,6 +54,7 @@ void cenx4_can_handle_reset(phi_can_t * can, void * context, uint8_t prio, uint8
 void cenx4_can_handle_start_bootloader(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len);
 void cenx4_can_handle_encoder_event(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len);
 void cenx4_can_handle_btn_event(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len);
+void cenx4_can_handle_pot_event(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len);
 void cenx4_can_handle_unknown_cmd(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len);
 
 #ifdef __cplusplus
