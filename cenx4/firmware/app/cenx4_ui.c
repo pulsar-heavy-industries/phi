@@ -460,22 +460,18 @@ const uint8_t phi_logo[][8] = {
 };
 void cenx4_ui_render_logo(cenx4_ui_t * ui)
 {
-	for (int disp = 0; disp < 2; ++disp)
-    {
-	   for (uint32_t row = 0; row < PHI_ARRLEN(phi_logo); ++row)
+   for (uint32_t row = 0; row < PHI_ARRLEN(phi_logo); ++row)
+   {
+	   for (int byte = 0; byte < 8; ++byte)
 	   {
-		   for (int byte = 0; byte < 8; ++byte)
+		   for (int bit = 0; bit < 8; ++bit)
 		   {
-			   for (int bit = 0; bit < 8; ++bit)
+			   if (phi_logo[row][byte] & (1 << (7-bit)))
 			   {
-				   if (phi_logo[row][byte] & (1 << (7-bit)))
-				   {
-					   gdispGDrawPixel(ui->g, (byte * 8) + bit, 32 + row, White);
-				   }
+				   gdispGDrawPixel(ui->g, (byte * 8) + bit, 32 + row, White);
 			   }
 		   }
 	   }
-	   gdispGFlush(ui->g);
    }
 }
 

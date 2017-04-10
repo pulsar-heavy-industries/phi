@@ -63,7 +63,7 @@ void cenx4_app_setup_start(void * _ctx)
 	memset(&(ui->state), 0, sizeof(ui->state));
 
 	ui->state.text.flags[0] = CENX4_UI_DISPMODE_TEXT_FLAGS_ALIGN_CENTER;
-	ui->state.text.flags[3] = CENX4_UI_DISPMODE_TEXT_FLAGS_ALIGN_CENTER | CENX4_UI_DISPMODE_TEXT_FLAGS_BOTTOM;
+	ui->state.text.flags[3] = CENX4_UI_DISPMODE_TEXT_FLAGS_ALIGN_CENTER | CENX4_UI_DISPMODE_TEXT_FLAGS_BOTTOM | CENX4_UI_DISPMODE_TEXT_FLAGS_FONT_MED;
 	strcpy(ui->state.text.lines[0], "Setup");
 	strcpy(ui->state.text.lines[1], "MASTER");
 
