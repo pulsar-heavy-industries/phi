@@ -577,42 +577,26 @@ void cenx4_app_ableton_midi_sysex_set_pot_all(cenx4_app_ableton_context_t * ctx,
     }
     else
     {
-        cenx4_can_handle_set_split_pot_val_t msg_val;
-        cenx4_can_handle_set_split_pot_text_t msg_text;
+        cenx4_can_handle_set_split_pot_t msg;
 
-        msg_val.disp = pot_num / 2;
-        msg_val.pot = pot_num % 2;
-        msg_val.val = data->val;
+        msg.disp = pot_num / 2;
+        msg.pot = pot_num % 2;
+        msg.val = data->val;
+		memcpy(&(msg.text_top), data->text_top, CENX4_UI_MAX_LINE_TEXT_LEN);
+		memcpy(&(msg.text_bottom), data->text_bottom, CENX4_UI_MAX_LINE_TEXT_LEN);
+
         phi_can_xfer(
             &cenx4_can,
             PHI_CAN_PRIO_LOWEST,
-            PHI_CAN_MSG_ID_CENX4_SET_SPLIT_POT_VAL,
+            PHI_CAN_MSG_ID_CENX4_SET_SPLIT_POT,
             node_id,
-            (const uint8_t *) &msg_val,
-            sizeof(msg_val),
+            (const uint8_t *) &msg,
+            sizeof(msg),
             NULL,
             0,
             NULL,
             PHI_CAN_DEFAULT_TIMEOUT
         );
-
-		msg_text.disp = pot_num / 2;
-		msg_text.pot = pot_num % 2;
-		memcpy(&(msg_text.text_top), data->text_top, CENX4_UI_MAX_LINE_TEXT_LEN);
-		memcpy(&(msg_text.text_bottom), data->text_bottom, CENX4_UI_MAX_LINE_TEXT_LEN);
-
-		phi_can_xfer(
-			&cenx4_can,
-			PHI_CAN_PRIO_LOWEST,
-			PHI_CAN_MSG_ID_CENX4_SET_SPLIT_POT_TEXT,
-			node_id,
-			(const uint8_t *) &msg_text,
-			sizeof(msg_text),
-			NULL,
-			0,
-			NULL,
-			PHI_CAN_DEFAULT_TIMEOUT
-		);
     }
 }
 

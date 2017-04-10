@@ -15,6 +15,7 @@ enum {
 	PHI_CAN_MSG_ID_CENX4_SET_DISPMODE_STATE,
 	PHI_CAN_MSG_ID_CENX4_SET_SPLIT_POT_VAL,
 	PHI_CAN_MSG_ID_CENX4_SET_SPLIT_POT_TEXT,
+	PHI_CAN_MSG_ID_CENX4_SET_SPLIT_POT,
 };
 
 #pragma pack (1)
@@ -41,6 +42,14 @@ typedef struct {
     char text_top[CENX4_UI_MAX_LINE_TEXT_LEN];
     char text_bottom[CENX4_UI_MAX_LINE_TEXT_LEN];
 } cenx4_can_handle_set_split_pot_text_t;
+
+typedef struct {
+    uint8_t disp;
+    uint8_t pot;
+    uint8_t val;
+    char text_top[CENX4_UI_MAX_LINE_TEXT_LEN];
+    char text_bottom[CENX4_UI_MAX_LINE_TEXT_LEN];
+} cenx4_can_handle_set_split_pot_t;
 
 #pragma pack ()
 

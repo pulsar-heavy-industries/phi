@@ -157,5 +157,27 @@ void cenx4_app_slave_can_cmd(void * ctx, uint8_t prio, uint8_t msg_id, uint8_t s
 		    cenx4_ui_unlock(ui);
 		}
 		break;
+
+	case PHI_CAN_MSG_ID_CENX4_SET_SPLIT_POT:
+		{
+			const cenx4_can_handle_set_split_pot_t * msg = (cenx4_can_handle_set_split_pot_t *) data;
+
+			if ((len != sizeof(*msg)) ||
+				(msg->disp >= CENX4_UI_NUM_DISPS) ||
+				(msg->pot >= 2))
+			{
+				return;
+			}
+
+			cenx4_ui_t * ui = cenx4_ui_lock(msg->disp);
+			if (ui->dispmode == CENX4_UI_DISPMODE_SPLIT_POT)
+			{
+				ui->state.split_pot.pots[msg->pot].val = msg->val;
+				memcpy(ui->state.split_pot.pots[msg->pot].text_top, msg->text_top, CENX4_UI_MAX_LINE_TEXT_LEN);
+				memcpy(ui->state.split_pot.pots[msg->pot].text_bottom, msg->text_bottom, CENX4_UI_MAX_LINE_TEXT_LEN);
+			}
+			cenx4_ui_unlock(ui);
+		}
+		break;
 	}
 }
