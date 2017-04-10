@@ -14,7 +14,6 @@ const phi_app_desc_t cenx4_app_setup_desc = {
 
 void cenx4_app_setup_start(void * _ctx)
 {
-	cenx4_ui_t * ui;
     cenx4_app_setup_context_t * ctx = (cenx4_app_setup_context_t *) _ctx;
     uint32_t i;
 
@@ -55,43 +54,8 @@ void cenx4_app_setup_start(void * _ctx)
 		PHI_ARRLEN(cenx4_app_cfg.cur.mod_num_to_uid)
 	);
 
-	// Move our displays into setup mode - display 0
-	ui = cenx4_ui_lock(0);
-
-	ui->dispmode = CENX4_UI_DISPMODE_TEXTS;
-
-	memset(&(ui->state), 0, sizeof(ui->state));
-
-	ui->state.text.flags[0] = CENX4_UI_DISPMODE_TEXT_FLAGS_ALIGN_CENTER;
-	ui->state.text.flags[3] = CENX4_UI_DISPMODE_TEXT_FLAGS_ALIGN_CENTER | CENX4_UI_DISPMODE_TEXT_FLAGS_BOTTOM | CENX4_UI_DISPMODE_TEXT_FLAGS_FONT_MED;
-	strcpy(ui->state.text.lines[0], "Setup");
-	strcpy(ui->state.text.lines[1], "MASTER");
-
-	cenx4_ui_unlock(ui);
-
-	// Move our displays into setup mode - display 1
-	ui = cenx4_ui_lock(1);
-
-	ui->dispmode = CENX4_UI_DISPMODE_SPLIT_POT;
-
-	memset(&(ui->state), 0, sizeof(ui->state));
-
-	ui->state.split_pot.pots[0].flags =
-			CENX4_UI_DISPMODE_POT_FLAGS_ROUND |
-			CENX4_UI_DISPMODE_POT_FLAGS_FILL |
-			CENX4_UI_DISPMODE_POT_FLAGS_RENDER_VAL |
-			CENX4_UI_DISPMODE_POT_FLAGS_TOP_FONT_AUTO;
-	chsnprintf(ui->state.split_pot.pots[0].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "ModNum");
-	ui->state.split_pot.pots[0].val = ctx->node_id_to_mod_num[0];
-
-	ui->state.split_pot.pots[1].flags = ui->state.split_pot.pots[0].flags;
-	chsnprintf(ui->state.split_pot.pots[1].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "Test");
-	ui->state.split_pot.pots[1].val = ctx->test_pot_val[0];
-
-	cenx4_ui_unlock(ui);
-
-	// Refresh
-	cenx4_app_setup_update_ui(ctx, 0);
+    // Enter setup mode locally
+	cenx4_app_setup_enter_setup_mode(ctx, 0);
 
     // Move our Berry modules into setup mode
 	// TODO locks
@@ -245,7 +209,7 @@ void cenx4_app_setup_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, ph
 			break;
 
         case CENX4_APP_SETUP_ACTION_UPDATE_SLAVES:
-        	cenx4_app_setup_bootload_slave(10);
+        	cenx4_app_setup_bootload_slave(ctx, 10);
         	break;
 
 		default:
@@ -256,64 +220,109 @@ void cenx4_app_setup_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, ph
 
 msg_t cenx4_app_setup_enter_setup_mode(cenx4_app_setup_context_t * ctx, uint8_t node_id)
 {
-    msg_t ret;
+	if (node_id == 0)
+	{
+		cenx4_ui_t * ui;
 
-    cenx4_can_handle_update_display_state_t msg;
+		// Move our displays into setup mode - display 0
+		ui = cenx4_ui_lock(0);
 
-    // Put display 0 in boot mode
-    memset(&msg, 0, sizeof(msg));
-    msg.disp = 0;
-    msg.dispmode = CENX4_UI_DISPMODE_BOOT;
-    memset(&msg, 0, sizeof(msg));
+		ui->dispmode = CENX4_UI_DISPMODE_TEXTS;
 
-    ret = phi_can_xfer(
-        &cenx4_can,
-        PHI_CAN_PRIO_LOWEST + 1,
-		PHI_CAN_MSG_ID_CENX4_UPDATE_DISPLAY,
-        node_id,
-        (const uint8_t *) &msg,
-        sizeof(msg),
-        NULL,
-        0,
-        NULL,
-        PHI_CAN_DEFAULT_TIMEOUT
-    );
-    if (MSG_OK != ret)
-    {
-        return ret;
-    }
+		memset(&(ui->state), 0, sizeof(ui->state));
 
-    // Put display 1 in pots mode
-    memset(&msg, 0, sizeof(msg));
-    msg.disp = 1;
-    msg.dispmode = CENX4_UI_DISPMODE_SPLIT_POT;
+		ui->state.text.flags[0] = CENX4_UI_DISPMODE_TEXT_FLAGS_ALIGN_CENTER;
+		ui->state.text.flags[3] = CENX4_UI_DISPMODE_TEXT_FLAGS_ALIGN_CENTER | CENX4_UI_DISPMODE_TEXT_FLAGS_BOTTOM | CENX4_UI_DISPMODE_TEXT_FLAGS_FONT_MED;
+		strcpy(ui->state.text.lines[0], "Setup");
+		strcpy(ui->state.text.lines[1], "MASTER");
 
-    ret = phi_can_xfer(
-        &cenx4_can,
-        PHI_CAN_PRIO_LOWEST + 1,
-		PHI_CAN_MSG_ID_CENX4_UPDATE_DISPLAY,
-        node_id,
-        (const uint8_t *) &msg,
-        sizeof(msg),
-        NULL,
-        0,
-        NULL,
-        PHI_CAN_DEFAULT_TIMEOUT
-    );
-    if (MSG_OK != ret)
-    {
-        return ret;
-    }
+		cenx4_ui_unlock(ui);
 
-    // Set pots
-    ret = cenx4_app_setup_update_ui(ctx, node_id);
-    if (MSG_OK != ret)
-    {
-        return ret;
-    }
+		// Move our displays into setup mode - display 1
+		ui = cenx4_ui_lock(1);
 
-    // Success
-    return MSG_OK;
+		ui->dispmode = CENX4_UI_DISPMODE_SPLIT_POT;
+
+		memset(&(ui->state), 0, sizeof(ui->state));
+
+		ui->state.split_pot.pots[0].flags =
+				CENX4_UI_DISPMODE_POT_FLAGS_ROUND |
+				CENX4_UI_DISPMODE_POT_FLAGS_FILL |
+				CENX4_UI_DISPMODE_POT_FLAGS_RENDER_VAL |
+				CENX4_UI_DISPMODE_POT_FLAGS_TOP_FONT_AUTO;
+		chsnprintf(ui->state.split_pot.pots[0].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "ModNum");
+		ui->state.split_pot.pots[0].val = ctx->node_id_to_mod_num[0];
+
+		ui->state.split_pot.pots[1].flags = ui->state.split_pot.pots[0].flags;
+		chsnprintf(ui->state.split_pot.pots[1].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "Test");
+		ui->state.split_pot.pots[1].val = ctx->test_pot_val[0];
+
+		cenx4_ui_unlock(ui);
+
+		// Refresh
+		cenx4_app_setup_update_ui(ctx, 0);
+
+		return MSG_OK;
+	}
+	else
+	{
+		msg_t ret;
+		cenx4_can_handle_update_display_state_t msg;
+
+		// Put display 0 in boot mode
+		memset(&msg, 0, sizeof(msg));
+		msg.disp = 0;
+		msg.dispmode = CENX4_UI_DISPMODE_BOOT;
+
+		ret = phi_can_xfer(
+			&cenx4_can,
+			PHI_CAN_PRIO_LOWEST + 1,
+			PHI_CAN_MSG_ID_CENX4_UPDATE_DISPLAY,
+			node_id,
+			(const uint8_t *) &msg,
+			sizeof(msg),
+			NULL,
+			0,
+			NULL,
+			PHI_CAN_DEFAULT_TIMEOUT
+		);
+		if (MSG_OK != ret)
+		{
+			return ret;
+		}
+
+		// Put display 1 in pots mode
+		memset(&msg, 0, sizeof(msg));
+		msg.disp = 1;
+		msg.dispmode = CENX4_UI_DISPMODE_SPLIT_POT;
+
+		ret = phi_can_xfer(
+			&cenx4_can,
+			PHI_CAN_PRIO_LOWEST + 1,
+			PHI_CAN_MSG_ID_CENX4_UPDATE_DISPLAY,
+			node_id,
+			(const uint8_t *) &msg,
+			sizeof(msg),
+			NULL,
+			0,
+			NULL,
+			PHI_CAN_DEFAULT_TIMEOUT
+		);
+		if (MSG_OK != ret)
+		{
+			return ret;
+		}
+
+		// Set pots
+		ret = cenx4_app_setup_update_ui(ctx, node_id);
+		if (MSG_OK != ret)
+		{
+			return ret;
+		}
+
+		// Success
+		return MSG_OK;
+	}
 }
 
 msg_t cenx4_app_setup_update_ui(cenx4_app_setup_context_t * ctx, uint8_t node_id)
@@ -426,9 +435,9 @@ msg_t cenx4_app_setup_update_ui(cenx4_app_setup_context_t * ctx, uint8_t node_id
     return MSG_OK;
 }
 
-void cenx4_app_setup_bootload_slave(uint8_t node_id)
+bool cenx4_app_setup_bootload_slave(cenx4_app_setup_context_t * ctx, uint8_t node_id)
 {
-	char err[16];
+	char err[CENX4_UI_MAX_LINE_TEXT_LEN];
 	phi_bl_msg_start_t msg_start;
 	const phi_bl_hdr_t * hdr = (phi_bl_hdr_t *) PHI_BL_USER_ADDR;
 	phi_bl_ret_t bl_ret;
@@ -436,31 +445,115 @@ void cenx4_app_setup_bootload_slave(uint8_t node_id)
 	uint32_t resp_len;
 	uint32_t offset;
 	phi_bl_msg_data_t msg_data;
+	phi_can_msg_data_sysinfo_t sysinfo;
 
 	cenx4_ui_t * ui;
 
+	// Starting
 	ui=cenx4_ui_lock(0);
-	memset(&(ui->state.text), 0, sizeof(ui->state.text));
+
+	memset(&(ui->state), 0, sizeof(ui->state));
 	ui->dispmode = CENX4_UI_DISPMODE_TEXTS;
-	strcpy(ui->state.text.lines[0], "START");
+	ui->state.text.flags[0] = CENX4_UI_DISPMODE_TEXT_FLAGS_FONT_SMALL;
+	ui->state.text.flags[1] = CENX4_UI_DISPMODE_TEXT_FLAGS_FONT_SMALL;
+	ui->state.text.flags[2] = CENX4_UI_DISPMODE_TEXT_FLAGS_FONT_SMALL;
+	ui->state.text.flags[3] = CENX4_UI_DISPMODE_TEXT_FLAGS_FONT_SMALL;
+
+	chsnprintf(ui->state.text.lines[0], CENX4_UI_MAX_LINE_TEXT_LEN - 1, "Update #%d", node_id);
+	strcpy(ui->state.text.lines[1], "Starting");
 	cenx4_ui_unlock(ui);
 
-	// start bootloader on save
-	phi_can_xfer(
+	// Get dev info to see if we support updating it
+	ret = phi_can_xfer(
 		&cenx4_can,
 		PHI_CAN_PRIO_LOWEST + 1,
-		PHI_CAN_MSG_ID_START_BOOTLOADER,
+		PHI_CAN_MSG_ID_SYSINFO,
 		node_id,
 		NULL,
 		0,
-		NULL,
-		0,
-		NULL,
+		(uint8_t *) &sysinfo,
+		sizeof(sysinfo),
+		&resp_len,
 		PHI_CAN_DEFAULT_TIMEOUT
 	);
-	chThdSleepMilliseconds(500);
+	if (MSG_OK != ret)
+	{
+		chsnprintf(err, sizeof(err) - 1, "SIErr1 %d", ret);
+		goto lbl_err;
+	}
+	if (sizeof(sysinfo) != resp_len)
+	{
+		chsnprintf(err, sizeof(err) - 1, "SIErr2 %d", resp_len);
+		goto lbl_err;
+	}
+	if (CENX4_DEV_ID != sysinfo.dev_id)
+	{
+		chsnprintf(err, sizeof(err) - 1, "SIErr3 %x", sysinfo.dev_id);
+		goto lbl_err;
+	}
+
+	// start bootloader if needed
+	if (!PHI_HW_SW_VER_GET_IS_BOOTLOADER(sysinfo.hw_sw_ver))
+	{
+		ui=cenx4_ui_lock(0);
+		strcpy(ui->state.text.lines[1], "BLPreStart");
+		cenx4_ui_unlock(ui);
+
+		phi_can_xfer(
+			&cenx4_can,
+			PHI_CAN_PRIO_LOWEST + 1,
+			PHI_CAN_MSG_ID_START_BOOTLOADER,
+			node_id,
+			NULL,
+			0,
+			NULL,
+			0,
+			NULL,
+			PHI_CAN_DEFAULT_TIMEOUT
+		);
+		chThdSleepMilliseconds(500);
+
+		// Try getting device info again
+		// Get dev info to see if we support updating it
+		ret = phi_can_xfer(
+			&cenx4_can,
+			PHI_CAN_PRIO_LOWEST + 1,
+			PHI_CAN_MSG_ID_SYSINFO,
+			node_id,
+			NULL,
+			0,
+			(uint8_t *) &sysinfo,
+			sizeof(sysinfo),
+			&resp_len,
+			PHI_CAN_DEFAULT_TIMEOUT
+		);
+		if (MSG_OK != ret)
+		{
+			chsnprintf(err, sizeof(err) - 1, "BLSErr1 %d", ret);
+			goto lbl_err;
+		}
+		if (sizeof(sysinfo) != resp_len)
+		{
+			chsnprintf(err, sizeof(err) - 1, "BLSErr2 %d", resp_len);
+			goto lbl_err;
+		}
+		if (CENX4_DEV_ID != sysinfo.dev_id)
+		{
+			chsnprintf(err, sizeof(err) - 1, "BLSErr3 %x", sysinfo.dev_id);
+			goto lbl_err;
+		}
+		if (!PHI_HW_SW_VER_GET_IS_BOOTLOADER(sysinfo.hw_sw_ver))
+		{
+			chsnprintf(err, sizeof(err) - 1, "B%x", sysinfo.hw_sw_ver);
+			goto lbl_err;
+		}
+	}
 
 	// Bootloader start command
+	ui=cenx4_ui_lock(0);
+	strcpy(ui->state.text.lines[1], "BLStart");
+	cenx4_ui_unlock(ui);
+
 	memset(&msg_start, 0, sizeof(msg_start));
 	msg_start.img_size = hdr->img_size + sizeof(*hdr);
 	msg_start.img_start_addr = PHI_BL_USER_ADDR;
@@ -503,7 +596,8 @@ void cenx4_app_setup_bootload_slave(uint8_t node_id)
 		memcpy(&(msg_data.buf[0]), (const void *)(PHI_BL_USER_ADDR + offset), sizeof(msg_data.buf));
 
 		ui=cenx4_ui_lock(0);
-		chsnprintf(&(ui->state.text.lines[0][0]), 16, "%d", offset);
+		chsnprintf(ui->state.text.lines[1], CENX4_UI_MAX_LINE_TEXT_LEN - 1, "%d", offset);
+		chsnprintf(ui->state.text.lines[2], CENX4_UI_MAX_LINE_TEXT_LEN - 1, "%d%%", offset * 100 / (hdr->img_size + sizeof(*hdr)));
 		cenx4_ui_unlock(ui);
 
 		bl_ret = PHI_BL_RET_ERR_UNKNOWN;
@@ -536,6 +630,12 @@ void cenx4_app_setup_bootload_slave(uint8_t node_id)
 		}
 	}
 
+	ui=cenx4_ui_lock(0);
+	strcpy(ui->state.text.lines[1], "SendDone");
+	strcpy(ui->state.text.lines[2], "");
+	cenx4_ui_unlock(ui);
+
+
 	bl_ret = PHI_BL_RET_ERR_UNKNOWN;
 	ret = phi_can_xfer(
 		&cenx4_can,
@@ -565,18 +665,24 @@ void cenx4_app_setup_bootload_slave(uint8_t node_id)
 		goto lbl_err;
 	}
 
+	/* Wait for reboot */
 	ui=cenx4_ui_lock(0);
-	memset(&(ui->state.text), 0, sizeof(ui->state.text));
-	ui->dispmode = CENX4_UI_DISPMODE_TEXTS;
-	strcpy(ui->state.text.lines[0], "WOW");
+	strcpy(ui->state.text.lines[1], "Wait");
 	cenx4_ui_unlock(ui);
 
-	return;
+	chThdSleepMilliseconds(500);
+
+	cenx4_app_setup_enter_setup_mode(ctx, node_id);
+
+	/* Done */
+	cenx4_app_setup_enter_setup_mode(ctx, 0);
+
+	return TRUE;
 
 lbl_err:
-ui=cenx4_ui_lock(0);
-memset(&(ui->state.text), 0, sizeof(ui->state.text));
-ui->dispmode = CENX4_UI_DISPMODE_TEXTS;
-strcpy(ui->state.text.lines[0], err);
-cenx4_ui_unlock(ui);
+	ui=cenx4_ui_lock(0);
+	strcpy(ui->state.text.lines[1], err);
+	cenx4_ui_unlock(ui);
+
+	return FALSE;
 }

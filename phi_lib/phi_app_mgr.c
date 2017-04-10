@@ -12,7 +12,7 @@ static virtual_timer_t phi_app_mgr_tick_timer;
 static void phi_app_mgr_do_switch_app(const phi_app_desc_t * desc, void * ctx);
 
 static thread_t * phi_app_mgr_thread;
-static THD_WORKING_AREA(phi_app_mgr_thread_wa, 1024);
+static THD_WORKING_AREA(phi_app_mgr_thread_wa, 2048);
 static THD_FUNCTION(phi_app_mgr_thread_func, arg)
 {
     (void) arg;

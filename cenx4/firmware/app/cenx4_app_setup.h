@@ -43,6 +43,6 @@ void cenx4_app_setup_btn_event(void * ctx, uint8_t node_id, uint8_t btn_num, phi
 msg_t cenx4_app_setup_enter_setup_mode(cenx4_app_setup_context_t * ctx, uint8_t node_id);
 msg_t cenx4_app_setup_update_ui(cenx4_app_setup_context_t * ctx, uint8_t node_id);
 
-void cenx4_app_setup_bootload_slave(uint8_t node_id);
+bool cenx4_app_setup_bootload_slave(cenx4_app_setup_context_t * ctx, uint8_t node_id);
 
 #endif /* CENX4_APP_SETUP_H_ */
