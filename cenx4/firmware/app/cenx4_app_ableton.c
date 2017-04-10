@@ -326,50 +326,6 @@ msg_t cenx4_app_ableton_berry_enter_ableton_mode(cenx4_app_ableton_context_t * c
 {
     msg_t ret;
 
-    cenx4_can_handle_set_dispmode_t dispmode;
-
-    // Put display 0 in split pot mode
-    dispmode.disp = 0;
-    dispmode.dispmode = CENX4_UI_DISPMODE_SPLIT_POT;
-
-    ret = phi_can_xfer(
-        &cenx4_can,
-        PHI_CAN_PRIO_LOWEST,
-        PHI_CAN_MSG_ID_CENX4_SET_DISPMODE,
-        node_id,
-        (const uint8_t *) &dispmode,
-        sizeof(dispmode),
-        NULL,
-        0,
-        NULL,
-        PHI_CAN_DEFAULT_TIMEOUT
-    );
-    if (MSG_OK != ret)
-    {
-        return ret;
-    }
-
-    // Put display 1 in split pot mode
-    dispmode.disp = 1;
-    dispmode.dispmode = CENX4_UI_DISPMODE_SPLIT_POT;
-
-    ret = phi_can_xfer(
-        &cenx4_can,
-        PHI_CAN_PRIO_LOWEST,
-        PHI_CAN_MSG_ID_CENX4_SET_DISPMODE,
-        node_id,
-        (const uint8_t *) &dispmode,
-        sizeof(dispmode),
-        NULL,
-        0,
-        NULL,
-        PHI_CAN_DEFAULT_TIMEOUT
-    );
-    if (MSG_OK != ret)
-    {
-        return ret;
-    }
-
     // Set text
     ret = cenx4_app_ableton_berry_update_ui(ctx, node_id);
     if (MSG_OK != ret)
@@ -383,7 +339,7 @@ msg_t cenx4_app_ableton_berry_enter_ableton_mode(cenx4_app_ableton_context_t * c
 
 msg_t cenx4_app_ableton_berry_update_ui(cenx4_app_ableton_context_t * ctx, uint8_t node_id)
 {
-    cenx4_can_handle_set_dispmode_state_t state;
+	cenx4_can_handle_update_display_state_t state;
     msg_t ret;
     uint8_t base = (ctx->node_id_to_mod_num[cenx4_app_cfg_get_mapped_node_id(node_id)] * 4) + 1;
 
@@ -392,6 +348,7 @@ msg_t cenx4_app_ableton_berry_update_ui(cenx4_app_ableton_context_t * ctx, uint8
     // Display 0
     memset(&state, 0, sizeof(state));
     state.disp = 0;
+    state.dispmode = CENX4_UI_DISPMODE_SPLIT_POT;
 
     state.state.split_pot.pots[0].flags =
             CENX4_UI_DISPMODE_POT_FLAGS_ROUND |
@@ -407,7 +364,7 @@ msg_t cenx4_app_ableton_berry_update_ui(cenx4_app_ableton_context_t * ctx, uint8
     ret = phi_can_xfer(
         &cenx4_can,
         PHI_CAN_PRIO_LOWEST,
-        PHI_CAN_MSG_ID_CENX4_SET_DISPMODE_STATE,
+		PHI_CAN_MSG_ID_CENX4_UPDATE_DISPLAY,
         node_id,
         (const uint8_t *) &state,
         sizeof(state),
@@ -424,6 +381,7 @@ msg_t cenx4_app_ableton_berry_update_ui(cenx4_app_ableton_context_t * ctx, uint8
     // Display 1
     memset(&state, 0, sizeof(state));
     state.disp = 1;
+    state.dispmode = CENX4_UI_DISPMODE_SPLIT_POT;
 
     state.state.split_pot.pots[0].flags =
             CENX4_UI_DISPMODE_POT_FLAGS_ROUND |
@@ -439,7 +397,7 @@ msg_t cenx4_app_ableton_berry_update_ui(cenx4_app_ableton_context_t * ctx, uint8
     ret = phi_can_xfer(
         &cenx4_can,
         PHI_CAN_PRIO_LOWEST,
-        PHI_CAN_MSG_ID_CENX4_SET_DISPMODE_STATE,
+		PHI_CAN_MSG_ID_CENX4_UPDATE_DISPLAY,
         node_id,
         (const uint8_t *) &state,
         sizeof(state),

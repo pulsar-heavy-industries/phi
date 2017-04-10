@@ -83,9 +83,9 @@ void cenx4_app_slave_can_cmd(void * ctx, uint8_t prio, uint8_t msg_id, uint8_t s
 
 	switch (msg_id)
 	{
-	case PHI_CAN_MSG_ID_CENX4_SET_DISPMODE:
+	case PHI_CAN_MSG_ID_CENX4_UPDATE_DISPLAY:
 		{
-			const cenx4_can_handle_set_dispmode_t * msg = (cenx4_can_handle_set_dispmode_t *) data;
+			const cenx4_can_handle_update_display_state_t * msg = (cenx4_can_handle_update_display_state_t *) data;
 
 			if ((len != sizeof(*msg)) ||
 				(msg->disp >= CENX4_UI_NUM_DISPS) ||
@@ -95,23 +95,7 @@ void cenx4_app_slave_can_cmd(void * ctx, uint8_t prio, uint8_t msg_id, uint8_t s
 			}
 
 			cenx4_ui_t * ui = cenx4_ui_lock(msg->disp);
-			memset(&(ui->state), 0, sizeof(ui->state));
 			ui->dispmode = msg->dispmode;
-			cenx4_ui_unlock(ui);
-		}
-		break;
-
-	case PHI_CAN_MSG_ID_CENX4_SET_DISPMODE_STATE:
-		{
-			const cenx4_can_handle_set_dispmode_state_t * msg = (cenx4_can_handle_set_dispmode_state_t *) data;
-
-			if ((len != sizeof(*msg)) ||
-				(msg->disp >= CENX4_UI_NUM_DISPS))
-			{
-				break;
-			}
-
-			cenx4_ui_t * ui = cenx4_ui_lock(msg->disp);
 			memcpy(&(ui->state), &(msg->state), sizeof(ui->state));
 			cenx4_ui_unlock(ui);
 		}

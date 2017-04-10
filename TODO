@@ -10,7 +10,6 @@ Documentation:
 Code improvements:
 - Ableton needs to be able to read number of modules using SysEx, and configure itself accordingly
 - Change hw_sw ver to 32 bit (hw 8 bit, sw 24 bit)
-- Change display commands to have one SET instead of SET_STATE and SET_DISPMODE
 - create an init app on master
    - checks versions of available modules and update if possible
    - when done, starts setup app (or maybe straight to ableton if config is ok?)

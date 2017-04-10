@@ -11,8 +11,7 @@ extern "C" {
 
 enum {
 	// MASTER->SLAVE commands
-	PHI_CAN_MSG_ID_CENX4_SET_DISPMODE = PHI_CAN_MSG_ID_USER + 1,
-	PHI_CAN_MSG_ID_CENX4_SET_DISPMODE_STATE,
+	PHI_CAN_MSG_ID_CENX4_UPDATE_DISPLAY = PHI_CAN_MSG_ID_USER + 1,
 	PHI_CAN_MSG_ID_CENX4_SET_SPLIT_POT_VAL,
 	PHI_CAN_MSG_ID_CENX4_SET_SPLIT_POT_TEXT,
 	PHI_CAN_MSG_ID_CENX4_SET_SPLIT_POT,
@@ -23,12 +22,8 @@ enum {
 typedef struct {
 	uint8_t disp;
 	cenx4_ui_dispmode_t dispmode;
-} cenx4_can_handle_set_dispmode_t;
-
-typedef struct {
-	uint8_t disp;
 	cenx4_ui_dispmode_state_t state;
-} cenx4_can_handle_set_dispmode_state_t;
+} cenx4_can_handle_update_display_state_t;
 
 typedef struct {
     uint8_t disp;
