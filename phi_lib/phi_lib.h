@@ -25,6 +25,10 @@ extern "C" {
 #define PHI_ARRLEN(arr) (sizeof(arr) / sizeof(arr[0]))
 #define PHI_DEV_ID(x1, x2, x3, x4) ((x1 << 24) | (x2 << 16) | (x3 << 8) | x4)
 
+#define PHI_HW_SW_VER(is_bootloader, hw_ver, sw_ver) ((is_bootloader << 31) | ((hw_ver & 0x7f) << 24) | (sw_ver & 0xffffff))
+#define PHI_HW_SW_VER_GET_IS_BOOTLOADER (hw_sw_ver & 0x80000000)
+#define PHI_HW_SW_VER_GET_SW(hw_sw_ver) (hw_sw_ver & 0xffffff)
+#define PHI_HW_SW_VER_GET_HW(hw_sw_ver) ((hw_sw_ver >> 24) & 0x7f)
 
 #define phi_is_aligned(ptr, align) (((uintptr_t)(const void *)(ptr)) % (align) == 0)
 

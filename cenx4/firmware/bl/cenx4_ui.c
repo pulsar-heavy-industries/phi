@@ -175,7 +175,7 @@ void cenx4_ui_render_boot(cenx4_ui_t * ui)
 	cenx4_ui_text(ui, 0, 0, ui->w, justifyCenter, "cenx4-bl");
 	y += font_height + 2;
 
-	chsnprintf(buf, sizeof(buf) - 1, "HwSw %04x", CENX4_HW_SW_VER);
+	chsnprintf(buf, sizeof(buf) - 1, "%08x", CENX4_HW_SW_VER);
 	cenx4_ui_text(ui, 0, y, ui->w, justifyLeft, buf);
 	y += font_height + 2;
 

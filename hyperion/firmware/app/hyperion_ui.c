@@ -98,7 +98,7 @@ void hyperion_ui_render_boot(hyperion_ui_t * ui)
 	hyperion_ui_text(ui, 0, 0, ui->w, hyperion_ui_get_biggest_possible_font_idx(ui, "hyperion"), justifyCenter, "hyperion");
 	y += font_heights[2] + 2;
 
-	chsnprintf(buf, sizeof(buf) - 1, "HwSw %04x", HYPERION_HW_SW_VER);
+	chsnprintf(buf, sizeof(buf) - 1, "HwSw %08x", HYPERION_HW_SW_VER);
 	hyperion_ui_text(ui, 0, y, ui->w, 0, justifyLeft, buf);
 	y += font_heights[0] + 2;
 
@@ -288,7 +288,7 @@ void hyperion_ui_render_logo(hyperion_ui_t * ui)
 {
 	char buf[HYPERION_UI_MAX_LINE_TEXT_LEN];
 
-	chsnprintf(buf, sizeof(buf) - 1, "Hyperion %04x", HYPERION_HW_SW_VER);
+	chsnprintf(buf, sizeof(buf) - 1, "Hyperion %08x", HYPERION_HW_SW_VER);
 	hyperion_ui_text(ui, 0, 0, ui->w, 1, justifyCenter, buf);
 
 	for (uint32_t row = 0; row < PHI_ARRLEN(phi_logo); ++row)

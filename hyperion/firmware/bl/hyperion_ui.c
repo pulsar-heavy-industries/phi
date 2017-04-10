@@ -44,7 +44,7 @@ void hyperion_ui_render(void)
     hyperion_ui_text(0, 0, lcd_w, justifyCenter, "hyperion-bl");
     y += font_height + 5;
 
-    chsnprintf(buf, sizeof(buf) - 1, "HwSw %04x", HYPERION_HW_SW_VER);
+    chsnprintf(buf, sizeof(buf) - 1, "HwSw %08x", HYPERION_HW_SW_VER);
     hyperion_ui_text(0, y, lcd_w, justifyLeft, buf);
     y += font_height + 2;
 

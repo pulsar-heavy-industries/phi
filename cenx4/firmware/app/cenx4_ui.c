@@ -120,7 +120,7 @@ void cenx4_ui_render_boot(cenx4_ui_t * ui)
 	cenx4_ui_text(ui, 0, 0, ui->w, cenx4_ui_get_biggest_possible_font_idx(ui, "cenx4"), justifyCenter, "cenx4");
 	y += font_heights[2] + 2;
 
-	chsnprintf(buf, sizeof(buf) - 1, "HwSw %04x", CENX4_HW_SW_VER);
+	chsnprintf(buf, sizeof(buf) - 1, "%08x", CENX4_HW_SW_VER);
 	cenx4_ui_text(ui, 0, y, ui->w, 0, justifyLeft, buf);
 	y += font_heights[0] + 2;
 
