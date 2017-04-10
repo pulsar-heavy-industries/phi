@@ -287,21 +287,21 @@ void cenx4_ui_render_split_pot_helper(cenx4_ui_t * ui, struct cenx4_ui_dispmode_
 		{
 			if (pot->flags & CENX4_UI_DISPMODE_POT_FLAGS_CENTERED)
 			{
-				if (pot->val > 50)
+				if (pot->val > 128)
 				{
-					int m = 225 - phi_lib_map(pot->val, 0, 99, 10, 270);
+					int m = 225 - phi_lib_map(pot->val, 0, 0xff, 10, 270);
 					gdispGDrawThickArc(ui->g, ui->w / 2, y + (ui->h / 4), 7, 10, m, 90, White);
 				}
 				else
 				{
-					int m = (90 + phi_lib_map(50 - pot->val, 0, 99, 10, 270));
+					int m = (90 + phi_lib_map(128 - pot->val, 0, 0xff, 10, 270));
 					gdispGDrawThickArc(ui->g, ui->w / 2, y + (ui->h / 4), 7, 10, 90, m, White);
 				}
 
 			}
 			else
 			{
-				int m = 225 - phi_lib_map(pot->val, 0, 99, 5, 270);
+				int m = 225 - phi_lib_map(pot->val, 0, 0xff, 5, 270);
 				gdispGDrawThickArc(ui->g, ui->w / 2, y + (ui->h / 4), 7, 10, m, 225, White);
 			}
 		}
@@ -309,7 +309,7 @@ void cenx4_ui_render_split_pot_helper(cenx4_ui_t * ui, struct cenx4_ui_dispmode_
 		{
 			coord_t center_x = ui->w / 2;
 			coord_t center_y = y + (ui->h / 4);
-			int deg = 135 + phi_lib_map(pot->val, 0, 99, 0, 270);
+			int deg = 135 + phi_lib_map(pot->val, 0, 0xff, 0, 270);
 
 			fixed cos_m = ffcos(deg);
 			fixed sin_m = ffsin(deg);
@@ -339,9 +339,9 @@ void cenx4_ui_render_split_pot_helper(cenx4_ui_t * ui, struct cenx4_ui_dispmode_
 
 			gdispGDrawLine(ui->g, ui->w / 2, y, ui->w / 2, y + 7, White);
 
-			if (val < 50)
+			if (val < 128)
 			{
-				coord_t from = phi_lib_map(49 - val, 0, 49, 0, c - 5);
+				coord_t from = phi_lib_map(127 - val, 0, 127, 0, c - 5);
 				if (pot->flags & CENX4_UI_DISPMODE_POT_FLAGS_FILL) {
 					gdispGFillArea(ui->g, c - from, y + 3, from, 2, White);
 				} else {
@@ -350,7 +350,7 @@ void cenx4_ui_render_split_pot_helper(cenx4_ui_t * ui, struct cenx4_ui_dispmode_
 			}
 			else
 			{
-				coord_t to = phi_lib_map(val - 50, 0, 49, 0, c - 5);
+				coord_t to = phi_lib_map(val - 128, 0, 127, 0, c - 5);
 				if (pot->flags & CENX4_UI_DISPMODE_POT_FLAGS_FILL) {
 					gdispGFillArea(ui->g, c, y + 3, to, 2, White);
 				} else {
@@ -360,7 +360,7 @@ void cenx4_ui_render_split_pot_helper(cenx4_ui_t * ui, struct cenx4_ui_dispmode_
 		}
 		else
 		{
-			coord_t to = phi_lib_map(pot->val, 0, 99, 0, ui->w - 10);
+			coord_t to = phi_lib_map(pot->val, 0, 0xff, 0, ui->w - 10);
 
 			if (pot->flags & CENX4_UI_DISPMODE_POT_FLAGS_FILL) {
 				gdispGFillArea(ui->g, 5, y + 3, to, 2, White);
@@ -384,53 +384,6 @@ void cenx4_ui_render_split_pot_helper(cenx4_ui_t * ui, struct cenx4_ui_dispmode_
 		0,
 		y,
 		(pot->flags & CENX4_UI_DISPMODE_POT_FLAGS_MERGE_BOTTOM) ? gdispGetStringWidth(pot->text_bottom, fonts[bot_font]) + 2 : ui->w,
-		bot_font,
-		(pot->flags & CENX4_UI_DISPMODE_POT_FLAGS_MERGE_BOTTOM) ? justifyLeft : justifyCenter,
-		pot->text_bottom);
-
-	return;
-
-	cenx4_ui_text(ui, 0, y, ui->w, top_font, justifyCenter, pot->text_top);
-	y += font_heights[top_font] + 4;
-
-	gdispGFillArea(ui->g, 5, y, ui->w - 10, 8, Black);
-	gdispGDrawBox(ui->g, 5, y, ui->w - 10, 8, White);
-	if (pot->flags & CENX4_UI_DISPMODE_POT_FLAGS_CENTERED)
-	{
-		coord_t c = ui->w / 2;
-		uint8_t val = pot->val;
-
-		gdispGDrawLine(ui->g, ui->w / 2, y, ui->w / 2, y + 7, White);
-
-		if (val < 50)
-		{
-			coord_t from = phi_lib_map(49 - val, 0, 49, 0, c - 5);
-			gdispGFillArea(ui->g, c - from, y + 3, from, 2, White);
-		}
-		else
-		{
-			coord_t to = phi_lib_map(val - 50, 0, 49, 0, c - 5);
-			gdispGFillArea(ui->g, c, y + 3, to, 2, White);
-		}
-	}
-	else
-	{
-		gdispGFillArea(ui->g, 5, y + 3, phi_lib_map(pot->val, 0, 99, 0, ui->w - 10), 2, White);
-	}
-	y += 13;
-
-	if (pot->flags & CENX4_UI_DISPMODE_POT_FLAGS_RENDER_VAL)
-	{
-		chsnprintf(buf, sizeof(buf) - 1, "%02d", pot->val);
-		cenx4_ui_text(ui, 0, y, ui->w, bot_font, (pot->flags & CENX4_UI_DISPMODE_POT_FLAGS_MERGE_BOTTOM) ? justifyRight : justifyCenter, buf);
-		y += (pot->flags & CENX4_UI_DISPMODE_POT_FLAGS_MERGE_BOTTOM) ? 0 : font_heights[bot_font] + 2;
-	}
-
-	cenx4_ui_text(
-		ui,
-		0,
-		y,
-		(pot->flags & CENX4_UI_DISPMODE_POT_FLAGS_MERGE_BOTTOM) ? gdispGetStringWidth(pot->text_bottom, fonts[bot_font]) : ui->w,
 		bot_font,
 		(pot->flags & CENX4_UI_DISPMODE_POT_FLAGS_MERGE_BOTTOM) ? justifyLeft : justifyCenter,
 		pot->text_bottom);

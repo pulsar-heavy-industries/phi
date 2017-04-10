@@ -73,7 +73,7 @@ typedef union cenx4_ui_dispmode_state_u
 		struct cenx4_ui_dispmode_state_split_pot_s {
 			uint16_t flags;
 			char text_top[CENX4_UI_MAX_LINE_TEXT_LEN];
-			uint8_t val; // 0 - 99
+			uint8_t val;
 			char text_bottom[CENX4_UI_MAX_LINE_TEXT_LEN];
 		} pots[2];
 

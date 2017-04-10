@@ -91,8 +91,6 @@ int main(void)
 	gfxInit();
 	cenx4_ui_init();
 
-//	chThdSleepMilliseconds(1000);
-
 	if (cenx4_is_master)
 	{
 		cenx4_app_cfg_load();
@@ -106,7 +104,7 @@ int main(void)
 		strcpy(ui->state.boot.misc_text, "USB");
 		cenx4_ui_unlock(ui);
 		#define usb_lld_connect_bus(usbp) palClearPad(GPIOA, GPIOA_USB_CONN)
-#define usb_lld_disconnect_bus(usbp) palSetPad(GPIOA, GPIOA_USB_CONN)
+		#define usb_lld_disconnect_bus(usbp) palSetPad(GPIOA, GPIOA_USB_CONN)
 		usbDisconnectBus(midiusbcfg.usbp);
 		chThdSleepMilliseconds(1500);
 		usbStart(midiusbcfg.usbp, &usbcfg);
@@ -154,6 +152,7 @@ int main(void)
 	if (cenx4_is_master)
 	{
 		phi_app_mgr_switch_app(&cenx4_app_setup_desc, &(cenx4_app_contexts.setup));
+//		phi_app_mgr_switch_app(&cenx4_app_test_desc, &(cenx4_app_contexts.test));
 	}
 	else
 	{

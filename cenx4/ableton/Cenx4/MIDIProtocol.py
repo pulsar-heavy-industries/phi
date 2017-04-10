@@ -151,7 +151,7 @@ class SysExProtocol(object):
     def set_pot_all_scaled(self, pot, val, val_min, val_max, top, bottom):
         # Figure out how 'wide' each range is
         val_span = val_max - val_min
-        rightSpan = 100 - 0
+        rightSpan = 0xff
 
         # Convert the left range into a 0-1 range (float)
         valueScaled = float(val - val_min) / float(val_span)
@@ -159,5 +159,3 @@ class SysExProtocol(object):
         # Convert the 0-1 range into a value in the right range.
         val = int(0 + (valueScaled * rightSpan))
         self.set_pot_all(pot, val, top, bottom)
-
-

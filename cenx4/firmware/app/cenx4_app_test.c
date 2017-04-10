@@ -22,7 +22,7 @@ void cenx4_app_test_start(void * _ctx)
 
     ctx->num_pots = 4; // TODO constant
     for (i = 0; i < ctx->num_pots; ++i) {
-        ctx->pots[i] = i ? i * 5 : 1;
+        ctx->pots[i] = i ? i * 25 : 1;
     }
 
     // Move our displays into pots mode for test
@@ -37,6 +37,7 @@ void cenx4_app_test_start(void * _ctx)
         ui->state.split_pot.pots[0].flags =
                 CENX4_UI_DISPMODE_POT_FLAGS_RENDER_VAL |
                 CENX4_UI_DISPMODE_POT_FLAGS_ROUND |
+//				CENX4_UI_DISPMODE_POT_FLAGS_CENTERED |
                 CENX4_UI_DISPMODE_POT_FLAGS_MERGE_BOTTOM |
                 CENX4_UI_DISPMODE_POT_FLAGS_FILL |
                 CENX4_UI_DISPMODE_POT_FLAGS_TOP_FONT_AUTO;
@@ -73,18 +74,6 @@ void cenx4_app_test_encoder_event(void * _ctx, uint8_t node_id, uint8_t encoder_
     cenx4_ui_t * ui = cenx4_ui_lock(lcd_num);
     ui->state.split_pot.pots[pot_num].val += val_change;
     cenx4_ui_unlock(ui);
-
-
-#if CENX4_IS_SLAVE
-    phi_midi_pkt_t pkt;
-
-    pkt.chn = 2;
-    pkt.event = 0xB; // Control Change
-    pkt.val1 = encoder_num;
-    pkt.val2 = 64 + val_change; // "Relative Binary Offset". Positive offsets are sent as offset plus 64 and negative offsets are sent as 64 minus offset
-
-    phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
-#endif
 }
 
 // NOTES:

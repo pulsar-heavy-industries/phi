@@ -14,10 +14,6 @@ static void btn_event_cb(uint8_t btn, phi_btn_event_t event, uint32_t param)
 {
     phi_app_mgr_notify_btn_event(0, btn, event, param);
 
-
-#if CENX4_IS_SLAVE
-    send me over CAN
-#endif
 }
 
 static THD_WORKING_AREA(cenx4_io_thread_wa, 512);
