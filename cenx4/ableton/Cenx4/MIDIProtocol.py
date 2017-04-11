@@ -152,6 +152,8 @@ class SysExProtocol(object):
         # Figure out how 'wide' each range is
         val_span = val_max - val_min
         rightSpan = 0xff
+        if not val_span:
+            return
 
         # Convert the left range into a 0-1 range (float)
         valueScaled = float(val - val_min) / float(val_span)
@@ -159,3 +161,10 @@ class SysExProtocol(object):
         # Convert the 0-1 range into a value in the right range.
         val = int(0 + (valueScaled * rightSpan))
         self.set_pot_all(pot, val, top, bottom)
+
+    def send_resync(self):
+        self.send_midi([
+            CENX4_MAIN_MIDI_SYSEX_APP_CMD,
+            CENX4_APP_ABLETON_SYSEX_RESYNC,
+        ])
+

@@ -23,6 +23,11 @@ const uint8_t ableton_to_hw_pot_maps[][CENX4_MAX_POTS] = {
         0, 2, 4, 6,
         1, 3, 5, 7
     },
+    // 12 pots (1 master + 2 slaves, horizontal layout)
+    {
+        0, 2, 4, 6, 8, 10,
+        1, 3, 5, 7, 9, 11,
+    },
 };
 
 const uint8_t hw_to_ableton_pot_maps[][CENX4_MAX_POTS] = {
@@ -34,6 +39,11 @@ const uint8_t hw_to_ableton_pot_maps[][CENX4_MAX_POTS] = {
     {
         0, 4, 1, 5,
         2, 6, 3, 7,
+    },
+    // 12 pots (1 master + 2 slaves, horizontal layout)
+    {
+    	0, 6, 1, 7, 2, 8,
+		3, 9, 4, 10, 5, 11,
     },
 };
 
@@ -133,17 +143,13 @@ void cenx4_app_ableton_start(void * _ctx)
     	}
     }
 
-    switch (ctx->num_modules)
+    if ((ctx->num_modules >= 1) && (ctx->num_modules <= 3))
     {
-    case 1:
-        ctx->ableton_to_hw_pot_map = (const uint8_t *) &(ableton_to_hw_pot_maps[0]);
-        ctx->hw_to_ableton_pot_map = (const uint8_t *) &(hw_to_ableton_pot_maps[0]);
-        break;
-    case 2:
-        ctx->ableton_to_hw_pot_map = (const uint8_t *) &(ableton_to_hw_pot_maps[1]);
-        ctx->hw_to_ableton_pot_map = (const uint8_t *) &(hw_to_ableton_pot_maps[1]);
-        break;
-    default:
+    	ctx->ableton_to_hw_pot_map = (const uint8_t *) &(ableton_to_hw_pot_maps[ctx->num_modules - 1]);
+		ctx->hw_to_ableton_pot_map = (const uint8_t *) &(hw_to_ableton_pot_maps[ctx->num_modules - 1]);
+    }
+    else
+    {
     	cenx4_app_log_fmt("NumM?%d", ctx->num_modules);
         goto err_bad_cfg;
     }
@@ -166,11 +172,11 @@ void cenx4_app_ableton_start(void * _ctx)
 					CENX4_UI_DISPMODE_POT_FLAGS_ROUND |
 					CENX4_UI_DISPMODE_POT_FLAGS_FILL |
 					CENX4_UI_DISPMODE_POT_FLAGS_TOP_FONT_AUTO;
-			chsnprintf(ui->state.split_pot.pots[0].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "Pot? %d", base + (i * 2));
+			chsnprintf(ui->state.split_pot.pots[0].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "Pot? %02d", base + (i * 2));
 			ui->state.split_pot.pots[0].val = 1;
 
 			ui->state.split_pot.pots[1].flags = ui->state.split_pot.pots[0].flags;
-			chsnprintf(ui->state.split_pot.pots[1].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "Pot? %d", base + (i * 2) + 1);
+			chsnprintf(ui->state.split_pot.pots[1].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "Pot? %02d", base + (i * 2) + 1);
 			ui->state.split_pot.pots[1].val = 1;
         }
         else
@@ -187,24 +193,12 @@ void cenx4_app_ableton_start(void * _ctx)
     {
     	if (ctx->mod_num_to_node_id[mod_num] != 0)
     	{
-    		cenx4_app_ableton_berry_enter_ableton_mode(ctx, ctx->mod_num_to_node_id[mod_num]);
+    		cenx4_app_ableton_enter_ableton_mode(ctx, ctx->mod_num_to_node_id[mod_num]);
     	}
     }
 
     // Notify Ableton we are ready, in case it's waiting for us
-    {
-    	struct {
-    		uint8_t cmd;
-    		cenx4_app_ableton_sysex_resync_t data;
-    	} resync_msg = {
-			.cmd =  CENX4_APP_ABLETON_SYSEX_RESYNC,
-			.data = {
-				.num_modules = ctx->num_modules,
-			},
-    	};
-
-    	phi_midi_tx_sysex(PHI_MIDI_PORT_USB, CENX4_MIDI_SYSEX_APP_CMD, &resync_msg, sizeof(resync_msg));
-    }
+    cenx4_app_ableton_send_resync(ctx);
 
     return;
 
@@ -316,18 +310,22 @@ void cenx4_app_ableton_midi_sysex(void * _ctx, phi_midi_port_t port, uint8_t cmd
         }
         break;
 
+    case CENX4_APP_ABLETON_SYSEX_RESYNC:
+    	cenx4_app_ableton_send_resync(ctx);
+    	break;
+
     case CENX4_APP_ABLETON_SYSEX_INVALID:
     default:
         break;
     }
 }
 
-msg_t cenx4_app_ableton_berry_enter_ableton_mode(cenx4_app_ableton_context_t * ctx, uint8_t node_id)
+msg_t cenx4_app_ableton_enter_ableton_mode(cenx4_app_ableton_context_t * ctx, uint8_t node_id)
 {
     msg_t ret;
 
     // Set text
-    ret = cenx4_app_ableton_berry_update_ui(ctx, node_id);
+    ret = cenx4_app_ableton_update_ui(ctx, node_id);
     if (MSG_OK != ret)
     {
         return ret;
@@ -337,7 +335,7 @@ msg_t cenx4_app_ableton_berry_enter_ableton_mode(cenx4_app_ableton_context_t * c
     return MSG_OK;
 }
 
-msg_t cenx4_app_ableton_berry_update_ui(cenx4_app_ableton_context_t * ctx, uint8_t node_id)
+msg_t cenx4_app_ableton_update_ui(cenx4_app_ableton_context_t * ctx, uint8_t node_id)
 {
 	cenx4_can_handle_update_display_state_t state;
     msg_t ret;
@@ -354,11 +352,11 @@ msg_t cenx4_app_ableton_berry_update_ui(cenx4_app_ableton_context_t * ctx, uint8
             CENX4_UI_DISPMODE_POT_FLAGS_ROUND |
             CENX4_UI_DISPMODE_POT_FLAGS_FILL |
             CENX4_UI_DISPMODE_POT_FLAGS_TOP_FONT_AUTO;
-    chsnprintf(state.state.split_pot.pots[0].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "Pot? %d", base);
+    chsnprintf(state.state.split_pot.pots[0].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "Pot? %02d", base);
     state.state.split_pot.pots[0].val = 1;
 
     state.state.split_pot.pots[1].flags =  state.state.split_pot.pots[0].flags;
-    chsnprintf(state.state.split_pot.pots[1].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "Pot? %d", base + 1);
+    chsnprintf(state.state.split_pot.pots[1].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "Pot? %02d", base + 1);
     state.state.split_pot.pots[1].val = 1;
 
     ret = phi_can_xfer(
@@ -387,11 +385,11 @@ msg_t cenx4_app_ableton_berry_update_ui(cenx4_app_ableton_context_t * ctx, uint8
             CENX4_UI_DISPMODE_POT_FLAGS_ROUND |
             CENX4_UI_DISPMODE_POT_FLAGS_FILL |
             CENX4_UI_DISPMODE_POT_FLAGS_TOP_FONT_AUTO;
-    chsnprintf(state.state.split_pot.pots[0].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "Pot? %d", base + 2);
+    chsnprintf(state.state.split_pot.pots[0].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "Pot? %02d", base + 2);
     state.state.split_pot.pots[0].val = 1;
 
     state.state.split_pot.pots[1].flags = state.state.split_pot.pots[0].flags;
-    chsnprintf(state.state.split_pot.pots[1].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "Pot? %d", base + 3);
+    chsnprintf(state.state.split_pot.pots[1].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "Pot? %02d", base + 3);
     state.state.split_pot.pots[1].val = 1;
 
     ret = phi_can_xfer(
@@ -411,8 +409,22 @@ msg_t cenx4_app_ableton_berry_update_ui(cenx4_app_ableton_context_t * ctx, uint8
         return ret;
     }
 
-
     return MSG_OK;
+}
+
+void cenx4_app_ableton_send_resync(cenx4_app_ableton_context_t * ctx)
+{
+	struct {
+		uint8_t cmd;
+		cenx4_app_ableton_sysex_resync_t data;
+	} resync_msg = {
+		.cmd =  CENX4_APP_ABLETON_SYSEX_RESYNC,
+		.data = {
+			.num_modules = ctx->num_modules,
+		},
+	};
+
+	phi_midi_tx_sysex(PHI_MIDI_PORT_USB, CENX4_MIDI_SYSEX_APP_CMD, &resync_msg, sizeof(resync_msg));
 }
 
 void cenx4_app_ableton_midi_sysex_set_pot_value(cenx4_app_ableton_context_t * ctx, cenx4_app_ableton_sysex_set_pot_value_t * data)

@@ -67,6 +67,10 @@ class Cenx4DeviceComponent(DeviceComponent):
         assert self._parameter_controls != None
         parameters = self._device_parameters_to_map()
         num_controls = len(self._parameter_controls)
+
+        for i in range(self.cenx4.cfg.num_pots):
+            self.cenx4.sysex.set_pot_all_scaled(i, 0, 0, 100, '? %02d' % (i, ), unicode(i))
+
         # index = self._bank_index * num_controls
         index = 0
         for control in self._parameter_controls:

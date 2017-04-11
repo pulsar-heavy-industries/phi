@@ -71,8 +71,9 @@ void cenx4_app_ableton_encoder_event(void * ctx, uint8_t node_id, uint8_t encode
 void cenx4_app_ableton_btn_event(void * ctx, uint8_t node_id, uint8_t btn_num, phi_btn_event_t event, uint32_t param);
 void cenx4_app_ableton_midi_sysex(void * ctx, phi_midi_port_t port, uint8_t cmd, const void * data, size_t data_len);
 
-msg_t cenx4_app_ableton_berry_enter_ableton_mode(cenx4_app_ableton_context_t * ctx, uint8_t node_id);
-msg_t cenx4_app_ableton_berry_update_ui(cenx4_app_ableton_context_t * ctx, uint8_t node_id);
+msg_t cenx4_app_ableton_enter_ableton_mode(cenx4_app_ableton_context_t * ctx, uint8_t node_id);
+msg_t cenx4_app_ableton_update_ui(cenx4_app_ableton_context_t * ctx, uint8_t node_id);
+void cenx4_app_ableton_send_resync(cenx4_app_ableton_context_t * ctx);
 
 void cenx4_app_ableton_midi_sysex_set_pot_value(cenx4_app_ableton_context_t * ctx, cenx4_app_ableton_sysex_set_pot_value_t * data);
 void cenx4_app_ableton_midi_sysex_set_pot_text(cenx4_app_ableton_context_t * ctx, cenx4_app_ableton_sysex_set_pot_text_t * data);
