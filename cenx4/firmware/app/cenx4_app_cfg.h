@@ -24,6 +24,10 @@ typedef struct cenx4_app_cfg_s
             // The module number is derived from the index in the array.
             // Unused entries have all 0s
             uint8_t mod_num_to_uid[CENX4_APP_CFG_MAX_MODULES][PHI_CAN_AUTO_ID_UNIQ_ID_LEN];
+
+            // Ableton specific: Make the last encoder switch banks
+            bool ableton_enable_banks_enc;
+
         } cur;
     };
 } cenx4_app_cfg_t;

@@ -1,4 +1,6 @@
 from __future__ import with_statement
+
+import Live
 import time
 from _Framework.ControlSurface import ControlSurface
 from _Framework.InputControlElement import *
@@ -13,8 +15,9 @@ from Cenx4EncoderElement import Cenx4EncoderElement
 
 
 class Config(object):
-    num_pots = 8
+    num_pots = 4
     midi_ch = 2
+    enable_banks_encoder = False
 
 
 #from PHITelnet import PHITelnetMixin
@@ -64,6 +67,40 @@ class Cenx4(ControlSurface):
         self.log('refresh_state!')
         self.sysex.send_resync()
 
+    def receive_midi(self, midi_bytes):
+        self.log(('IN MIDI', midi_bytes))
+
+        # CC on our selected channel
+        cc = 0xb0 | self.cfg.midi_ch
+
+        # Check for bank encoder
+        if ((len(midi_bytes) == 3) and
+            (midi_bytes[0] == cc) and
+            (midi_bytes[1] == self.cfg.num_pots - 1) and
+            self.cfg.enable_banks_encoder):
+
+            if midi_bytes[2] == 63:
+                direction = -1
+            elif midi_bytes[2] == 65:
+                direction = 1
+            else:
+                direction = 0
+            if direction:
+                self._ab_device_component._banks_encoder(direction)
+            return
+
+
+        super(Cenx4, self).receive_midi(midi_bytes)
+
+    def build_midi_map(self, midi_map_handle):
+        self.log('BUILD MIDI MAP')
+
+        if self.cfg.enable_banks_encoder:
+            script_handle = self.__c_instance.handle()
+            Live.MidiMap.forward_midi_cc(script_handle, midi_map_handle, self.cfg.midi_ch, self.cfg.num_pots - 1)
+
+        super(Cenx4, self).build_midi_map(midi_map_handle)
+
     def handle_sysex(self, midi_bytes):
         data = self.sysex.decode(midi_bytes)
         if data is None:
@@ -72,12 +109,15 @@ class Cenx4(ControlSurface):
         if len(data) >= 2 and data[0] == CENX4_MAIN_MIDI_SYSEX_APP_CMD:
             cmd, data = data[1], data[2:]
             if cmd == CENX4_APP_ABLETON_SYSEX_RESYNC:
-                num_modules = data[0]
+                num_modules, enable_banks_encoder = data
 
                 self.cfg.num_pots = num_modules * 4
+                self.cfg.enable_banks_encoder = bool(enable_banks_encoder)
 
                 self.log(('RESYNC', data))
                 self.resynced = True
+
+                self.__c_instance.request_rebuild_midi_map()
 
                 pots_map = {
                     4: [0, 1, 2, 3],
@@ -101,10 +141,16 @@ class Cenx4(ControlSurface):
                 }.get(self.cfg.num_pots, list(range(self.cfg.num_pots)))
                 self.log(('Pots map', pots_map))
                 device_controls = [Cenx4EncoderElement(self, MIDI_CC_TYPE, self.cfg.midi_ch, i, True) for i in range(self.cfg.num_pots)]
+
+                avail_params = len(device_controls)
+                if self.cfg.enable_banks_encoder:
+                    avail_params -= 1
+
                 self._ab_device_component.set_parameter_controls(tuple(
-                    device_controls[pots_map[idx]] for idx in range(len(device_controls))
+                    device_controls[pots_map[idx]] for idx in range(avail_params)
                 ))
                 self._ab_device_component._assign_parameters()
+                self._ab_device_component._reset_banks()
                 #self._ab_device_component.send_params()
 
             else:

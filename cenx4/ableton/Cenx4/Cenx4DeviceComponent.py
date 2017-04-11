@@ -9,11 +9,14 @@ class Cenx4DeviceComponent(DeviceComponent):
         self.cenx4 = cenx4
         self.song().view.add_selected_parameter_listener(self._on_selected_parameter_changed)
 
+        self._cur_bank = 0
+
     def disconnect(self):
         self.song().view.remove_selected_parameter_listener(self._on_selected_parameter_changed)
         super(Cenx4DeviceComponent, self).disconnect()
 
     def set_device(self, device):
+        self._reset_banks(device)
         super(Cenx4DeviceComponent, self).set_device(device)
         self.cenx4.log('Cenx4DeviceComponent.set_device! %r' % (device, ))
 
@@ -27,12 +30,16 @@ class Cenx4DeviceComponent(DeviceComponent):
 
     def number_of_parameter_banks(self, device):
         result = 0
+
         if device != None:
-            param_count = len(list(device.parameters))
-            # TODO number needs to come from hardware
-            result = param_count / 16
-            if not param_count % 16 == 0:
+            from _Generic.Devices import device_parameters_to_map
+            parameters = device_parameters_to_map(device)
+            param_count = len(list(parameters))
+
+            result = param_count / (self.cenx4.cfg.num_pots - 1)
+            if (param_count % (self.cenx4.cfg.num_pots - 1)) != 0:
                 result += 1
+
         return result
 
     def send_params(self):
@@ -60,6 +67,46 @@ class Cenx4DeviceComponent(DeviceComponent):
         self._selected_parameter = self.song().view.selected_parameter
         self.cenx4.log('Cenx4DeviceComponent._on_selected_paramater_changed!')
 
+    def _banks_encoder(self, direction):
+        if direction != self._banks_direction_debounce:
+            self._banks_direction_debounce = direction
+            return
+
+        self._banks_direction_debounce = 0
+        new_bank = self._cur_bank + direction
+        if new_bank < 0 or new_bank >= self._num_banks:
+            return
+
+        self.cenx4.log(('Banks encoder setting new bank', new_bank))
+        self._cur_bank = new_bank
+
+        self._update_banks_display()
+        self._assign_parameters()
+
+
+    def _reset_banks(self, device=None):
+        if not self.cenx4.cfg.enable_banks_encoder:
+            return
+
+        device = device or self._device
+
+        self._num_banks = self.number_of_parameter_banks(device)
+        self._cur_bank = 0
+        self._banks_direction_debounce = 0
+
+        self.cenx4.log(('Reset banks encoder', self._num_banks))
+        self._update_banks_display()
+
+    def _update_banks_display(self):
+        self.cenx4.sysex.set_pot_all_scaled(
+            self.cenx4.cfg.num_pots - 1,
+            self._cur_bank + 1,
+            0,
+            self._num_banks,
+            'Bank',
+            '%d/%d' % (self._cur_bank + 1, self._num_banks),
+        )
+
     def _assign_parameters(self):
         self.cenx4.log('Cenx4DeviceComponent._assign_parameters!')
         assert self.is_enabled()
@@ -68,13 +115,15 @@ class Cenx4DeviceComponent(DeviceComponent):
         parameters = self._device_parameters_to_map()
         num_controls = len(self._parameter_controls)
 
-        for i in range(self.cenx4.cfg.num_pots):
-            self.cenx4.sysex.set_pot_all_scaled(i, 0, 0, 100, '? %02d' % (i, ), unicode(i))
+        num_pots = self.cenx4.cfg.num_pots
+        if self.cenx4.cfg.enable_banks_encoder:
+            num_pots -= 1
+            parameters = parameters[self._cur_bank * num_pots:]
 
-        # index = self._bank_index * num_controls
-        index = 0
-        for control in self._parameter_controls:
+        for index, control in enumerate(self._parameter_controls):
             control.release_parameter()
             if index < len(parameters):
                 control.connect_to(parameters[index])
-            index += 1
+
+        for i in range(len(parameters), num_pots):
+            self.cenx4.sysex.set_pot_all_scaled(i, 0, 0, 100, 'Pot %02d' % (i+1, ), '---')

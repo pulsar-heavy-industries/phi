@@ -68,7 +68,10 @@ void cenx4_app_cfg_save(cenx4_app_cfg_t * cfg)
 	status = HAL_FLASH_Lock();
 	chDbgCheck(status == HAL_OK);
 
-	memcpy(&cenx4_app_cfg, cfg, sizeof(*cfg));
+	if (cfg != &cenx4_app_cfg)
+	{
+		memcpy(&cenx4_app_cfg, cfg, sizeof(*cfg));
+	}
 
 	chSysEnable();
 }

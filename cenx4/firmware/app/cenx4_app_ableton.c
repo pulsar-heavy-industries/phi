@@ -189,9 +189,10 @@ void cenx4_app_ableton_encoder_event(void * _ctx, uint8_t node_id, uint8_t encod
     phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
 }
 
-void cenx4_app_ableton_btn_event(void * ctx, uint8_t node_id, uint8_t btn_num, phi_btn_event_t event, uint32_t param)
+void cenx4_app_ableton_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, phi_btn_event_t event, uint32_t param)
 {
-	(void) ctx;
+    cenx4_app_ableton_context_t * ctx = (cenx4_app_ableton_context_t *) _ctx;
+    uint8_t mod_num;
 
 	// Setup mode
 	if (node_id == 0)
@@ -218,6 +219,36 @@ void cenx4_app_ableton_btn_event(void * ctx, uint8_t node_id, uint8_t btn_num, p
 			break;
 		}
 	}
+
+	// Event from remote node - see if we're working with it
+    mod_num = ctx->node_id_to_mod_num[cenx4_app_cfg_get_mapped_node_id(node_id)];
+    if (mod_num == CENX4_APP_CFG_INVALID_MODULE_NUM)
+	{
+		return;
+	}
+
+    // If we're the last encoder on the last module then we're dealing with ableton_enable_banks_enc
+    if ((mod_num == (ctx->num_modules - 1)) && (btn_num == 3))
+    {
+    	switch (event)
+    	{
+    	case PHI_BTN_EVENT_PRESSED:
+    		ctx->waiting_for_ableton_enable_banks_enc = FALSE;
+    		break;
+
+    	case PHI_BTN_EVENT_HELD:
+    		if ((param >= 5000) && !ctx->waiting_for_ableton_enable_banks_enc)
+    		{
+    			cenx4_app_cfg.cur.ableton_enable_banks_enc = !cenx4_app_cfg.cur.ableton_enable_banks_enc;
+    			cenx4_app_cfg_save(&cenx4_app_cfg);
+    			ctx->waiting_for_ableton_enable_banks_enc = TRUE;
+    			cenx4_app_ableton_send_resync(ctx);
+    		}
+
+    	default:
+    		break;
+    	}
+    }
 }
 
 void cenx4_app_ableton_midi_sysex(void * _ctx, phi_midi_port_t port, uint8_t cmd, const void * data, size_t data_len)
@@ -371,6 +402,7 @@ void cenx4_app_ableton_send_resync(cenx4_app_ableton_context_t * ctx)
 		.cmd =  CENX4_APP_ABLETON_SYSEX_RESYNC,
 		.data = {
 			.num_modules = ctx->num_modules,
+			.ableton_enable_banks_enc = cenx4_app_cfg.cur.ableton_enable_banks_enc,
 		},
 	};
 

@@ -42,6 +42,7 @@ typedef struct
 typedef struct
 {
 	uint8_t num_modules;
+	bool ableton_enable_banks_enc;
 } cenx4_app_ableton_sysex_resync_t;
 
 #pragma pack()
@@ -58,6 +59,9 @@ typedef struct cenx4_app_ableton_context_s
 
     // Reverse map (module number -> node id)
     uint8_t mod_num_to_node_id[CENX4_APP_CFG_MAX_MODULES];
+
+    // Keep track of enabling/disabling ableton_enable_banks_enc
+    bool waiting_for_ableton_enable_banks_enc;
 
 } cenx4_app_ableton_context_t;
 

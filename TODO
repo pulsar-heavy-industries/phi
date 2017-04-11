@@ -8,6 +8,7 @@ Documentation:
 - Hardware (Enclosure, pots, BOM, JST cables, USB socket)
 
 Code improvements:
+- need to deal with encoder acceleration mode on slaves in the ableton app
 - create an init app on master
    - checks versions of available modules and update if possible
    - when done, starts setup app (or maybe straight to ableton if config is ok?)
