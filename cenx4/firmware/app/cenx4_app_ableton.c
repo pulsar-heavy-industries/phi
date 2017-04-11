@@ -13,41 +13,6 @@ const phi_app_desc_t cenx4_app_ableton_desc = {
     .midi_sysex = cenx4_app_ableton_midi_sysex,
 };
 
-const uint8_t ableton_to_hw_pot_maps[][CENX4_MAX_POTS] = {
-    // 4 pots (1 master)
-    {
-        0, 1, 2, 3,
-    },
-    // 8 pots (1 master + slave, horizontal layout)
-    {
-        0, 2, 4, 6,
-        1, 3, 5, 7
-    },
-    // 12 pots (1 master + 2 slaves, horizontal layout)
-    {
-        0, 2, 4, 6, 8, 10,
-        1, 3, 5, 7, 9, 11,
-    },
-};
-
-const uint8_t hw_to_ableton_pot_maps[][CENX4_MAX_POTS] = {
-    // 4 pots (1 master)
-    {
-        0, 1, 2, 3,
-    },
-    // 8 pots (1 master + slave, horizontal layout)
-    {
-        0, 4, 1, 5,
-        2, 6, 3, 7,
-    },
-    // 12 pots (1 master + 2 slaves, horizontal layout)
-    {
-    	0, 6, 1, 7, 2, 8,
-		3, 9, 4, 10, 5, 11,
-    },
-};
-
-
 void cenx4_app_ableton_start(void * _ctx)
 {
     cenx4_app_ableton_context_t * ctx = (cenx4_app_ableton_context_t *) _ctx;
@@ -143,17 +108,6 @@ void cenx4_app_ableton_start(void * _ctx)
     	}
     }
 
-    if ((ctx->num_modules >= 1) && (ctx->num_modules <= 3))
-    {
-    	ctx->ableton_to_hw_pot_map = (const uint8_t *) &(ableton_to_hw_pot_maps[ctx->num_modules - 1]);
-		ctx->hw_to_ableton_pot_map = (const uint8_t *) &(hw_to_ableton_pot_maps[ctx->num_modules - 1]);
-    }
-    else
-    {
-    	cenx4_app_log_fmt("NumM?%d", ctx->num_modules);
-        goto err_bad_cfg;
-    }
-
     cenx4_app_log("CfgOk!");
 
     // Move our displays into pots mode
@@ -225,9 +179,6 @@ void cenx4_app_ableton_encoder_event(void * _ctx, uint8_t node_id, uint8_t encod
     }
 
     encoder_num += mod_num * 4;
-
-    // Dat shitty mapping
-    encoder_num = ctx->hw_to_ableton_pot_map[encoder_num];
 
     pkt.chn = 2;
     pkt.event = 0xB; // Control Change
@@ -438,7 +389,6 @@ void cenx4_app_ableton_midi_sysex_set_pot_value(cenx4_app_ableton_context_t * ct
     }
 
     // From Ableton pot number to the shitty logic below pot number
-    data->pot = ctx->ableton_to_hw_pot_map[data->pot];
     mod_num = data->pot / 4;
     pot_num = data->pot % 4;
     node_id = ctx->mod_num_to_node_id[mod_num];
@@ -483,7 +433,6 @@ void cenx4_app_ableton_midi_sysex_set_pot_text(cenx4_app_ableton_context_t * ctx
     }
 
     // From ableton pot number to the shitty logic below pot number
-    data->pot = ctx->ableton_to_hw_pot_map[data->pot];
     mod_num = data->pot / 4;
     pot_num = data->pot % 4;
     node_id = ctx->mod_num_to_node_id[mod_num];
@@ -531,7 +480,6 @@ void cenx4_app_ableton_midi_sysex_set_pot_all(cenx4_app_ableton_context_t * ctx,
     }
 
     // From Ableton pot number to the shitty logic below pot number
-    data->pot = ctx->ableton_to_hw_pot_map[data->pot];
     mod_num = data->pot / 4;
     pot_num = data->pot % 4;
     node_id = ctx->mod_num_to_node_id[mod_num];

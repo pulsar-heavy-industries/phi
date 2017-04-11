@@ -58,11 +58,6 @@ class Cenx4(ControlSurface):
         self._ab_device_component = Cenx4DeviceComponent(self)
         self.set_device_component(self._ab_device_component)
 
-        # TODO hardcoded 16
-        device_controls = [Cenx4EncoderElement(self, MIDI_CC_TYPE, self.cfg.midi_ch, i, True) for i in range(16)]
-        self._ab_device_component.set_parameter_controls(tuple(device_controls))
-
-
     def refresh_state(self):
         super(Cenx4, self).refresh_state()
 
@@ -83,6 +78,32 @@ class Cenx4(ControlSurface):
 
                 self.log(('RESYNC', data))
                 self.resynced = True
+
+                pots_map = {
+                    4: [0, 1, 2, 3],
+                    8: [
+                        # The order of the first 8 parameters matters due to the popular instrument rack
+                        # macros arrangement. Other pots don't matter as much.
+                        0, 2, 4, 6,
+                        1, 3, 5, 7,
+                    ],
+                    12: [
+                        0, 2, 4, 6,
+                        1, 3, 5, 7,
+                        8, 9, 10, 11,
+                    ],
+                    16 : [
+                        0, 2, 4, 6,
+                        1, 3, 5, 7,
+                        8, 9, 10, 11,
+                        12, 13, 14, 15,
+                    ],
+                }.get(self.cfg.num_pots, list(range(self.cfg.num_pots)))
+                self.log(('Pots map', pots_map))
+                device_controls = [Cenx4EncoderElement(self, MIDI_CC_TYPE, self.cfg.midi_ch, i, True) for i in range(self.cfg.num_pots)]
+                self._ab_device_component.set_parameter_controls(tuple(
+                    device_controls[pots_map[idx]] for idx in range(len(device_controls))
+                ))
                 self._ab_device_component._assign_parameters()
                 #self._ab_device_component.send_params()
 

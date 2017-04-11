@@ -59,10 +59,6 @@ typedef struct cenx4_app_ableton_context_s
     // Reverse map (module number -> node id)
     uint8_t mod_num_to_node_id[CENX4_APP_CFG_MAX_MODULES];
 
-    // Map of pots from ableton side to hardware side
-    const uint8_t * ableton_to_hw_pot_map;
-    const uint8_t * hw_to_ableton_pot_map;
-
 } cenx4_app_ableton_context_t;
 
 void cenx4_app_ableton_start(void * ctx);
