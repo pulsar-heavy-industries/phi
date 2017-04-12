@@ -161,9 +161,6 @@ int main(void)
 
     if (cenx4_is_master)
     {
-		bduObjectInit(&BDU1);
-		bduStart(&BDU1, &bulkusbcfg);
-
 		cenx4_midi_init();
 
 		/*

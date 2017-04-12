@@ -95,9 +95,6 @@ int main(void)
 	{
 		cenx4_app_cfg_load();
 
-		bduObjectInit(&BDU1);
-		bduStart(&BDU1, &bulkusbcfg);
-
 		cenx4_midi_init();
 
 		ui = cenx4_ui_lock(1);
