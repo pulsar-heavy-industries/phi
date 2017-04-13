@@ -518,14 +518,17 @@ void phi_usb_midi_send_sysex(MIDIUSBDriver *mdup, uint8_t port, const uint8_t * 
     case 0:
         tx[0] = port | 0x05;
         tx[1] = 0xf7;
-        write(mdup, &tx[0], 2);
+        tx[2] = 0;
+        tx[3] = 0;
+        write(mdup, &tx[0], 4);
         break;
 
     case 1:
         tx[0] = port | 0x06;
         tx[1] = data[0];
         tx[2] = 0xf7;
-        write(mdup, &tx[0], 3);
+        tx[3] = 0;
+        write(mdup, &tx[0], 4);
         break;
 
     case 2:
