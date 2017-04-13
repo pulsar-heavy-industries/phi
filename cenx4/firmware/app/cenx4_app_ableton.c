@@ -50,7 +50,6 @@ void cenx4_app_ableton_start(void * _ctx)
 
 
     // See what we can learn about our module configuration.
-    // We start with one module because we (the master) act as one
     ctx->num_modules = 0;
 
     for (mod_num = 0; mod_num < CENX4_APP_CFG_MAX_MODULES; ++mod_num)
@@ -87,7 +86,7 @@ void cenx4_app_ableton_start(void * _ctx)
 			goto err_bad_cfg;
 		}
 
-		if ((si.dev_id != PHI_DEV_ID('C', 'N', 'X', '4') && (si.dev_id != PHI_DEV_ID('B', 'E', 'R', 'Y')))) // TODO
+		if (si.dev_id != PHI_DEV_ID('C', 'N', 'X', '4'))
 		{
 			cenx4_app_log_fmt("M%dDevId?", mod_num);
 			cenx4_app_log_fmt("%x", si.dev_id);

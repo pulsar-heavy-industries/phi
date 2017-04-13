@@ -15,7 +15,7 @@ const mapStateToProps = (state) => {
     }
 }
 // TODO
-import binbin from '../fwUpdate/bl-ch.bin'
+import binbin from '../../../cenx4/firmware/app/build/bl-ch.bin'
 
 const mapDispatchToProps = (dispatch) => {
     return {
