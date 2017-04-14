@@ -1,6 +1,6 @@
 import React from 'react'
 import { connect } from 'react-redux'
-import { Form, Select, Button, Modal } from 'antd'
+import { Form, Select, Button, Modal, Input, InputNumber, Icon, Row, Col, Tooltip } from 'antd'
 
 const FormItem = Form.Item;
 const Option = Select.Option;
@@ -55,6 +55,99 @@ const SetupForm = Form.create()(
             ]}
         >
             <Form>
+               <FormItem
+                    {...formItemLayout}
+                    label="Name/Type"
+                    required
+                >
+                    <Col span="12">
+                        <FormItem hasFeedback>
+                            {getFieldDecorator('name', {
+                                rules: [{ required: true }],
+                            })(
+                                <Input></Input>
+                            )}
+                        </FormItem>
+                    </Col>
+                    <Col span="12">
+                        <FormItem hasFeedback>
+                            {getFieldDecorator('type', {
+                                rules: [{ required: true }],
+                            })(
+                                <Select>
+                                    <Option key="enc" value="enc">Encoder</Option>
+                                    <Option key="pot-fb" value="pot-fb">Pot (with feedback)</Option>
+                                    <Option key="pot-no-fb" value="pot-no-fb">Pot (without feedback)</Option>
+                                </Select>
+                            )}
+                        </FormItem>
+                    </Col>
+                </FormItem>
+
+                <FormItem
+                    {...formItemLayout}
+                    label={<span>
+                        Midi Channel/CC&nbsp;
+                        <Tooltip title="Midi channel and CC number the pot is controlling/receiving feedback from">
+                            <Icon type="question-circle-o" />
+                        </Tooltip>
+                    </span>}
+                    required
+                >
+                    <Col span="12">
+                        <FormItem hasFeedback>
+                            {getFieldDecorator('midi_ch', {
+                                rules: [{ required: true }],
+                            })(
+                                <Select>{[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map((input) =>
+                                    <Option key={input} value={input.toString()}>{input}</Option>
+                                )}</Select>
+                            )}
+                        </FormItem>
+                    </Col>
+                    <Col span="12">
+                        <FormItem hasFeedback>
+                            {getFieldDecorator('midi_cc', {
+                                rules: [{ required: true }],
+                            })(
+                                <Select>{[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map((input) =>
+                                    <Option key={input} value={input.toString()}>{input}</Option>
+                                )}</Select>
+                            )}
+                        </FormItem>
+                    </Col>
+                </FormItem>
+
+                {['pot-fb', 'pot-no-fb'].indexOf(form.getFieldValue('type')) != -1 && <FormItem
+                    {...formItemLayout}
+                    label={<span>
+                        Midi Min/Max&nbsp;
+                        <Tooltip title="Minimum and maximum values to transmit">
+                            <Icon type="question-circle-o" />
+                        </Tooltip>
+                    </span>}
+                    required
+                >
+                    <Col span="12">
+                        <FormItem hasFeedback>
+                            {getFieldDecorator('midi_min_val', {
+                                rules: [{ required: true }],
+                            })(
+                                <InputNumber min={0} max={127} style={{ width: "100%" }} />
+                            )}
+                        </FormItem>
+                    </Col>
+                    <Col span="12">
+                        <FormItem hasFeedback>
+                            {getFieldDecorator('midi_max_val', {
+                                rules: [{ required: true }],
+                            })(
+                                <InputNumber min={0} max={127} style={{ width: "100%" }} />
+                            )}
+                        </FormItem>
+                    </Col>
+                </FormItem>}
+
                 <FormItem
                     {...formItemLayout}
                     label="Input device"
