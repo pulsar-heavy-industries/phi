@@ -13,6 +13,11 @@ Code improvements:
    - checks versions of available modules and update if possible
    - when done, starts setup app (or maybe straight to ableton if config is ok?)
 
+Cenx4:
+ - get SPI flash to work
+ - bootloading through SPI
+ - slave bootloading through master midi
+
 
 
 diff -r ChibiOS_16.1.5/os/common/ports/ARMCMx/compilers/GCC/vectors.c /Users/eran/Documents/workspace-stm32f4/ChibiOS_16.1.5/os/common/ports/ARMCMx/compilers/GCC/vectors.c
