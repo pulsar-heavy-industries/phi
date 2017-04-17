@@ -3,6 +3,7 @@
 #include "cenx4_can.h"
 #include "cenx4_conf.h"
 #include "cenx4_ui.h"
+#include "cenx4_io.h"
 
 
 static const CANConfig cancfg_500k = {
@@ -26,6 +27,9 @@ static const phi_can_msg_handler_t can_handlers[] = {
 	{PHI_CAN_MSG_ID_IO_ENCODER_EVENT, cenx4_can_handle_encoder_event, NULL},
 	{PHI_CAN_MSG_ID_IO_BTN_EVENT, cenx4_can_handle_btn_event, NULL},
 	{PHI_CAN_MSG_ID_IO_POT_EVENT, cenx4_can_handle_pot_event, NULL},
+
+	// MASTER->SLAVE commands that are not app-specific
+	{PHI_CAN_MSG_ID_CENX4_SET_ROTENC_SPEED, cenx4_can_handle_set_rotenc_speed, NULL},
 };
 
 static const phi_can_config_t can1_cfg = {
@@ -154,9 +158,47 @@ void cenx4_can_handle_pot_event(phi_can_t * can, void * context, uint8_t prio, u
     }
 }
 
+void cenx4_can_handle_set_rotenc_speed(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)
+{
+    const cenx4_can_handle_set_rotenc_speed_t * msg = (cenx4_can_handle_set_rotenc_speed_t *) data;
+
+    (void) can; (void) context; (void) prio; (void) msg_id; (void) src; (void) chan_id;
+
+    if ((len != sizeof(*msg)) ||
+    	(msg->rotenc >= PHI_ARRLEN(cenx4_rotencs)))
+    {
+        return;
+    }
+
+    cenx4_rotencs[msg->rotenc].speed = msg->speed;
+}
 
 void cenx4_can_handle_unknown_cmd(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)
 {
 	// Forward unknown events to current app
 	phi_app_mgr_notify_can_cmd(prio, msg_id, src, chan_id, data, len);
+}
+
+msg_t cenx4_send_set_rotenc_speed(uint8_t node_id, uint8_t rotenc, uint8_t speed)
+{
+	msg_t ret;
+	cenx4_can_handle_set_rotenc_speed_t msg = {
+		.rotenc = rotenc,
+		.speed = speed,
+	};
+
+	ret = phi_can_xfer(
+        &cenx4_can,
+        PHI_CAN_PRIO_LOWEST,
+		PHI_CAN_MSG_ID_CENX4_SET_ROTENC_SPEED,
+        node_id,
+        (const uint8_t *) &msg,
+        sizeof(msg),
+        NULL,
+        0,
+        NULL,
+        PHI_CAN_DEFAULT_TIMEOUT
+    );
+
+    return ret;
 }

@@ -227,6 +227,20 @@ void cenx4_app_ableton_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, 
 		return;
 	}
 
+    // Speed tweaking
+    switch (event) {
+    case PHI_BTN_EVENT_PRESSED:
+    	cenx4_send_set_rotenc_speed(node_id, btn_num, 2);
+    	break;
+
+    case PHI_BTN_EVENT_RELEASED:
+		cenx4_send_set_rotenc_speed(node_id, btn_num, 1);
+		break;
+
+    default:
+    	break;
+    }
+
     // If we're the last encoder on the last module then we're dealing with ableton_enable_banks_enc
     if ((mod_num == (ctx->num_modules - 1)) && (btn_num == 3))
     {
@@ -304,6 +318,7 @@ void cenx4_app_ableton_midi_sysex(void * _ctx, phi_midi_port_t port, uint8_t cmd
 msg_t cenx4_app_ableton_enter_ableton_mode(cenx4_app_ableton_context_t * ctx, uint8_t node_id)
 {
     msg_t ret;
+    int i;
 
     // Set text
     ret = cenx4_app_ableton_update_ui(ctx, node_id);
@@ -311,6 +326,13 @@ msg_t cenx4_app_ableton_enter_ableton_mode(cenx4_app_ableton_context_t * ctx, ui
     {
         return ret;
     }
+
+    // Update rotencs speed
+    for (i = 0; i < 4; ++i)
+    {
+    	cenx4_send_set_rotenc_speed(node_id, i, 1);
+    }
+
 
     // Success
     return MSG_OK;
