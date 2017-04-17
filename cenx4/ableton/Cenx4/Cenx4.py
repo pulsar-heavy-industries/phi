@@ -7,7 +7,6 @@ from _Framework.InputControlElement import *
 from Cenx4DeviceComponent import Cenx4DeviceComponent
 from MIDIProtocol import (
     SysExProtocol,
-    CENX4_MAIN_MIDI_SYSEX_APP_CMD,
     CENX4_APP_ABLETON_SYSEX_RESYNC,
 )
 
@@ -106,8 +105,8 @@ class Cenx4(ControlSurface):
         if data is None:
             return super(Cenx4, self).handle_sysex(midi_bytes)
 
-        if len(data) >= 2 and data[0] == CENX4_MAIN_MIDI_SYSEX_APP_CMD:
-            cmd, data = data[1], data[2:]
+        if data:
+            cmd, data = data[0], data[1:]
             if cmd == CENX4_APP_ABLETON_SYSEX_RESYNC:
                 num_modules, enable_banks_encoder = data
 

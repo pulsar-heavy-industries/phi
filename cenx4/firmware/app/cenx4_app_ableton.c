@@ -268,48 +268,36 @@ void cenx4_app_ableton_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, 
 void cenx4_app_ableton_midi_sysex(void * _ctx, phi_midi_port_t port, uint8_t cmd, const void * data, size_t data_len)
 {
     cenx4_app_ableton_context_t * ctx = (cenx4_app_ableton_context_t *) _ctx;
-    cenx4_app_ableton_sysex_cmd_t app_cmd = (cenx4_app_ableton_sysex_cmd_t) ((uint8_t *) data)[0];
 
     (void) port;
 
-    chDbgCheck(cmd == CENX4_MIDI_SYSEX_APP_CMD);
-
-    if (data_len < 1)
+    switch (cmd)
     {
-        return;
-    }
-
-    data = &(((uint8_t *)data)[1]);
-    --data_len;
-
-    switch (app_cmd)
-    {
-    case CENX4_APP_ABLETON_SYSEX_SET_POT_VALUE:
+    case CENX4_MIDI_SYSEX_APP_ABLETON_SET_POT_VALUE:
         if (data_len == sizeof(cenx4_app_ableton_sysex_set_pot_value_t))
         {
             cenx4_app_ableton_midi_sysex_set_pot_value(ctx, (cenx4_app_ableton_sysex_set_pot_value_t *) data);
         }
         break;
 
-    case CENX4_APP_ABLETON_SYSEX_SET_POT_TEXT:
+    case CENX4_MIDI_SYSEX_APP_ABLETON_SET_POT_TEXT:
         if (data_len == sizeof(cenx4_app_ableton_sysex_set_pot_text_t))
         {
             cenx4_app_ableton_midi_sysex_set_pot_text(ctx, (cenx4_app_ableton_sysex_set_pot_text_t *) data);
         }
         break;
 
-    case CENX4_APP_ABLETON_SYSEX_SET_POT_ALL:
+    case CENX4_MIDI_SYSEX_APP_ABLETON_SET_POT_ALL:
         if (data_len == sizeof(cenx4_app_ableton_sysex_set_pot_all_t))
         {
             cenx4_app_ableton_midi_sysex_set_pot_all(ctx, (cenx4_app_ableton_sysex_set_pot_all_t *) data);
         }
         break;
 
-    case CENX4_APP_ABLETON_SYSEX_RESYNC:
+    case CENX4_MIDI_SYSEX_APP_ABLETON_RESYNC:
     	cenx4_app_ableton_send_resync(ctx);
     	break;
 
-    case CENX4_APP_ABLETON_SYSEX_INVALID:
     default:
         break;
     }
@@ -417,18 +405,12 @@ msg_t cenx4_app_ableton_update_ui(cenx4_app_ableton_context_t * ctx, uint8_t nod
 
 void cenx4_app_ableton_send_resync(cenx4_app_ableton_context_t * ctx)
 {
-	struct {
-		uint8_t cmd;
-		cenx4_app_ableton_sysex_resync_t data;
-	} resync_msg = {
-		.cmd =  CENX4_APP_ABLETON_SYSEX_RESYNC,
-		.data = {
-			.num_modules = ctx->num_modules,
-			.ableton_enable_banks_enc = cenx4_app_cfg.cur.ableton_enable_banks_enc,
-		},
+	cenx4_app_ableton_sysex_resync_t resync_msg = {
+		.num_modules = ctx->num_modules,
+		.ableton_enable_banks_enc = cenx4_app_cfg.cur.ableton_enable_banks_enc,
 	};
 
-	phi_midi_tx_sysex(PHI_MIDI_PORT_USB, CENX4_MIDI_SYSEX_APP_CMD, &resync_msg, sizeof(resync_msg));
+	phi_midi_tx_sysex(PHI_MIDI_PORT_USB, CENX4_MIDI_SYSEX_APP_ABLETON_RESYNC, &resync_msg, sizeof(resync_msg));
 }
 
 void cenx4_app_ableton_midi_sysex_set_pot_value(cenx4_app_ableton_context_t * ctx, cenx4_app_ableton_sysex_set_pot_value_t * data)

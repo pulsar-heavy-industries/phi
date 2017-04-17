@@ -6,14 +6,6 @@
 #include "cenx4_can.h"
 #include "cenx4_app_cfg.h"
 
-typedef enum
-{
-    CENX4_APP_ABLETON_SYSEX_INVALID = 0,
-    CENX4_APP_ABLETON_SYSEX_SET_POT_VALUE,
-    CENX4_APP_ABLETON_SYSEX_SET_POT_TEXT,
-	CENX4_APP_ABLETON_SYSEX_SET_POT_ALL,
-	CENX4_APP_ABLETON_SYSEX_RESYNC,
-} cenx4_app_ableton_sysex_cmd_t;
 
 #pragma pack(1)
 

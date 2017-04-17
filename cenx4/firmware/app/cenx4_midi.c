@@ -87,7 +87,7 @@ void cenx4_midi_in_sysex(phi_midi_port_t port, uint8_t cmd, const void * data, s
         }
         break;
 
-    case CENX4_MIDI_SYSEX_APP_CMD:
+    default:
         phi_app_mgr_notify_midi_sysex(port, cmd, data, data_len);
         break;
     }
