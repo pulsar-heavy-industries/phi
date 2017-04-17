@@ -350,7 +350,8 @@ msg_t cenx4_app_setup_update_ui(cenx4_app_setup_context_t * ctx, uint8_t node_id
     		// Assume everything is okay
     		ctx->cfg_ok = true;
 
-    		// This code checks if we have a
+    		// Look for duplicate module ids and holes
+    		bool saw_missing_node = false;
     		for (i = 0; i < (cenx4_can.auto_alloc_num_devs + 1); ++i)
     		{
     			cnt = 0;
@@ -362,17 +363,24 @@ msg_t cenx4_app_setup_update_ui(cenx4_app_setup_context_t * ctx, uint8_t node_id
     				}
     			}
 
-    			if (cnt == 0)
-    			{
-    				chsnprintf(ui->state.text.lines[2], CENX4_UI_MAX_LINE_TEXT_LEN-1, "Mod%d miss", i);
-    				break;
-    			}
-
     			if (cnt > 1)
     			{
     				chsnprintf(ui->state.text.lines[2], CENX4_UI_MAX_LINE_TEXT_LEN-1, "Mod%d dupe", i);
     				ctx->cfg_ok = false;
     				break;
+    			}
+    			else if (cnt == 1)
+    			{
+    				if (saw_missing_node)
+    				{
+        				chsnprintf(ui->state.text.lines[2], CENX4_UI_MAX_LINE_TEXT_LEN-1, "Mod%d miss", i - 1);
+        				ctx->cfg_ok = false;
+        				break;
+    				}
+    			}
+    			else if (cnt == 0)
+    			{
+    				saw_missing_node = true;
     			}
     		}
 
@@ -381,7 +389,6 @@ msg_t cenx4_app_setup_update_ui(cenx4_app_setup_context_t * ctx, uint8_t node_id
     			chsnprintf(ui->state.text.lines[2], CENX4_UI_MAX_LINE_TEXT_LEN-1, "ModCfg OK");
     		}
     	}
-
 
     	// Action button
     	strcpy(ui->state.text.lines[3], actions[ctx->cur_action]);
