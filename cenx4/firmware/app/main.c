@@ -103,7 +103,7 @@ int main(void)
 		#define usb_lld_connect_bus(usbp) palClearPad(GPIOA, GPIOA_USB_CONN)
 		#define usb_lld_disconnect_bus(usbp) palSetPad(GPIOA, GPIOA_USB_CONN)
 		usbDisconnectBus(midiusbcfg.usbp);
-		chThdSleepMilliseconds(1500);
+		chThdSleepMilliseconds(100);
 		usbStart(midiusbcfg.usbp, &usbcfg);
 		usbConnectBus(midiusbcfg.usbp);
 	}
@@ -135,7 +135,7 @@ int main(void)
 		}
 
 		// Give slaves time to start?
-		chThdSleepMilliseconds(2000);
+		chThdSleepMilliseconds(1000);
 	}
 
 	ui = cenx4_ui_lock(1);

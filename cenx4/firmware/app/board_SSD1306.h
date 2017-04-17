@@ -68,7 +68,10 @@ static GFXINLINE void setpin_reset(GDisplay* g, bool_t state)
 {
 	(void)g; (void)state;
 
-//	palWritePad(RESET_PORT, RESET_PAD, !state);
+	if (g->controllerdisplay == 0)
+	{
+		palWritePad(RESET_PORT, RESET_PAD, !state);
+	}
 }
 
 static GFXINLINE void acquire_bus(GDisplay* g)
