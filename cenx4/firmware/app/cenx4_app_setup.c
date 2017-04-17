@@ -57,7 +57,7 @@ void cenx4_app_setup_start(void * _ctx)
     // Enter setup mode locally
 	cenx4_app_setup_enter_setup_mode(ctx, 0);
 
-    // Move our Berry modules into setup mode
+    // Move our modules into setup mode
 	// TODO locks
 	for (i = 0; i < cenx4_can.auto_alloc_num_devs; ++i)
 	{
@@ -141,14 +141,11 @@ void cenx4_app_setup_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, ph
 		case CENX4_APP_SETUP_ACTION_SAVE:
 			if (ctx->cfg_ok)
 			{
-				cenx4_app_cfg_t cfg;
 				uint8_t uid[PHI_CAN_AUTO_ID_UNIQ_ID_LEN];
-
-				cenx4_app_cfg_init_default(&cfg);
 
 				phi_can_auto_get_dev_uid(&cenx4_can, uid);
 				memcpy(
-					&(cfg.cur.mod_num_to_uid[ctx->node_id_to_mod_num[0]]),
+					&(cenx4_app_cfg.cur.mod_num_to_uid[ctx->node_id_to_mod_num[0]]),
 					uid,
 					PHI_CAN_AUTO_ID_UNIQ_ID_LEN
 				);
@@ -156,13 +153,13 @@ void cenx4_app_setup_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, ph
 				for (i = 0; i < cenx4_can.auto_alloc_num_devs; ++i)
 				{
 					memcpy(
-						&(cfg.cur.mod_num_to_uid[ctx->node_id_to_mod_num[i + 1]]),
+						&(cenx4_app_cfg.cur.mod_num_to_uid[ctx->node_id_to_mod_num[i + 1]]),
 						cenx4_can.auto_alloc_table[i],
 						PHI_CAN_AUTO_ID_UNIQ_ID_LEN
 					);
 				}
 
-				cenx4_app_cfg_save(&cfg);
+				cenx4_app_cfg_save(&cenx4_app_cfg);
 			}
 			else
 			{
