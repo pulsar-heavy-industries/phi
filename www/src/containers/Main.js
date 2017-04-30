@@ -16,6 +16,7 @@ const mapStateToProps = (state) => {
 }
 // TODO
 import binbin from '../../../cenx4/firmware/app/build/bl-ch.bin'
+import binbin2 from '../../../cenx4/firmware/app/build/multi.img'
 
 const mapDispatchToProps = (dispatch) => {
     return {
@@ -36,7 +37,20 @@ const mapDispatchToProps = (dispatch) => {
                     })
                     reader.readAsArrayBuffer(blob)
                 })
+        },
+        onUpdateFwClick3: () => {
+            fetch(binbin2)
+                .then((resp) => resp.blob())
+                .then(blob => {
+                    const reader = new FileReader()
+                    reader.addEventListener('loadend', () => {
+                        const buf = Array.from(new Uint8Array(reader.result))
+                        dispatch(fwUpdateStart('boo', buf))
+                    })
+                    reader.readAsArrayBuffer(blob)
+                })
         }
+
     }
 }
 
@@ -58,6 +72,7 @@ class Main extends React.Component {
                 <Button onClick={() => { this.props.onResetClick(this.props.midi.inputName, this.props.midi.outputName) }}>Reset</Button>
                 <Button onClick={this.props.onUpdateFwClick}>Update firmware</Button>
                 <Button onClick={this.props.onUpdateFwClick2}>Update firmware (server)</Button>
+                <Button onClick={this.props.onUpdateFwClick3}>Update multi-img (server)</Button>
             </div>
         )
 

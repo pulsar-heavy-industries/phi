@@ -1,3 +1,10 @@
+at45 multiimg stuff:
+ - Improve reporting to PC over midi (send progress messages via midi). This should also clean up error handling
+   in the update slaves code inside the init app
+ - test init app with an empty config, should switch to ableton and then to setup
+ - add reserved bytes to bl headers, multiimg headers
+
+
 Hyperion:
 - main/bl need rnd init code
 
@@ -7,15 +14,13 @@ Documentation:
 - CAN protocol
 - Hardware (Enclosure, pots, BOM, JST cables, USB socket)
 
-Code improvements:
-- create an init app on master
-   - checks versions of available modules and update if possible
-   - when done, starts setup app (or maybe straight to ableton if config is ok?)
-
 Cenx4:
- - get SPI flash to work
- - bootloading through SPI
  - slave bootloading through master midi
+ - Traktor app needs module mapping similar to the ableton app
+
+
+Misc:
+ - Convert all tabs to spaces, cleanup all the whitespace mess :(
 
 
 

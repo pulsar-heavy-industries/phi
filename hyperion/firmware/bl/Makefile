@@ -11,7 +11,7 @@ endif
 
 # C specific options here (added to USE_OPT).
 ifeq ($(USE_COPT),)
-  USE_COPT =
+  USE_COPT = -Wno-unused-parameter
 endif
 
 # C++ specific options here (added to USE_OPT).
@@ -135,6 +135,7 @@ CSRC = $(STARTUPSRC) \
        main.c \
        hyperion_ui.c \
 	   hyperion_can.c \
+	   hyperion_can_bl.c \
 	   hyperion_io.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global

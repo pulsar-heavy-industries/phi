@@ -443,7 +443,7 @@ bool cenx4_app_setup_bootload_slave(cenx4_app_setup_context_t * ctx, uint8_t nod
 {
 	char err[CENX4_UI_MAX_LINE_TEXT_LEN];
 	phi_bl_msg_start_t msg_start;
-	const phi_bl_hdr_t * hdr = (phi_bl_hdr_t *) PHI_BL_USER_ADDR;
+	const phi_bl_hdr_t * bl_hdr = (phi_bl_hdr_t *) PHI_BL_USER_ADDR;
 	phi_bl_ret_t bl_ret;
 	msg_t ret;
 	uint32_t resp_len;
@@ -559,10 +559,9 @@ bool cenx4_app_setup_bootload_slave(cenx4_app_setup_context_t * ctx, uint8_t nod
 	cenx4_ui_unlock(ui);
 
 	memset(&msg_start, 0, sizeof(msg_start));
-	msg_start.img_size = hdr->img_size + sizeof(*hdr);
-	msg_start.img_start_addr = PHI_BL_USER_ADDR;
-	msg_start.dev_id = CENX4_DEV_ID;
-	msg_start.crc32 = phi_crc32((void *) PHI_BL_USER_ADDR, msg_start.img_size);
+	msg_start.img_size = bl_hdr->fw_data_size + sizeof(*bl_hdr);
+	msg_start.img_crc32 = phi_crc32((void *) PHI_BL_USER_ADDR, msg_start.img_size);
+	memcpy(&(msg_start.bl_hdr), (void *) PHI_BL_USER_ADDR, sizeof(msg_start.bl_hdr));
 
 	bl_ret = PHI_BL_RET_ERR_UNKNOWN;
 	ret = phi_can_xfer(
@@ -593,7 +592,7 @@ bool cenx4_app_setup_bootload_slave(cenx4_app_setup_context_t * ctx, uint8_t nod
 		goto lbl_err;
 	}
 
-	for (offset = 0; offset < hdr->img_size + sizeof(*hdr); offset += sizeof(msg_data.buf))
+	for (offset = 0; offset < bl_hdr->fw_data_size + sizeof(*bl_hdr); offset += sizeof(msg_data.buf))
 	{
 		memset(&msg_data, 0, sizeof(msg_data));
 		msg_data.offset = offset;
@@ -601,7 +600,7 @@ bool cenx4_app_setup_bootload_slave(cenx4_app_setup_context_t * ctx, uint8_t nod
 
 		ui=cenx4_ui_lock(0);
 		chsnprintf(ui->state.text.lines[1], CENX4_UI_MAX_LINE_TEXT_LEN - 1, "%d", offset);
-		chsnprintf(ui->state.text.lines[2], CENX4_UI_MAX_LINE_TEXT_LEN - 1, "%d%%", offset * 100 / (hdr->img_size + sizeof(*hdr)));
+		chsnprintf(ui->state.text.lines[2], CENX4_UI_MAX_LINE_TEXT_LEN - 1, "%d%%", offset * 100 / (bl_hdr->fw_data_size + sizeof(*bl_hdr)));
 		cenx4_ui_unlock(ui);
 
 		bl_ret = PHI_BL_RET_ERR_UNKNOWN;

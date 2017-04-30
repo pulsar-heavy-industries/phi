@@ -5,7 +5,6 @@
 #include "cenx4_io.h"
 #include "usbcfg.h"
 
-
 cenx4_app_contexts_t cenx4_app_contexts;
 bool cenx4_is_master;
 
@@ -75,13 +74,29 @@ void phi_rnd_init(void)
  * Main
  *===========================================================================*/
 
+#include "phi_lib/phi_at45.h"
 
+const phi_at45_cfg_t at45_cfg = {
+	.spi = &SPID1,
+	.spi_cfg = {
+		NULL,
+		GPIOA,
+		GPIOA_FLASH_CS,
+		SPI_CR1_BR_1,
+		0,
+	},
+};
+
+phi_at45_t at45;;
 
 int main(void)
 {
 	cenx4_ui_t * ui;
+	phi_at45_ret_t ret;
+
 	halInit();
 	chSysInit();
+
 	cenx4_is_master = palReadPad(GPIOC, GPIOC_MASTER_EN) ? FALSE : TRUE;
 
 	phi_rnd_init();
@@ -94,6 +109,10 @@ int main(void)
 	if (cenx4_is_master)
 	{
 		cenx4_app_cfg_load();
+
+		// TODO show error
+		ret = phi_at45_init(&at45, &at45_cfg);
+		chDbgCheck(ret == PHI_AT45_RET_SUCCESS);
 
 		cenx4_midi_init();
 
@@ -148,7 +167,8 @@ int main(void)
 	//phi_app_mgr_switch_app(&cenx4_app_test_desc, &(cenx4_app_contexts.test));
 	if (cenx4_is_master)
 	{
-		phi_app_mgr_switch_app(&cenx4_app_setup_desc, &(cenx4_app_contexts.setup));
+		phi_app_mgr_switch_app(&cenx4_app_init_desc, &(cenx4_app_contexts.init));
+//		phi_app_mgr_switch_app(&cenx4_app_setup_desc, &(cenx4_app_contexts.setup));
 //		phi_app_mgr_switch_app(&cenx4_app_test_desc, &(cenx4_app_contexts.test));
 	}
 	else

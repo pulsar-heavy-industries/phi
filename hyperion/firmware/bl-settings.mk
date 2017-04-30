@@ -4,8 +4,12 @@
 ###############################################################################
 
 # See phi_bl.mk for an explanation of these variables
-BL_MAGIC = 0xC0DE1338
+BL_DEV_ID = 0x4e525048 # "HPRN"
+BL_SW_VER = 2
+BL_HW_VER = 1
+BL_HW_VER_MASK = 0x7f
+
 BL_PAGE_SIZE = 131072
 BL_FLASH_START = 0x8000000
-BL_RESERVED_SIZE = 65536
-BL_START_OFFSET = 0x200
+BL_RESERVED_SIZE = 131072
+BL_VECTORS_OFFSET = 0x200

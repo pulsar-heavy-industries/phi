@@ -8,6 +8,7 @@
 #include "cenx4_app_cfg.h"
 #include "cenx4_app_log.h"
 #include "cenx4_app_traktor.h"
+#include "cenx4_app_init.h"
 
 typedef union {
     cenx4_app_setup_context_t setup;
@@ -16,6 +17,7 @@ typedef union {
     cenx4_app_log_viewer_context_t log_viewer;
     cenx4_app_traktor_context_t traktor;
     cenx4_app_slave_context_t slave;
+    cenx4_app_init_context_t init;
 } cenx4_app_contexts_t;
 
 extern cenx4_app_contexts_t cenx4_app_contexts;

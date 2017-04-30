@@ -15,6 +15,8 @@ static const CANConfig cancfg_500k = {
 static const phi_can_msg_handler_t can_handlers[] = {
 	// Bultin stuff
 	PHI_CAN_BUILTIN_MSG_HANDLERS,
+	{PHI_CAN_MSG_ID_RESET, hyperion_can_handle_reset, NULL},
+	{PHI_CAN_MSG_ID_START_BOOTLOADER, hyperion_can_handle_start_bootloader, NULL},
 
 	// Bootloader
 	// PHI_CAN_BL_MSG_HANDLERS,
@@ -76,4 +78,19 @@ void hyperion_can_init(void)
 void hyperion_can_handle_unknown_cmd(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)
 {
 	phi_app_mgr_notify_can_cmd(prio, msg_id, src, chan_id, data, len);
+}
+
+void hyperion_can_handle_reset(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)
+{
+	NVIC_SystemReset();
+}
+
+void hyperion_can_handle_start_bootloader(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)
+{
+	const WDGConfig wdgcfg = {
+		STM32_IWDG_PR_64,
+		STM32_IWDG_RL(1),
+	};
+
+	wdgStart(&WDGD1, &wdgcfg);
 }

@@ -106,6 +106,8 @@ void user_jump_to_app(uint32_t address) {
 void boot_user(void)
 {
     const phi_bl_hdr_t * hdr = (phi_bl_hdr_t *) PHI_BL_USER_ADDR;
+    uint32_t flash_size = *((uint16_t *) 0x1FFF7A22) * 1024;
+    uint32_t flash_end = PHI_BL_FLASH_START + flash_size;
 
     int is_watchdog_reset = RCC->CSR;
     RCC->CSR |= RCC_CSR_RMVF;
@@ -122,7 +124,20 @@ void boot_user(void)
         return;
     }
 
-    if (hdr->crc32 != phi_crc32(&(hdr->data[0]), hdr->img_size))
+    if (hdr->hdr_data_crc32 != phi_crc32(&(hdr->hdr_data[0]), PHI_BL_HDR_DATA_SIZE))
+    {
+        strcpy(boot_user_status, "BadHdrCrc");
+        return;
+    }
+
+    if ((hdr->fw_data_size == 0) ||
+    	((hdr->start_addr + hdr->fw_data_size) >= flash_end))
+	{
+		strcpy(boot_user_status, "BadDataSize");
+		return;
+	}
+
+    if (hdr->fw_data_crc32 != phi_crc32(&(hdr->fw_data[0]), hdr->fw_data_size))
     {
         strcpy(boot_user_status, "BadCrc");
         return;
@@ -130,7 +145,7 @@ void boot_user(void)
 
     strcpy(boot_user_status, "FW OK");
 
-    user_jump_to_app(hdr->load_addr);
+    user_jump_to_app(hdr->start_addr);
 }
 
 
@@ -141,6 +156,7 @@ void boot_user(void)
 int main(void)
 {
 	bool force_bl;
+	hyperion_ui_t * ui;
 
     halInit();
 
@@ -158,7 +174,13 @@ int main(void)
     chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
     hyperion_io_init();
     hyperion_ui_init();
+
+    ui = hyperion_ui_lock();
+    strcpy(ui->state.boot.misc_text, boot_user_status);
+    hyperion_ui_unlock(ui);
+
     hyperion_can_init();
+
 
 //    adcStart(&ADCD1, NULL);
 //    adcStartConversion(&ADCD1, &adcgrpcfg2, adc_data, ADC_GRP2_BUF_DEPTH);

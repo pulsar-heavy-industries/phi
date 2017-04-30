@@ -1,6 +1,7 @@
 #include "phi_lib/phi_can.h"
 
 #include "cenx4_ui.h"
+#include "cenx4_can.h"
 #include "cenx4_can_bl.h"
 
 
@@ -17,6 +18,7 @@ static const CANConfig cancfg_500k = {
 static const phi_can_msg_handler_t can_handlers[] = {
 	// Bultin stuff
 	PHI_CAN_BUILTIN_MSG_HANDLERS,
+	{PHI_CAN_MSG_ID_RESET, cenx4_can_handle_reset, NULL},
 
 	// Bootloader
 	CENX4_CAN_BL_MSG_HANDLERS,
@@ -65,4 +67,9 @@ void cenx4_can_init(void)
 
 	   ui->state.boot.misc_text[0][0] = 0;
    }
+}
+
+void cenx4_can_handle_reset(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)
+{
+	NVIC_SystemReset();
 }

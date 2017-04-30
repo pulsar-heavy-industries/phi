@@ -111,6 +111,8 @@ void user_jump_to_app(uint32_t address) {
 void boot_user(void)
 {
     const phi_bl_hdr_t * hdr = (phi_bl_hdr_t *) CENX4_BL_USER_ADDR;
+    uint32_t flash_size = *((uint16_t *)FLASH_SIZE_DATA_REGISTER) * 1024;
+    uint32_t flash_end = PHI_BL_FLASH_START + flash_size;
 
     int is_watchdog_reset = RCC->CSR;
     RCC->CSR |= RCC_CSR_RMVF;
@@ -133,21 +135,53 @@ void boot_user(void)
         return;
     }
 
-    if (hdr->crc32 != phi_crc32(&(hdr->data[0]), hdr->img_size))
+    if (hdr->hdr_data_crc32 != phi_crc32(&(hdr->hdr_data[0]), PHI_BL_HDR_DATA_SIZE))
     {
-        strcpy(boot_user_status, "BadCrc");
+        strcpy(boot_user_status, "BadHdrCrc");
+        return;
+    }
+
+    if ((hdr->fw_data_size == 0) ||
+    	((hdr->start_addr + hdr->fw_data_size) >= flash_end))
+	{
+		strcpy(boot_user_status, "BadDataSize");
+		return;
+	}
+
+    if (hdr->fw_data_crc32 != phi_crc32(&(hdr->fw_data[0]), hdr->fw_data_size))
+    {
+        strcpy(boot_user_status, "BadFwCrc");
         return;
     }
 
     strcpy(boot_user_status, "FW OK");
 
-    user_jump_to_app(hdr->load_addr);
+    user_jump_to_app(hdr->start_addr);
 }
 
+
+#include "phi_lib/phi_at45.h"
+
+const phi_at45_cfg_t at45_cfg = {
+	.spi = &SPID1,
+	.spi_cfg = {
+		NULL,
+		GPIOA,
+		GPIOA_FLASH_CS,
+		SPI_CR1_BR_1,
+		0,
+	},
+};
+
+phi_at45_t at45;
+#include "phi_lib/phi_bl_multiimg.h"
+volatile phi_bl_multiimg_hdr_t hhh;
+
 int main(void)
+
 {
     cenx4_ui_t * ui;
-
+    phi_at45_ret_t ret;
 
     halInit();
     boot_user();
@@ -174,6 +208,10 @@ int main(void)
 		chThdSleepMilliseconds(1000);
 		usbStart(midiusbcfg.usbp, &usbcfg);
 		usbConnectBus(midiusbcfg.usbp);
+
+		// TODO show error
+		ret = phi_at45_init(&at45, &at45_cfg);
+		chDbgCheck(ret == PHI_AT45_RET_SUCCESS);
     }
     else
     {

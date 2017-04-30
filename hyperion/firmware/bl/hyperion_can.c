@@ -1,4 +1,5 @@
 #include "hyperion_can.h"
+#include "hyperion_can_bl.h"
 
 static const CANConfig cancfg_500k = {
     .mcr =
@@ -14,13 +15,11 @@ static const CANConfig cancfg_500k = {
 static const phi_can_msg_handler_t can_handlers[] = {
 	// Bultin stuff
 	PHI_CAN_BUILTIN_MSG_HANDLERS,
+	{PHI_CAN_MSG_ID_RESET, hyperion_can_handle_reset, NULL},
 
 	// Bootloader
-	// PHI_CAN_BL_MSG_HANDLERS,
+	HYPERION_CAN_BL_MSG_HANDLERS,
 
-	// UI
-	// {PHI_CAN_MSG_ID_BERRY_SET_DISPMODE, phi_berry_can_handle_set_dispmode, NULL},
-	// {PHI_CAN_MSG_ID_BERRY_SET_DISPMODE_STATE, phi_berry_can_handle_set_dispmode_state, NULL},
 };
 
 static const phi_can_config_t can1_cfg = {
@@ -66,4 +65,9 @@ void hyperion_can_init(void)
 
 	   //ui->state.boot.misc_text[0][0] = 0;
    }
+}
+
+void hyperion_can_handle_reset(phi_can_t * can, void * context, uint8_t prio, uint8_t msg_id, uint8_t src, uint8_t chan_id, const uint8_t * data, size_t len)
+{
+	NVIC_SystemReset();
 }

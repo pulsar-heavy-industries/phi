@@ -6,7 +6,7 @@
 # Compiler options here.
 ifeq ($(USE_OPT),)
   # USE_OPT = -O2 -ggdb -fomit-frame-pointer -falign-functions=16
-  USE_OPT = -Og -ggdb -falign-functions=16
+  USE_OPT = -Og -ggdb -falign-functions=16 -Wno-unused-parameter
 endif
 
 # C specific options here (added to USE_OPT).
@@ -123,11 +123,13 @@ CSRC = $(STARTUPSRC) \
        $(GFXSRC) \
        $(CHIBIOS)/os/hal/lib/streams/memstreams.c \
        $(CHIBIOS)/os/hal/lib/streams/chprintf.c \
+       $(PHI_LIB)/phi_bl_multiimg.c \
 	   $(PHI_LIB)/phi_can.c \
 	   $(PHI_LIB)/phi_lib.c \
 	   $(PHI_LIB)/phi_midi.c \
 	   $(PHI_LIB)/phi_usb_bulk.c \
 	   $(PHI_LIB)/phi_usb_midi.c \
+	   $(PHI_LIB)/phi_at45.c \
 	   $(PHI_LIB)/st/stm32f3xx_hal_flash.c \
 	   $(PHI_LIB)/st/stm32f3xx_hal_flash_ex.c \
        main.c \

@@ -6,61 +6,68 @@ import { EventEmitter } from 'fbemitter'
 
 
 /////////////////
-class MidiBootloader {
+class BaseMidiBootloader {
     constructor(midi) {
         this.midi = midi
 
         this.BL_RETS = [
-            'AB_BL_RET_ERR_UNKNOWN',
-            'AB_BL_RET_OK',
-            'AB_BL_RET_SIZE_MISMATCH',
-            'AB_BL_RET_START_ADDR_MISMATCH',
-            'AB_BL_RET_START_ADDR_MISALIGNED',
-            'AB_BL_RET_IMG_SIZE_MISALIGNED',
-            'AB_BL_RET_DEV_ID_MISMATCH',
-            'AB_BL_RET_NOT_READY',
-            'AB_BL_RET_OFFSET_MISMATCH',
-            'AB_BL_RET_OFFSET_OVERFLOW',
-            'AB_BL_RET_FLASH_ERASE_ERR',
-            'AB_BL_RET_FLASH_WRITE_ERR',
-            'AB_BL_RET_MISSING_DATA',
-            'AB_BL_RET_BAD_CRC',
+            'PHI_BL_RET_ERR_UNKNOWN',
+            'PHI_BL_RET_OK',
+            'PHI_BL_RET_SIZE_MISMATCH',
+            'PHI_BL_RET_START_ADDR_MISMATCH',
+            'PHI_BL_RET_START_ADDR_MISALIGNED',
+            'PHI_BL_RET_IMG_SIZE_MISALIGNED',
+            'PHI_BL_RET_DEV_ID_MISMATCH',
+            'PHI_BL_RET_NOT_READY',
+            'PHI_BL_RET_OFFSET_MISMATCH',
+            'PHI_BL_RET_OFFSET_OVERFLOW',
+            'PHI_BL_RET_FLASH_ERASE_ERR',
+            'PHI_BL_RET_FLASH_WRITE_ERR',
+            'PHI_BL_RET_MISSING_DATA',
+            'PHI_BL_RET_BAD_CRC',
+            'PHI_BL_RET_BAD_MAGIC',
+            'PHI_BL_RET_AT45_ERROR',
         ];
         this.BL_PKT_SIZE = 128;
     }
+}
 
+class MidiBootloader extends BaseMidiBootloader {
     start(dev_id, buf) {
+        // Read data from our header
+        const bl_hdr_size = 31;
+        const bl_hdr = Struct()
+            .word32Ule('magic')
+            .word32Ule('hdr_data_crc32')
+            .word32Ule('dev_id')
+            .word8Ule('sw_ver')
+            .word8Ule('hw_ver')
+            .word8Ule('hw_ver_mask')
+            .word32Ule('write_addr')
+            .word32Ule('start_addr')
+            .word32Ule('fw_data_size')
+            .word32Ule('fw_data_crc32');
+        bl_hdr.setBuffer(buf);
+
+        // TODO validate magic, dev_id
+
         const msg = Struct()
             .word32Ule('img_size')
-            .word32Ule('img_start_addr')
-            .word32Ule('dev_id')
-            .word32Ule('crc32')
-            .array('reserved', 4, 'word32Ule');
+            .word32Ule('img_crc32')
+            .array('bl_hdr', bl_hdr_size, 'word8Ule');
         msg.allocate();
 
-        let start_addr;
-        if (dev_id === 0x42455259 || dev_id === 0x434e5834)
-        {
-            start_addr = 0x8010000;
-        }
-        else
-        {
-            alert('TODO!');
-            debugger;
-        }
-
-
         msg.fields.img_size = buf.length;
-        msg.fields.img_start_addr = start_addr; // TODO
-        msg.fields.dev_id = dev_id;
-        msg.fields.crc32 = crc32(buf);
+        msg.fields.img_crc32 = crc32(buf);
+        msg.fields.bl_hdr = buf.slice(0, bl_hdr_size);
+        console.log(msg.fields.bl_hdr);
 
         this.sent = 0
         this.buf = buf
 
         return new Promise((resolve, reject) => {
             this.midi.callSysExCmd(
-                SYSEX_CMD.USER + 0, // AB_MAIN_BL_MIDI_SYSEX_CMD_BL_START
+                SYSEX_CMD.USER + 0, // PHI_MAIN_BL_MIDI_SYSEX_CMD_BL_START
                 Array.from(msg.buffer())
             ).then(
                 (data) => {
@@ -92,7 +99,7 @@ class MidiBootloader {
 
         return new Promise((resolve, reject) => {
             this.midi.callSysExCmd(
-                SYSEX_CMD.USER + 1, // AB_MAIN_BL_MIDI_SYSEX_CMD_BL_DATA
+                SYSEX_CMD.USER + 1, // PHI_MAIN_BL_MIDI_SYSEX_CMD_BL_DATA
                 Array.from(msg.buffer()),
                 2000 // Flash writes can take time
             ).then(
@@ -137,7 +144,7 @@ class MidiBootloader {
     handleSendComplete() {
         return new Promise((resolve, reject) => {
             this.midi.callSysExCmd(
-                SYSEX_CMD.USER + 2 // AB_MAIN_BL_MIDI_SYSEX_CMD_BL_DONE
+                SYSEX_CMD.USER + 2 // PHI_MAIN_BL_MIDI_SYSEX_CMD_BL_DONE
             ).then(
                 (data) => {
                     if (data[1] !== 1)
@@ -147,6 +154,143 @@ class MidiBootloader {
                     else
                     {
                         resolve()
+                    }
+                },
+                reject
+            )
+        })
+    }
+}
+class MidiSerialFlashBootloader extends BaseMidiBootloader {
+    constructor(midi, {updateSelfWhenDone = false} = {}) {
+        super(midi);
+        self.updateSelfWhenDone = updateSelfWhenDone;
+    }
+
+    start(dev_id, buf) {
+        const msg = Struct()
+            .word32Ule('img_size')
+            .word32Ule('img_crc32')
+        msg.allocate();
+
+        msg.fields.img_size = buf.length;
+        msg.fields.img_crc32 = crc32(buf);
+
+        this.sent = 0
+        this.buf = buf
+
+        return new Promise((resolve, reject) => {
+            this.midi.callSysExCmd(
+                SYSEX_CMD.USER + 3, // CENX4_BL_MIDI_SYSEX_CMD_BL_SERFLASH_START
+                Array.from(msg.buffer())
+            ).then(
+                (data) => {
+                    if (data[1] !== 1)
+                    {
+                        reject(this.BL_RETS[data[1]]);
+                        // TODO handle this
+                        console.log('boo', this.BL_RETS[data[1]])
+                    }
+                    else
+                    {
+                        resolve();
+                    }
+                },
+                reject
+            );
+        });
+    }
+
+    sendData(offset, buf) {
+        const msg = Struct()
+            .word32Ule('offset')
+            .array('data', this.BL_PKT_SIZE, 'word8Ule');
+        msg.allocate();
+
+        //buf = Buffer.from(buf)
+        msg.fields.offset = offset
+        msg.fields.data = buf
+
+        return new Promise((resolve, reject) => {
+            this.midi.callSysExCmd(
+                SYSEX_CMD.USER + 4, // CENX4_BL_MIDI_SYSEX_CMD_BL_SERFLASH_DATA
+                Array.from(msg.buffer()),
+                2000 // Flash writes can take time
+            ).then(
+                (data) => {
+                    if (data[1] !== 1)
+                    {
+                        reject(this.BL_RETS[data[1]]);
+                    }
+                    else
+                    {
+                        resolve();
+                    }
+                },
+                reject
+            );
+        });
+    }
+
+
+    sendNextChunk(chunkSent, done) {
+        const chunk_size = Math.min(this.BL_PKT_SIZE, this.buf.length - this.sent);
+        console.log(`bl data: ${this.sent}/${this.buf.length}: ${chunk_size}`)
+
+        this.sendData(this.sent, this.buf.slice(this.sent, this.sent + chunk_size)).then(
+            () => {
+                this.sent += chunk_size
+                chunkSent(chunk_size)
+                if (this.sent === this.buf.length) {
+                    console.log('bl: sending done!');
+
+                    this.handleSendComplete().then(done)//TODO .catch...
+               } else {
+                    this.sendNextChunk(chunkSent, done);
+                }
+            },
+            (error) => {
+                console.log('bl data error: ', error);
+            }
+        );
+    }
+
+    handleSendComplete() {
+        return new Promise((resolve, reject) => {
+            this.midi.callSysExCmd(
+                SYSEX_CMD.USER + 5, // CENX4_BL_MIDI_SYSEX_CMD_BL_SERFLASH_DONE
+                null,
+                5000
+            ).then(
+                (data) => {
+                    if (data[1] !== 1)
+                    {
+                        reject(this.BL_RETS[data[1]])
+                    }
+                    else
+                    {
+                        if (self.updateSelfWhenDone)
+                        {
+                            this.midi.callSysExCmd(
+                                SYSEX_CMD.USER + 6, // CENX4_BL_MIDI_SYSEX_CMD_BL_UPDATE_SELF_FROM_SERFLASH
+                                null,
+                                10000
+                            ).then(
+                                (data) => {
+                                    if (data[1] !== 1)
+                                    {
+                                        reject(this.BL_RETS[data[1]])
+                                    }
+                                    else
+                                    {
+                                        resolve()
+                                    }
+                                },
+                                reject
+                            )
+                        } else {
+                            resolve()
+                        }
                     }
                 },
                 reject
@@ -332,7 +476,7 @@ class MidiDevice {
                     }
 
                     const deviceNames = {
-                        0x434e5834: 'CENX4',
+                        0x34584e43: 'CENX4',
                     }
                     fields.dev_name = deviceNames[fields.dev_id] || 'Unknown'
 
@@ -349,6 +493,10 @@ class MidiDevice {
 
     getBootloader() {
         return new MidiBootloader(this)
+    }
+
+    getSerialFlashBootloader(args) {
+        return new MidiSerialFlashBootloader(this, args)
     }
 }
 

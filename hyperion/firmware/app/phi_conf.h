@@ -8,8 +8,8 @@
  * HYPERION Specific stuff
  *****************************************************************************/
 
-#define HYPERION_HW_SW_VER  PHI_HW_SW_VER(0, 1, 1)
-#define HYPERION_DEV_ID     PHI_DEV_ID('H', 'Y', 'P', '1')
+#define HYPERION_HW_SW_VER  PHI_HW_SW_VER(0, PHI_BL_HW_VER, PHI_BL_SW_VER)
+#define HYPERION_DEV_ID     PHI_BL_DEV_ID
 
 
 

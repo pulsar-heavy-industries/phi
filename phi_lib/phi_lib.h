@@ -23,7 +23,7 @@ extern "C" {
 #endif
 
 #define PHI_ARRLEN(arr) (sizeof(arr) / sizeof(arr[0]))
-#define PHI_DEV_ID(x1, x2, x3, x4) ((x1 << 24) | (x2 << 16) | (x3 << 8) | x4)
+#define PHI_DEV_ID(x1, x2, x3, x4) ((x4 << 24) | (x3 << 16) | (x2 << 8) | x1)
 
 #define PHI_HW_SW_VER(is_bootloader, hw_ver, sw_ver) ((is_bootloader << 31) | ((hw_ver & 0x7f) << 24) | (sw_ver & 0xffffff))
 #define PHI_HW_SW_VER_GET_IS_BOOTLOADER(hw_sw_ver) (hw_sw_ver & 0x80000000)
@@ -50,7 +50,8 @@ static inline long phi_max(long a, long b)
 
 #define phi_crc16(buf, len)  phi_crc16_incremental(0xFFFFU, buf, len)
 uint16_t phi_crc16_incremental(uint16_t ret, const void * buf, size_t len);
-uint32_t phi_crc32(const void * buf, size_t len);
+#define phi_crc32(buf, len)  phi_crc32_incremental(0, buf, len)
+uint32_t phi_crc32_incremental(uint32_t crc, const void * buf, size_t len);
 
 #ifdef __cplusplus
 }

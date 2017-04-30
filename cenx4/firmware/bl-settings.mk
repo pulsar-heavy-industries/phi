@@ -4,8 +4,12 @@
 ###############################################################################
 
 # See phi_bl.mk for an explanation of these variables
-BL_MAGIC = 0xC0DE1337
+BL_DEV_ID = 0x34584e43 # "CNX4"
+BL_SW_VER = 3
+BL_HW_VER = 1
+BL_HW_VER_MASK = 0x7f
+
 BL_PAGE_SIZE = 2048
 BL_FLASH_START = 0x8000000
 BL_RESERVED_SIZE = 65536
-BL_START_OFFSET = 0x200
+BL_VECTORS_OFFSET = 0x200

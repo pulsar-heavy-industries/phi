@@ -107,13 +107,12 @@ static const uint32_t crc32_table[] = {
     0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d
 };
 
-uint32_t phi_crc32(const void * buf, size_t len)
+uint32_t phi_crc32_incremental(uint32_t crc, const void * buf, size_t len)
 {
     const uint8_t *p;
-    uint32_t crc = ~0U;
+    crc = crc  ^ ~0U;
 
     p = buf;
-    crc = ~0U;
 
     while (len--)
         crc = crc32_table[(crc ^ *p++) & 0xFF] ^ (crc >> 8);

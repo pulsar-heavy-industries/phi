@@ -65,7 +65,7 @@
 #define GPIOA_SPI1_CLK              5U
 #define GPIOA_SPI1_MISO             6U
 #define GPIOA_SPI1_MOSI             7U
-#define GPIOA_USB_CONN                  8U
+#define GPIOA_USB_CONN              8U
 #define GPIOA_DBG_TX                9U
 #define GPIOA_DBG_RX                10U
 #define GPIOA_USB_DM                11U

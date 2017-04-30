@@ -167,6 +167,7 @@ void cenx4_app_traktor_pot_event(void * ctx, uint8_t node_id, uint8_t pot_num, u
 void cenx4_app_traktor_midi_cc(void * _ctx, phi_midi_port_t port, uint8_t ch, uint8_t cc, uint8_t val)
 {
     cenx4_app_traktor_context_t * ctx = (cenx4_app_traktor_context_t *) _ctx;
+    uint8_t node_id;
 
     switch (ch)
     {
@@ -197,6 +198,10 @@ void cenx4_app_traktor_midi_cc(void * _ctx, phi_midi_port_t port, uint8_t ch, ui
     	break;
 
     	case CENX4_APP_TRAKTOR_MIDI_CH_MASTER + 1:
+    	case CENX4_APP_TRAKTOR_MIDI_CH_MASTER + 2:
+    	case CENX4_APP_TRAKTOR_MIDI_CH_MASTER + 3:
+			node_id = PHI_CAN_AUTO_ID_ALLOCATOR_FIRST_DEV_ID + (ch - (CENX4_APP_TRAKTOR_MIDI_CH_MASTER + 1));
+
 			// CC 1 to 8 are button LEDs
 			if ((cc >= 1) && (cc <= 8))
 			{
@@ -209,7 +214,7 @@ void cenx4_app_traktor_midi_cc(void * _ctx, phi_midi_port_t port, uint8_t ch, ui
 					&cenx4_can,
 					PHI_CAN_PRIO_LOWEST,
 					HYPERION_APP_SLAVE_CAN_MSG_ID_SET_BTN_LED,
-					10,
+					node_id,
 					(const uint8_t *) &set_btn_led,
 					sizeof(set_btn_led),
 					NULL,
@@ -231,7 +236,7 @@ void cenx4_app_traktor_midi_cc(void * _ctx, phi_midi_port_t port, uint8_t ch, ui
 					&cenx4_can,
 					PHI_CAN_PRIO_LOWEST,
 					HYPERION_APP_SLAVE_CAN_MSG_ID_SET_LED_BAR,
-					10,
+					node_id,
 					(const uint8_t *) &led_bar,
 					sizeof(led_bar),
 					NULL,

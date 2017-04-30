@@ -126,6 +126,8 @@ CSRC = $(STARTUPSRC) \
        $(CHIBIOS)/os/hal/lib/streams/memstreams.c \
        $(CHIBIOS)/os/hal/lib/streams/chprintf.c \
 	   $(PHI_LIB)/phi_app_mgr.c \
+	   $(PHI_LIB)/phi_at45.c \
+	   $(PHI_LIB)/phi_bl_multiimg.c \
 	   $(PHI_LIB)/phi_btn.c \
 	   $(PHI_LIB)/phi_can.c \
 	   $(PHI_LIB)/phi_lib.c \
@@ -141,6 +143,7 @@ CSRC = $(STARTUPSRC) \
        main.c \
 	   cenx4_app_ableton.c \
 	   cenx4_app_cfg.c \
+	   cenx4_app_init.c \
 	   cenx4_app_setup.c \
 	   cenx4_app_slave.c \
 	   cenx4_app_test.c \

@@ -73,13 +73,13 @@ void cenx4_app_log_render(cenx4_ui_t * ui, void * _ctx)
 	buf[CENX4_APP_LOG_MAX_MSG_LEN] = 0;
 
     chsnprintf(buf, CENX4_APP_LOG_MAX_MSG_LEN, "Log %d-%d", idx, ctx->read_idx % CENX4_APP_LOG_MAX_MSGS);
-	cenx4_ui_text(ui, 0, 0, ui->w, 1, justifyCenter, buf);
+	cenx4_ui_text(ui, 0, 0, ui->w, 0, justifyCenter, buf);
 
 	for (int i = 0; i < 10; i++)
 	{
 		memcpy(buf, cenx4_app_log_buf[(idx + i) % CENX4_APP_LOG_MAX_MSGS], CENX4_APP_LOG_MAX_MSG_LEN);
 
-		cenx4_ui_text(ui, 0, y, ui->w, 1, justifyLeft, buf);
+		cenx4_ui_text(ui, 0, y, ui->w, 0, justifyLeft, buf);
 		y += 10;
 	}
 

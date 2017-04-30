@@ -288,8 +288,8 @@ void hyperion_ui_render_logo(hyperion_ui_t * ui)
 {
 	char buf[HYPERION_UI_MAX_LINE_TEXT_LEN];
 
-	chsnprintf(buf, sizeof(buf) - 1, "Hyperion %08x", HYPERION_HW_SW_VER);
-	hyperion_ui_text(ui, 0, 0, ui->w, 1, justifyCenter, buf);
+	chsnprintf(buf, sizeof(buf) - 1, "%08x", HYPERION_HW_SW_VER);
+	hyperion_ui_text(ui, 0, 0, ui->w, 0, justifyCenter, buf);
 
 	for (uint32_t row = 0; row < PHI_ARRLEN(phi_logo); ++row)
     {

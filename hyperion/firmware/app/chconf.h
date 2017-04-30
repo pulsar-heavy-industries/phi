@@ -28,7 +28,7 @@
 #ifndef _CHCONF_H_
 #define _CHCONF_H_
 
-#define CORTEX_VTOR_INIT 0x00000000 | 0x0010200
+#define CORTEX_VTOR_INIT 0x00000000 | 0x0020200
 #define CHPRINTF_USE_FLOAT TRUE
 
 /*===========================================================================*/

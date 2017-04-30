@@ -9,7 +9,7 @@
  *****************************************************************************/
 
 #define HYPERION_HW_SW_VER  PHI_HW_SW_VER(1, 1, 1)
-#define HYPERION_DEV_ID     PHI_DEV_ID('H', 'Y', 'P', '1')
+#define HYPERION_DEV_ID     PHI_BL_DEV_ID
 
 
 #ifndef HYPERION_IS_SLAVE

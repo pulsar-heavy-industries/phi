@@ -26,7 +26,7 @@ MEMORY
      * actual app
      * (-2k config data)
      */
-    flash : org = BL_FLASH_START + BL_RESERVED_SIZE + BL_START_OFFSET, len = 1M - BL_RESERVED_SIZE - BL_START_OFFSET - 2k
+    flash : org = BL_START_ADDR, len = 1M - BL_RESERVED_SIZE - (BL_START_ADDR - BL_FLASH_START) - 2k
     ram0  : org = 0x20000000, len = 128k    /* SRAM1 + SRAM2 */
     ram1  : org = 0x20000000, len = 112k    /* SRAM1 */
     ram2  : org = 0x2001C000, len = 16k     /* SRAM2 */

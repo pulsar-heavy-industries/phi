@@ -1,3 +1,4 @@
+import Struct from 'struct'
 import { midiSetup } from '../actions'
 
 export const PREPARE = 'FW_UPDATE_PREPARE'
@@ -93,7 +94,28 @@ export const start = (fileName = null, buf = null) => {
             }
 
             start_bootloader.then(() => {
-                const bl = getState().midi.dev.getBootloader()
+                // Get the magic word from the image
+                const magic_word_rdr = Struct().word32Ule('magic')
+                magic_word_rdr.setBuffer(buf);
+                const magic_word = magic_word_rdr.fields.magic;
+
+                let bl;
+                switch (magic_word) {
+                    // Single bootloader image
+                    case 0xc0de1337:
+                        bl = getState().midi.dev.getBootloader();
+                        break;
+
+                    // Multi-img
+                    case 0x4d4c5431:
+                        bl = getState().midi.dev.getSerialFlashBootloader({updateSelfWhenDone: true});
+                        break;
+
+                    default:
+                        dispatch(update_status_msg('Unknown file magic 0x' + magic_word.toString(16)));
+                        return;
+                }
+
                 bl.start(
                     state.midi.devInfo.dev_id,
                     buf,
