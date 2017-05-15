@@ -22,23 +22,20 @@
 /* HYPERION_UI_DISPMODE_SPLIT_POT: global flags */
 #define HYPERION_UI_DISPMODE_POT_FLAGS_DIVIDER_LINE	(1 << 0)
 
+/* HYPERION_UI_DISPMODE_SPLIT_POT: global flags */
+#define HYPERION_UI_DISPMODE_POT_FLAGS_DIVIDER_LINE	(1 << 0)
+
 /* HYPERION_UI_DISPMODE_SPLIT_POT: per-pot flags */
 #define HYPERION_UI_DISPMODE_POT_FLAGS_CENTERED     	(1 << 0)
 #define HYPERION_UI_DISPMODE_POT_FLAGS_RENDER_VAL   	(1 << 1)
-#define HYPERION_UI_DISPMODE_POT_FLAGS_MERGE_BOTTOM 	(1 << 2)
-#define HYPERION_UI_DISPMODE_POT_FLAGS_ROUND		  	(1 << 3)
-#define HYPERION_UI_DISPMODE_POT_FLAGS_FILL         	(1 << 4)
-
-#define HYPERION_UI_DISPMODE_POT_FLAGS_TOP_FONT_AUTO  	(0 << 5)
-#define HYPERION_UI_DISPMODE_POT_FLAGS_TOP_FONT_SMALL	(1 << 5)
-#define HYPERION_UI_DISPMODE_POT_FLAGS_TOP_FONT_MED   	(2 << 5)
-#define HYPERION_UI_DISPMODE_POT_FLAGS_TOP_FONT_LARGE 	(3 << 5)
+#define HYPERION_UI_DISPMODE_POT_FLAGS_FILL         	(1 << 2)
 
 
 typedef enum hyperion_ui_dispmode_e
 {
 	HYPERION_UI_DISPMODE_BOOT = 0,
 	HYPERION_UI_DISPMODE_TEXTS,
+	HYPERION_UI_DISPMODE_SPLIT_POT,
 	HYPERION_UI_DISPMODE_LOGO,
 	HYPERION_UI_DISPMODE_CALLBACK,
 	HYPERION_UI_NUM_DISPMODES,
@@ -61,6 +58,18 @@ typedef union hyperion_ui_dispmode_state_u
 		char lines[HYPERION_UI_DISPMODE_TEXTS_LINES][HYPERION_UI_MAX_LINE_TEXT_LEN];
 	} text;
 
+	struct
+	{
+		struct hyperion_ui_dispmode_state_split_pot_s {
+			uint16_t flags;
+			char text_top[HYPERION_UI_MAX_LINE_TEXT_LEN];
+			uint8_t val;
+			char text_bottom[HYPERION_UI_MAX_LINE_TEXT_LEN];
+		} pots[2];
+
+		uint8_t flags;
+		char title[HYPERION_UI_MAX_LINE_TEXT_LEN];
+	} split_pot;
 
 	struct
 	{
@@ -91,6 +100,7 @@ void hyperion_ui_text(hyperion_ui_t * ui, coord_t x, coord_t y, coord_t w, uint8
 
 void hyperion_ui_render_boot(hyperion_ui_t * ui);
 void hyperion_ui_render_texts(hyperion_ui_t * ui);
+void hyperion_ui_render_split_pot(hyperion_ui_t * ui);
 uint8_t hyperion_ui_get_biggest_possible_font_idx(hyperion_ui_t * ui, const char * s);
 
 void hyperion_ui_render_logo(hyperion_ui_t * ui);

@@ -10,6 +10,7 @@ static coord_t font_heights[3];
 void (*hyperion_ui_renderers[])(hyperion_ui_t *) = {
 	hyperion_ui_render_boot,
 	hyperion_ui_render_texts,
+	hyperion_ui_render_split_pot,
 	hyperion_ui_render_logo,
 	hyperion_ui_render_callback,
 };
@@ -224,6 +225,89 @@ void hyperion_ui_render_texts(hyperion_ui_t * ui)
 		hyperion_ui_text(ui, 0, y, ui->w, font_idx, justify, ui->state.text.lines[i]);
 		y -= font_heights[font_idx] + 2;
 	}
+}
+
+void hyperion_ui_render_split_pot_helper(hyperion_ui_t * ui, struct hyperion_ui_dispmode_state_split_pot_s * pot, coord_t x)
+{
+	coord_t y = 16, h = ui->h - y, w = (ui->w / 2) - 4;
+
+	char    buf[HYPERION_UI_MAX_LINE_TEXT_LEN];
+
+	gdispGFillArea(ui->g, x, y, w,  h, Black);
+
+	hyperion_ui_text(ui, x, y, w, 0, justifyCenter, pot->text_top);
+
+	coord_t r = 10;
+	coord_t center_x = x + (w / 2);
+	coord_t center_y = y + (h / 2);
+
+	gdispGDrawCircle(ui->g, x + (w / 2), y + (h / 2), r, White);
+
+	if (pot->flags & HYPERION_UI_DISPMODE_POT_FLAGS_FILL)
+	{
+		if (pot->flags & HYPERION_UI_DISPMODE_POT_FLAGS_CENTERED)
+		{
+			if (pot->val > 128)
+			{
+				int m = 225 - phi_lib_map(pot->val, 0, 0xff, 10, 270);
+				gdispGDrawThickArc(ui->g, center_x, center_y, 7, 10, m, 90, White);
+			}
+			else
+			{
+				int m = (90 + phi_lib_map(128 - pot->val, 0, 0xff, 10, 270));
+				gdispGDrawThickArc(ui->g, center_x, center_y, 7, 10, 90, m, White);
+			}
+
+		}
+		else
+		{
+			int m = 225 - phi_lib_map(pot->val, 0, 0xff, 5, 270);
+			gdispGDrawThickArc(ui->g, center_x, center_y, 7, 10, m, 225, White);
+		}
+	}
+	else
+	{
+		int deg = 135 + phi_lib_map(pot->val, 0, 0xff, 0, 270);
+
+		fixed cos_m = ffcos(deg);
+		fixed sin_m = ffsin(deg);
+
+		int x1 = center_x + NONFIXED(FIXEDMUL(FIXED(5), cos_m));
+		int y1 = center_y + NONFIXED(FIXEDMUL(FIXED(5), sin_m));
+
+		int x2 = center_x + NONFIXED(FIXEDMUL(FIXED(10), cos_m));
+		int y2 = center_y + NONFIXED(FIXEDMUL(FIXED(10), sin_m));
+
+		gdispGDrawLine(ui->g, x1, y1, x2, y2, White);
+	}
+
+	// Bottom text
+	if (pot->flags & HYPERION_UI_DISPMODE_POT_FLAGS_RENDER_VAL)
+	{
+		chsnprintf(buf, sizeof(buf) - 1, "%02d", pot->val);
+		hyperion_ui_text(ui, x, y + h - font_heights[0], w, 0, pot->text_bottom[0] ? justifyRight : justifyCenter, buf);
+	}
+
+	hyperion_ui_text(
+		ui,
+		x,
+		y + h - font_heights[0],
+		gdispGetStringWidth(pot->text_bottom, fonts[0]) + 2,
+		0,
+		justifyLeft,
+		pot->text_bottom);
+}
+
+void hyperion_ui_render_split_pot(hyperion_ui_t * ui)
+{
+	hyperion_ui_render_split_pot_helper(ui, &(ui->state.split_pot.pots[0]), 0);
+	hyperion_ui_render_split_pot_helper(ui, &(ui->state.split_pot.pots[1]), ui->w / 2);
+
+	if (ui->state.split_pot.flags & HYPERION_UI_DISPMODE_POT_FLAGS_DIVIDER_LINE) {
+		gdispGDrawLine(ui->g, ui->w / 2, 16, ui->w / 2, ui->h, White);
+	}
+
+	hyperion_ui_text(ui, 0, 0, ui->w, 0, justifyCenter, ui->state.split_pot.title);
 }
 
 uint8_t hyperion_ui_get_biggest_possible_font_idx(hyperion_ui_t * ui, const char * s)
