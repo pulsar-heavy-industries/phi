@@ -8,13 +8,23 @@
 #ifndef HYPERION_APP_SLAVE_CAN_H_
 #define HYPERION_APP_SLAVE_CAN_H_
 
-#include "phi_lib/phi_can.h"
+#include "hyperion_can.h"
+#include "hyperion_ui.h"
 
-enum
-{
-	HYPERION_APP_SLAVE_CAN_MSG_ID_SET_BTN_LED = PHI_CAN_MSG_ID_USER,
-	HYPERION_APP_SLAVE_CAN_MSG_ID_SET_LED_BAR,
-};
+#ifndef HYPERION_DEV_ID
+#define HYPERION_DEV_ID PHI_DEV_ID('H', 'P', 'R', 'N')
+#else
+#if HYPERION_DEV_ID != PHI_DEV_ID('H', 'P', 'R', 'N')
+#error "WTF"
+#endif
+#endif
+
+#pragma pack (1)
+
+typedef struct {
+	hyperion_ui_dispmode_t dispmode;
+	hyperion_ui_dispmode_state_t state;
+} hyperion_app_slave_msg_update_display_state_t;
 
 typedef struct {
     uint8_t btn_num;

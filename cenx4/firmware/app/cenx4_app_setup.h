@@ -27,8 +27,14 @@ typedef struct cenx4_app_setup_context_s
 	// Value of test pot for each of the modules
 	uint8_t test_pot_val[PHI_CAN_AUTO_ID_ALLOCATOR_MAX_DEVS + 1]; // Extra device for our state
 
-    // Current map of node id -> module number
-    uint8_t node_id_to_mod_num[PHI_CAN_AUTO_ID_ALLOCATOR_MAX_DEVS + 1];
+    // Current map of node id -> module number, for cenx4 and hyperion modules
+    uint8_t cenx4_node_id_to_mod_num[PHI_CAN_AUTO_ID_ALLOCATOR_MAX_DEVS + 1];
+    uint8_t hyperion_node_id_to_mod_num[PHI_CAN_AUTO_ID_ALLOCATOR_MAX_DEVS + 1];
+
+    // Device ids/stats
+    uint32_t node_id_to_dev_id[PHI_CAN_AUTO_ID_ALLOCATOR_MAX_DEVS + 1];
+    uint8_t num_cenx4s;
+    uint8_t num_hyperions;
 
     // Is configuration in a saveable state?
     bool cfg_ok;

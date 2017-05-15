@@ -100,7 +100,24 @@ void hyperion_app_slave_can_cmd(void * ctx, uint8_t prio, uint8_t msg_id, uint8_
 {
 	switch (msg_id)
 	{
-	case HYPERION_APP_SLAVE_CAN_MSG_ID_SET_BTN_LED:
+	case PHI_CAN_MSG_ID_HYPERION_UPDATE_DISPLAY:
+		{
+			const hyperion_app_slave_msg_update_display_state_t * msg = (hyperion_app_slave_msg_update_display_state_t *) data;
+
+			if ((len != sizeof(*msg)) ||
+				(msg->dispmode >= HYPERION_UI_NUM_DISPMODES))
+			{
+				break;
+			}
+
+			hyperion_ui_t * ui = hyperion_ui_lock();
+			ui->dispmode = msg->dispmode;
+			memcpy(&(ui->state), &(msg->state), sizeof(ui->state));
+			hyperion_ui_unlock(ui);
+		}
+		break;
+
+	case PHI_CAN_MSG_ID_HYPERION_SET_BTN_LED:
 		{
 			const hyperion_app_slave_msg_set_btn_led_t * msg = (hyperion_app_slave_msg_set_btn_led_t *) data;
 
@@ -114,7 +131,7 @@ void hyperion_app_slave_can_cmd(void * ctx, uint8_t prio, uint8_t msg_id, uint8_
 		}
 		break;
 
-	case HYPERION_APP_SLAVE_CAN_MSG_ID_SET_LED_BAR:
+	case PHI_CAN_MSG_ID_HYPERION_SET_LED_BAR:
 		{
 			const hyperion_app_slave_msg_set_led_bar_t * msg = (hyperion_app_slave_msg_set_led_bar_t *) data;
 

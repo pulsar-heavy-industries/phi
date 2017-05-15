@@ -4,29 +4,27 @@
 
 #include "cenx4_app_cfg.h"
 #include "cenx4_can.h"
+#include "cenx4_conf.h"
+#include "../../../hyperion/firmware/app/hyperion_app_slave_can.h"
 
 cenx4_app_cfg_t cenx4_app_cfg;
 
 void cenx4_app_cfg_load(void)
 {
-	cenx4_app_cfg_t cfg;
 	uint32_t crc;
 
-	cenx4_app_cfg_init_default(&cenx4_app_cfg);
 
-    memcpy(&cfg, (void *)CENX4_APP_CFG_ADDR, sizeof(cfg));
+    memcpy(&cenx4_app_cfg, (void *)CENX4_APP_CFG_ADDR, sizeof(cenx4_app_cfg));
 
-    crc = cfg.crc;
-    cfg.crc = 0;
-    if ((cfg.magic != CENX4_APP_CFG_MAGIC) ||
-    	(cfg.ver != CENX4_APP_CFG_VER) ||
-		(crc != phi_crc32(&cfg, sizeof(cfg))))
+    crc = cenx4_app_cfg.crc;
+    cenx4_app_cfg.crc = 0;
+    if ((cenx4_app_cfg.magic != CENX4_APP_CFG_MAGIC) ||
+    	(cenx4_app_cfg.ver != CENX4_APP_CFG_VER) ||
+		(crc != phi_crc32(&cenx4_app_cfg, sizeof(cenx4_app_cfg))))
     {
+    	cenx4_app_cfg_init_default(&cenx4_app_cfg);
     	return;
     }
-
-    memcpy(&cenx4_app_cfg, &cfg, sizeof(cfg));
-
 }
 
 void cenx4_app_cfg_init_default(cenx4_app_cfg_t * cfg)
@@ -76,11 +74,13 @@ void cenx4_app_cfg_save(cenx4_app_cfg_t * cfg)
 	chSysEnable();
 }
 
-void cenx4_app_cfg_get_node_id_to_mod_num_map(uint8_t * map, uint32_t max_entries)
+void cenx4_app_cfg_get_node_id_to_mod_num_map(uint32_t dev_id, uint8_t * map, uint32_t max_entries)
 {
     uint8_t our_uid[PHI_CAN_AUTO_ID_UNIQ_ID_LEN];
     uint8_t node_id;
     uint8_t mod_num;
+    uint8_t * uid;
+
 
 	chDbgCheck(max_entries >= PHI_CAN_AUTO_ID_ALLOCATOR_MAX_DEVS + 1);
 
@@ -89,9 +89,9 @@ void cenx4_app_cfg_get_node_id_to_mod_num_map(uint8_t * map, uint32_t max_entrie
 	phi_can_auto_get_dev_uid(&cenx4_can, our_uid);
 	for (mod_num = 0; mod_num < PHI_CAN_AUTO_ID_ALLOCATOR_MAX_DEVS + 1; ++mod_num)
 	{
-		// If stored UID matches ours, set node id 0
-		if (memcmp(
-			&(cenx4_app_cfg.cur.mod_num_to_uid[mod_num][0]),
+		// If stored UID matches ours, set node id 0. This can only happen on a CENX4 dev_id request
+		if ((dev_id == CENX4_DEV_ID) && memcmp(
+			&(cenx4_app_cfg.cur.cenx4_mod_num_to_uid[mod_num][0]),
 			&(our_uid[0]),
 			PHI_CAN_AUTO_ID_UNIQ_ID_LEN) == 0)
 		{
@@ -102,8 +102,23 @@ void cenx4_app_cfg_get_node_id_to_mod_num_map(uint8_t * map, uint32_t max_entrie
 		// Get the node id of the current module
 		for (node_id = 0; node_id < cenx4_can.auto_alloc_num_devs; ++node_id)
 		{
+			switch (dev_id)
+			{
+			case CENX4_DEV_ID:
+				uid = &(cenx4_app_cfg.cur.cenx4_mod_num_to_uid[mod_num][0]);
+				break;
+
+			case HYPERION_DEV_ID:
+				uid = &(cenx4_app_cfg.cur.hyperion_mod_num_to_uid[mod_num][0]);
+				break;
+
+			default:
+				chDbgCheck(FALSE);
+				return;
+			}
+
 			if (memcmp(
-				&(cenx4_app_cfg.cur.mod_num_to_uid[mod_num][0]),
+				uid,
 				&(cenx4_can.auto_alloc_table[node_id][0]),
 				PHI_CAN_AUTO_ID_UNIQ_ID_LEN) == 0)
 			{

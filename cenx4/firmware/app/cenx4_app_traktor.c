@@ -213,7 +213,7 @@ void cenx4_app_traktor_midi_cc(void * _ctx, phi_midi_port_t port, uint8_t ch, ui
 				phi_can_xfer(
 					&cenx4_can,
 					PHI_CAN_PRIO_LOWEST,
-					HYPERION_APP_SLAVE_CAN_MSG_ID_SET_BTN_LED,
+					PHI_CAN_MSG_ID_HYPERION_SET_BTN_LED,
 					node_id,
 					(const uint8_t *) &set_btn_led,
 					sizeof(set_btn_led),
@@ -235,7 +235,7 @@ void cenx4_app_traktor_midi_cc(void * _ctx, phi_midi_port_t port, uint8_t ch, ui
 				phi_can_xfer(
 					&cenx4_can,
 					PHI_CAN_PRIO_LOWEST,
-					HYPERION_APP_SLAVE_CAN_MSG_ID_SET_LED_BAR,
+					PHI_CAN_MSG_ID_HYPERION_SET_LED_BAR,
 					node_id,
 					(const uint8_t *) &led_bar,
 					sizeof(led_bar),

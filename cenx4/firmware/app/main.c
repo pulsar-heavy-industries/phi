@@ -154,7 +154,7 @@ int main(void)
 		}
 
 		// Give slaves time to start?
-		chThdSleepMilliseconds(1000);
+		chThdSleepMilliseconds(1500);
 	}
 
 	ui = cenx4_ui_lock(1);

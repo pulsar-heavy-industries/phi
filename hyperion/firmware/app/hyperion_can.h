@@ -7,6 +7,13 @@ extern "C" {
 
 #include "phi_lib/phi_can.h"
 
+enum {
+	/* slave app commands - data defined in hyperion_app_slave_can.h */
+	PHI_CAN_MSG_ID_HYPERION_SET_BTN_LED = PHI_CAN_MSG_ID_USER,
+	PHI_CAN_MSG_ID_HYPERION_SET_LED_BAR,
+	PHI_CAN_MSG_ID_HYPERION_UPDATE_DISPLAY,
+
+};
 
 extern phi_can_t hyperion_can;
 

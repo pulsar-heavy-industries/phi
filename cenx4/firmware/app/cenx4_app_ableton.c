@@ -30,8 +30,9 @@ void cenx4_app_ableton_start(void * _ctx)
 
     // Load mod_num_to_uid from cfg
     cenx4_app_cfg_get_node_id_to_mod_num_map(
+    	CENX4_DEV_ID,
   		ctx->node_id_to_mod_num,
-		PHI_ARRLEN(cenx4_app_cfg.cur.mod_num_to_uid)
+		PHI_ARRLEN(cenx4_app_cfg.cur.cenx4_mod_num_to_uid)
 	);
 
     cenx4_app_log("Ableton!");

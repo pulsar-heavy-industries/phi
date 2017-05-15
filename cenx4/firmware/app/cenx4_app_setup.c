@@ -3,6 +3,7 @@
 #include "cenx4_app_registry.h"
 #include "cenx4_app_setup.h"
 #include "cenx4_can.h"
+#include "../../../hyperion/firmware/app/hyperion_app_slave_can.h"
 
 
 const phi_app_desc_t cenx4_app_setup_desc = {
@@ -15,7 +16,9 @@ const phi_app_desc_t cenx4_app_setup_desc = {
 void cenx4_app_setup_start(void * _ctx)
 {
     cenx4_app_setup_context_t * ctx = (cenx4_app_setup_context_t *) _ctx;
-    uint32_t i;
+	phi_can_msg_data_sysinfo_t sysinfo;
+	msg_t ret;
+    uint32_t i, resp_len;
 
     // Basic init
     chDbgCheck(ctx != NULL);
@@ -27,10 +30,20 @@ void cenx4_app_setup_start(void * _ctx)
     	ctx->test_pot_val[i] = (i + 1) * 10;
     }
 
+    ctx->node_id_to_dev_id[0] = CENX4_DEV_ID;
+    ctx->num_cenx4s = 1;
+
     // Load mod_num_to_uid from cfg
     cenx4_app_cfg_get_node_id_to_mod_num_map(
-  		ctx->node_id_to_mod_num,
-		PHI_ARRLEN(cenx4_app_cfg.cur.mod_num_to_uid)
+    	CENX4_DEV_ID,
+  		ctx->cenx4_node_id_to_mod_num,
+		PHI_ARRLEN(cenx4_app_cfg.cur.cenx4_mod_num_to_uid)
+	);
+
+    cenx4_app_cfg_get_node_id_to_mod_num_map(
+    	HYPERION_DEV_ID,
+		ctx->hyperion_node_id_to_mod_num,
+		PHI_ARRLEN(cenx4_app_cfg.cur.hyperion_mod_num_to_uid)
 	);
 
     // Enter setup mode locally
@@ -40,6 +53,41 @@ void cenx4_app_setup_start(void * _ctx)
 	// TODO locks
 	for (i = 0; i < cenx4_can.auto_alloc_num_devs; ++i)
 	{
+
+		ret = phi_can_xfer(
+			&cenx4_can,
+			PHI_CAN_PRIO_LOWEST + 1,
+			PHI_CAN_MSG_ID_SYSINFO,
+			PHI_CAN_AUTO_ID_ALLOCATOR_FIRST_DEV_ID + i,
+			NULL,
+			0,
+			(uint8_t *) &sysinfo,
+			sizeof(sysinfo),
+			&resp_len,
+			PHI_CAN_DEFAULT_TIMEOUT
+		);
+		if ((MSG_OK != ret) ||
+			(sizeof(sysinfo) != resp_len))
+		{
+			cenx4_app_log_fmt("SSI%d:%d", PHI_CAN_AUTO_ID_ALLOCATOR_FIRST_DEV_ID + i, ret);
+			continue;
+		}
+
+		ctx->node_id_to_dev_id[i + 1] = sysinfo.dev_id;
+		switch (sysinfo.dev_id)
+		{
+		case CENX4_DEV_ID:
+			ctx->num_cenx4s++;
+			break;
+
+		case HYPERION_DEV_ID:
+			ctx->num_hyperions++;
+			break;
+
+		default:
+			break;
+		}
+
 		cenx4_app_setup_enter_setup_mode(ctx, PHI_CAN_AUTO_ID_ALLOCATOR_FIRST_DEV_ID + i);
 	}
 }
@@ -52,7 +100,8 @@ void cenx4_app_setup_stop(void * ctx)
 void cenx4_app_setup_encoder_event(void * _ctx, uint8_t node_id, uint8_t encoder_num, int8_t val_change)
 {
     cenx4_app_setup_context_t * ctx = (cenx4_app_setup_context_t *) _ctx;
-    uint8_t idx = cenx4_app_setup_node_id_to_idx(node_id);
+    const uint8_t idx = cenx4_app_setup_node_id_to_idx(node_id);
+    const uint32_t dev_id = ctx->node_id_to_dev_id[idx];
     chDbgCheck(ctx != NULL);
 
     // Action knob (on master)
@@ -69,17 +118,17 @@ void cenx4_app_setup_encoder_event(void * _ctx, uint8_t node_id, uint8_t encoder
 		}
     }
 
-    // Module number pot
-    if (encoder_num == 2)
+    // CENX4: Module number pot
+    else if ((dev_id == CENX4_DEV_ID) && (encoder_num == 2))
 	{
-		ctx->node_id_to_mod_num[idx] += val_change;
-		if (ctx->node_id_to_mod_num[idx] == (0xff - 1))
+		ctx->cenx4_node_id_to_mod_num[idx] += val_change;
+		if (ctx->cenx4_node_id_to_mod_num[idx] == (0xff - 1))
 		{
-			ctx->node_id_to_mod_num[idx] = cenx4_can.auto_alloc_num_devs;
+			ctx->cenx4_node_id_to_mod_num[idx] = ctx->num_cenx4s - 1;
 		}
-		else if (ctx->node_id_to_mod_num[idx] > cenx4_can.auto_alloc_num_devs)
+		else if (ctx->cenx4_node_id_to_mod_num[idx] > (ctx->num_cenx4s - 1))
 		{
-			ctx->node_id_to_mod_num[idx] = 0xff;
+			ctx->cenx4_node_id_to_mod_num[idx] = 0xff;
 		}
 
 		// Lame hack: when module number changes we want to update the main
@@ -90,8 +139,30 @@ void cenx4_app_setup_encoder_event(void * _ctx, uint8_t node_id, uint8_t encoder
 		}
 	}
 
-    // Test pot
-    if (encoder_num == 3)
+    // Hyperion: Module number pot
+    else if ((dev_id == HYPERION_DEV_ID) && (encoder_num == 0))
+	{
+		ctx->hyperion_node_id_to_mod_num[idx] += val_change;
+		if (ctx->hyperion_node_id_to_mod_num[idx] == (0xff - 1))
+		{
+			ctx->hyperion_node_id_to_mod_num[idx] = ctx->num_hyperions - 1;
+		}
+		else if (ctx->hyperion_node_id_to_mod_num[idx] > ctx->num_hyperions - 1)
+		{
+			ctx->hyperion_node_id_to_mod_num[idx] = 0xff;
+		}
+
+		// Lame hack: when module number changes we want to update the main
+		// module whether the change came from it or from one of the slaves
+		if (node_id != 0)
+		{
+			cenx4_app_setup_update_ui(ctx, 0);
+		}
+	}
+
+    // Test pot on both cenx4 and hyperion
+    else if (((dev_id == CENX4_DEV_ID) && (encoder_num == 3)) ||
+    	((dev_id == HYPERION_DEV_ID) && (encoder_num == 1)))
     {
     	ctx->test_pot_val[idx] += val_change;
     }
@@ -120,22 +191,40 @@ void cenx4_app_setup_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, ph
 		case CENX4_APP_SETUP_ACTION_SAVE:
 			if (ctx->cfg_ok)
 			{
-				uint8_t uid[PHI_CAN_AUTO_ID_UNIQ_ID_LEN];
+				memset(&cenx4_app_cfg.cur.cenx4_mod_num_to_uid, 0, sizeof(cenx4_app_cfg.cur.cenx4_mod_num_to_uid));
+				memset(&cenx4_app_cfg.cur.hyperion_mod_num_to_uid, 0, sizeof(cenx4_app_cfg.cur.hyperion_mod_num_to_uid));
 
-				phi_can_auto_get_dev_uid(&cenx4_can, uid);
-				memcpy(
-					&(cenx4_app_cfg.cur.mod_num_to_uid[ctx->node_id_to_mod_num[0]]),
-					uid,
-					PHI_CAN_AUTO_ID_UNIQ_ID_LEN
-				);
+				if (ctx->cenx4_node_id_to_mod_num[0] != CENX4_APP_CFG_INVALID_MODULE_NUM)
+				{
+					uint8_t uid[PHI_CAN_AUTO_ID_UNIQ_ID_LEN];
+
+					phi_can_auto_get_dev_uid(&cenx4_can, uid);
+					memcpy(
+						&(cenx4_app_cfg.cur.cenx4_mod_num_to_uid[ctx->cenx4_node_id_to_mod_num[0]]),
+						uid,
+						PHI_CAN_AUTO_ID_UNIQ_ID_LEN
+					);
+				}
 
 				for (i = 0; i < cenx4_can.auto_alloc_num_devs; ++i)
 				{
-					memcpy(
-						&(cenx4_app_cfg.cur.mod_num_to_uid[ctx->node_id_to_mod_num[i + 1]]),
-						cenx4_can.auto_alloc_table[i],
-						PHI_CAN_AUTO_ID_UNIQ_ID_LEN
-					);
+					if (ctx->cenx4_node_id_to_mod_num[i + 1] != CENX4_APP_CFG_INVALID_MODULE_NUM)
+					{
+						memcpy(
+							&(cenx4_app_cfg.cur.cenx4_mod_num_to_uid[ctx->cenx4_node_id_to_mod_num[i + 1]]),
+							cenx4_can.auto_alloc_table[i],
+							PHI_CAN_AUTO_ID_UNIQ_ID_LEN
+						);
+					}
+
+					if (ctx->hyperion_node_id_to_mod_num[i + 1] != CENX4_APP_CFG_INVALID_MODULE_NUM)
+					{
+						memcpy(
+							&(cenx4_app_cfg.cur.hyperion_mod_num_to_uid[ctx->hyperion_node_id_to_mod_num[i + 1]]),
+							cenx4_can.auto_alloc_table[i],
+							PHI_CAN_AUTO_ID_UNIQ_ID_LEN
+						);
+					}
 				}
 
 				cenx4_app_cfg_save(&cenx4_app_cfg);
@@ -208,7 +297,7 @@ msg_t cenx4_app_setup_enter_setup_mode(cenx4_app_setup_context_t * ctx, uint8_t 
 		memset(&(ui->state), 0, sizeof(ui->state));
 
 		ui->state.text.flags[0] = CENX4_UI_DISPMODE_TEXT_FLAGS_ALIGN_CENTER;
-		ui->state.text.flags[3] = CENX4_UI_DISPMODE_TEXT_FLAGS_ALIGN_CENTER | CENX4_UI_DISPMODE_TEXT_FLAGS_BOTTOM | CENX4_UI_DISPMODE_TEXT_FLAGS_FONT_MED;
+		ui->state.text.flags[4] = CENX4_UI_DISPMODE_TEXT_FLAGS_ALIGN_CENTER | CENX4_UI_DISPMODE_TEXT_FLAGS_BOTTOM | CENX4_UI_DISPMODE_TEXT_FLAGS_FONT_MED;
 		strcpy(ui->state.text.lines[0], "Setup");
 		strcpy(ui->state.text.lines[1], "MASTER");
 
@@ -227,7 +316,7 @@ msg_t cenx4_app_setup_enter_setup_mode(cenx4_app_setup_context_t * ctx, uint8_t 
 				CENX4_UI_DISPMODE_POT_FLAGS_RENDER_VAL |
 				CENX4_UI_DISPMODE_POT_FLAGS_TOP_FONT_AUTO;
 		chsnprintf(ui->state.split_pot.pots[0].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "ModNum");
-		ui->state.split_pot.pots[0].val = ctx->node_id_to_mod_num[0];
+		ui->state.split_pot.pots[0].val = ctx->cenx4_node_id_to_mod_num[0];
 
 		ui->state.split_pot.pots[1].flags = ui->state.split_pot.pots[0].flags;
 		chsnprintf(ui->state.split_pot.pots[1].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "Test");
@@ -243,67 +332,113 @@ msg_t cenx4_app_setup_enter_setup_mode(cenx4_app_setup_context_t * ctx, uint8_t 
 	else
 	{
 		msg_t ret;
-		cenx4_can_handle_update_display_state_t msg;
 
-		// Put display 0 in boot mode
-		memset(&msg, 0, sizeof(msg));
-		msg.disp = 0;
-		msg.dispmode = CENX4_UI_DISPMODE_BOOT;
-
-		ret = phi_can_xfer(
-			&cenx4_can,
-			PHI_CAN_PRIO_LOWEST + 1,
-			PHI_CAN_MSG_ID_CENX4_UPDATE_DISPLAY,
-			node_id,
-			(const uint8_t *) &msg,
-			sizeof(msg),
-			NULL,
-			0,
-			NULL,
-			PHI_CAN_DEFAULT_TIMEOUT
-		);
-		if (MSG_OK != ret)
+		switch (ctx->node_id_to_dev_id[cenx4_app_setup_node_id_to_idx(node_id)])
 		{
-			return ret;
+		case CENX4_DEV_ID:
+			{
+				cenx4_can_handle_update_display_state_t msg;
+
+				// Put display 0 in boot mode
+				memset(&msg, 0, sizeof(msg));
+				msg.disp = 0;
+				msg.dispmode = CENX4_UI_DISPMODE_BOOT;
+
+				ret = phi_can_xfer(
+					&cenx4_can,
+					PHI_CAN_PRIO_LOWEST + 1,
+					PHI_CAN_MSG_ID_CENX4_UPDATE_DISPLAY,
+					node_id,
+					(const uint8_t *) &msg,
+					sizeof(msg),
+					NULL,
+					0,
+					NULL,
+					PHI_CAN_DEFAULT_TIMEOUT
+				);
+				if (MSG_OK != ret)
+				{
+					return ret;
+				}
+
+				// Put display 1 in pots mode
+				memset(&msg, 0, sizeof(msg));
+				msg.disp = 1;
+				msg.dispmode = CENX4_UI_DISPMODE_SPLIT_POT;
+
+				ret = phi_can_xfer(
+					&cenx4_can,
+					PHI_CAN_PRIO_LOWEST + 1,
+					PHI_CAN_MSG_ID_CENX4_UPDATE_DISPLAY,
+					node_id,
+					(const uint8_t *) &msg,
+					sizeof(msg),
+					NULL,
+					0,
+					NULL,
+					PHI_CAN_DEFAULT_TIMEOUT
+				);
+				if (MSG_OK != ret)
+				{
+					return ret;
+				}
+
+				// Set pots
+				ret = cenx4_app_setup_update_ui(ctx, node_id);
+				if (MSG_OK != ret)
+				{
+					return ret;
+				}
+
+				// Success
+				return MSG_OK;
+			}
+			break;
+
+		case HYPERION_DEV_ID:
+			{
+				hyperion_app_slave_msg_update_display_state_t msg;
+
+				memset(&msg, 0, sizeof(msg));
+				msg.dispmode = HYPERION_UI_DISPMODE_SPLIT_POT;
+
+				ret = phi_can_xfer(
+					&cenx4_can,
+					PHI_CAN_PRIO_LOWEST + 1,
+					PHI_CAN_MSG_ID_HYPERION_UPDATE_DISPLAY,
+					node_id,
+					(const uint8_t *) &msg,
+					sizeof(msg),
+					NULL,
+					0,
+					NULL,
+					PHI_CAN_DEFAULT_TIMEOUT
+				);
+				if (MSG_OK != ret)
+				{
+					return ret;
+				}
+
+				// Set pots
+				ret = cenx4_app_setup_update_ui(ctx, node_id);
+				if (MSG_OK != ret)
+				{
+					return ret;
+				}
+
+				// Success
+				return MSG_OK;
+			}
+			break;
+
+		default:
+			return MSG_RESET;
 		}
-
-		// Put display 1 in pots mode
-		memset(&msg, 0, sizeof(msg));
-		msg.disp = 1;
-		msg.dispmode = CENX4_UI_DISPMODE_SPLIT_POT;
-
-		ret = phi_can_xfer(
-			&cenx4_can,
-			PHI_CAN_PRIO_LOWEST + 1,
-			PHI_CAN_MSG_ID_CENX4_UPDATE_DISPLAY,
-			node_id,
-			(const uint8_t *) &msg,
-			sizeof(msg),
-			NULL,
-			0,
-			NULL,
-			PHI_CAN_DEFAULT_TIMEOUT
-		);
-		if (MSG_OK != ret)
-		{
-			return ret;
-		}
-
-		// Set pots
-		ret = cenx4_app_setup_update_ui(ctx, node_id);
-		if (MSG_OK != ret)
-		{
-			return ret;
-		}
-
-		// Success
-		return MSG_OK;
 	}
 }
 
 msg_t cenx4_app_setup_update_ui(cenx4_app_setup_context_t * ctx, uint8_t node_id)
 {
-	cenx4_can_handle_update_display_state_t state;
     msg_t ret;
     uint8_t idx = cenx4_app_setup_node_id_to_idx(node_id);
     cenx4_ui_t * ui;
@@ -325,18 +460,21 @@ msg_t cenx4_app_setup_update_ui(cenx4_app_setup_context_t * ctx, uint8_t node_id
     	// See if configuration is valid or not
     	{
     		int i, j, cnt;
+    		bool saw_missing_node;
+    		bool cenx4_cfg_ok = true;
+    		bool hyperion_cfg_ok = true;
 
     		// Assume everything is okay
     		ctx->cfg_ok = true;
 
-    		// Look for duplicate module ids and holes
-    		bool saw_missing_node = false;
+    		// Look for duplicate module ids and holes in cenx4 list
+    		saw_missing_node = false;
     		for (i = 0; i < (cenx4_can.auto_alloc_num_devs + 1); ++i)
     		{
     			cnt = 0;
     			for (j = 0; j < (cenx4_can.auto_alloc_num_devs + 1); ++j)
     			{
-    				if (ctx->node_id_to_mod_num[j] == i)
+    				if (ctx->cenx4_node_id_to_mod_num[j] == i)
     				{
     					cnt++;
     				}
@@ -344,16 +482,16 @@ msg_t cenx4_app_setup_update_ui(cenx4_app_setup_context_t * ctx, uint8_t node_id
 
     			if (cnt > 1)
     			{
-    				chsnprintf(ui->state.text.lines[2], CENX4_UI_MAX_LINE_TEXT_LEN-1, "Mod%d dupe", i);
-    				ctx->cfg_ok = false;
+    				chsnprintf(ui->state.text.lines[2], CENX4_UI_MAX_LINE_TEXT_LEN-1, "CMod%d dupe", i);
+    				cenx4_cfg_ok = false;
     				break;
     			}
     			else if (cnt == 1)
     			{
     				if (saw_missing_node)
     				{
-        				chsnprintf(ui->state.text.lines[2], CENX4_UI_MAX_LINE_TEXT_LEN-1, "Mod%d miss", i - 1);
-        				ctx->cfg_ok = false;
+        				chsnprintf(ui->state.text.lines[2], CENX4_UI_MAX_LINE_TEXT_LEN-1, "CMod%d miss", i - 1);
+        				cenx4_cfg_ok = false;
         				break;
     				}
     			}
@@ -363,59 +501,149 @@ msg_t cenx4_app_setup_update_ui(cenx4_app_setup_context_t * ctx, uint8_t node_id
     			}
     		}
 
-    		if (ctx->cfg_ok)
+    		if (cenx4_cfg_ok)
     		{
-    			chsnprintf(ui->state.text.lines[2], CENX4_UI_MAX_LINE_TEXT_LEN-1, "ModCfg OK");
+    			chsnprintf(ui->state.text.lines[2], CENX4_UI_MAX_LINE_TEXT_LEN-1, "CModCfg OK");
     		}
+
+    		// Look for duplicate module ids and holes in hyperion list
+    		saw_missing_node = false;
+    		for (i = 0; i < (cenx4_can.auto_alloc_num_devs + 1); ++i)
+    		{
+    			cnt = 0;
+    			for (j = 0; j < (cenx4_can.auto_alloc_num_devs + 1); ++j)
+    			{
+    				if (ctx->hyperion_node_id_to_mod_num[j] == i)
+    				{
+    					cnt++;
+    				}
+    			}
+
+    			if (cnt > 1)
+    			{
+    				chsnprintf(ui->state.text.lines[3], CENX4_UI_MAX_LINE_TEXT_LEN-1, "HMod%d dupe", i);
+    				hyperion_cfg_ok = false;
+    				break;
+    			}
+    			else if (cnt == 1)
+    			{
+    				if (saw_missing_node)
+    				{
+        				chsnprintf(ui->state.text.lines[3], CENX4_UI_MAX_LINE_TEXT_LEN-1, "HMod%d miss", i - 1);
+        				hyperion_cfg_ok = false;
+        				break;
+    				}
+    			}
+    			else if (cnt == 0)
+    			{
+    				saw_missing_node = true;
+    			}
+    		}
+
+    		if (hyperion_cfg_ok)
+    		{
+    			chsnprintf(ui->state.text.lines[3], CENX4_UI_MAX_LINE_TEXT_LEN-1, "HModCfg OK");
+    		}
+
+    		// Store ok status
+    		ctx->cfg_ok = hyperion_cfg_ok && cenx4_cfg_ok;
     	}
 
     	// Action button
-    	strcpy(ui->state.text.lines[3], actions[ctx->cur_action]);
+    	strcpy(ui->state.text.lines[4], actions[ctx->cur_action]);
 
     	cenx4_ui_unlock(ui);
 
     	ui = cenx4_ui_lock(1);
-		ui->state.split_pot.pots[0].val = ctx->node_id_to_mod_num[0];
+		ui->state.split_pot.pots[0].val = ctx->cenx4_node_id_to_mod_num[0];
 		ui->state.split_pot.pots[1].val = ctx->test_pot_val[0];
 		cenx4_ui_unlock(ui);
     }
     else
     {
-		memset(&state, 0, sizeof(state));
-		state.disp = 1;
-		state.dispmode = CENX4_UI_DISPMODE_SPLIT_POT;
-
-		state.state.split_pot.pots[0].flags =
-			CENX4_UI_DISPMODE_POT_FLAGS_ROUND |
-			CENX4_UI_DISPMODE_POT_FLAGS_FILL |
-			CENX4_UI_DISPMODE_POT_FLAGS_RENDER_VAL |
-			CENX4_UI_DISPMODE_POT_FLAGS_TOP_FONT_AUTO;
-		chsnprintf(state.state.split_pot.pots[0].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "ModNum");
-		state.state.split_pot.pots[0].val = ctx->node_id_to_mod_num[idx];
-
-		state.state.split_pot.pots[1].flags = state.state.split_pot.pots[0].flags;
-		chsnprintf(state.state.split_pot.pots[1].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "Test");
-		state.state.split_pot.pots[1].val = ctx->test_pot_val[idx];
-
-		ret = phi_can_xfer(
-			&cenx4_can,
-			PHI_CAN_PRIO_LOWEST + 1,
-			PHI_CAN_MSG_ID_CENX4_UPDATE_DISPLAY,
-			node_id,
-			(const uint8_t *) &state,
-			sizeof(state),
-			NULL,
-			0,
-			NULL,
-			PHI_CAN_DEFAULT_TIMEOUT
-		);
-		if (MSG_OK != ret)
+    	switch (ctx->node_id_to_dev_id[idx])
 		{
-			return ret;
-		}
-    }
+		case CENX4_DEV_ID:
+			{
+				cenx4_can_handle_update_display_state_t state;
 
-    return MSG_OK;
+				memset(&state, 0, sizeof(state));
+				state.disp = 1;
+				state.dispmode = CENX4_UI_DISPMODE_SPLIT_POT;
+
+				state.state.split_pot.pots[0].flags =
+					CENX4_UI_DISPMODE_POT_FLAGS_ROUND |
+					CENX4_UI_DISPMODE_POT_FLAGS_FILL |
+					CENX4_UI_DISPMODE_POT_FLAGS_RENDER_VAL |
+					CENX4_UI_DISPMODE_POT_FLAGS_TOP_FONT_AUTO;
+				chsnprintf(state.state.split_pot.pots[0].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "ModNum");
+				state.state.split_pot.pots[0].val = ctx->cenx4_node_id_to_mod_num[idx];
+
+				state.state.split_pot.pots[1].flags = state.state.split_pot.pots[0].flags;
+				chsnprintf(state.state.split_pot.pots[1].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "Test");
+				state.state.split_pot.pots[1].val = ctx->test_pot_val[idx];
+
+				ret = phi_can_xfer(
+					&cenx4_can,
+					PHI_CAN_PRIO_LOWEST + 1,
+					PHI_CAN_MSG_ID_CENX4_UPDATE_DISPLAY,
+					node_id,
+					(const uint8_t *) &state,
+					sizeof(state),
+					NULL,
+					0,
+					NULL,
+					PHI_CAN_DEFAULT_TIMEOUT
+				);
+				if (MSG_OK != ret)
+				{
+					return ret;
+				}
+			}
+			break;
+
+		case HYPERION_DEV_ID:
+			{
+			hyperion_app_slave_msg_update_display_state_t state;
+
+				memset(&state, 0, sizeof(state));
+				state.dispmode = HYPERION_UI_DISPMODE_SPLIT_POT;
+
+				state.state.split_pot.pots[0].flags =
+					HYPERION_UI_DISPMODE_POT_FLAGS_FILL |
+					HYPERION_UI_DISPMODE_POT_FLAGS_RENDER_VAL;
+				chsnprintf(state.state.split_pot.pots[0].text_top, HYPERION_UI_MAX_LINE_TEXT_LEN - 1, "ModNum");
+				state.state.split_pot.pots[0].val = ctx->hyperion_node_id_to_mod_num[idx];
+
+				state.state.split_pot.pots[1].flags = state.state.split_pot.pots[0].flags;
+				chsnprintf(state.state.split_pot.pots[1].text_top, HYPERION_UI_MAX_LINE_TEXT_LEN - 1, "Test");
+				state.state.split_pot.pots[1].val = ctx->test_pot_val[idx];
+
+				ret = phi_can_xfer(
+					&cenx4_can,
+					PHI_CAN_PRIO_LOWEST + 1,
+					PHI_CAN_MSG_ID_HYPERION_UPDATE_DISPLAY,
+					node_id,
+					(const uint8_t *) &state,
+					sizeof(state),
+					NULL,
+					0,
+					NULL,
+					PHI_CAN_DEFAULT_TIMEOUT
+				);
+				if (MSG_OK != ret)
+				{
+					return ret;
+				}
+			}
+			break;
+
+		default:
+			return MSG_RESET;
+		}
+	}
+
+	return MSG_OK;
 }
 
 bool cenx4_app_setup_bootload_slave(cenx4_app_setup_context_t * ctx, uint8_t node_id)

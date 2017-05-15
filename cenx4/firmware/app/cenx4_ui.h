@@ -56,7 +56,7 @@ typedef union cenx4_ui_dispmode_state_u
 		char misc_text[CENX4_UI_MAX_LINE_TEXT_LEN];
 	} boot;
 
-	#define CENX4_UI_DISPMODE_TEXTS_LINES 4
+	#define CENX4_UI_DISPMODE_TEXTS_LINES 5
 	struct
 	{
 		uint8_t flags[CENX4_UI_DISPMODE_TEXTS_LINES];

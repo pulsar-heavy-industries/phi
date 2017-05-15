@@ -23,7 +23,8 @@ typedef struct cenx4_app_cfg_s
             // A map of module numbers to their UIDs
             // The module number is derived from the index in the array.
             // Unused entries have all 0s
-            uint8_t mod_num_to_uid[CENX4_APP_CFG_MAX_MODULES][PHI_CAN_AUTO_ID_UNIQ_ID_LEN];
+            uint8_t cenx4_mod_num_to_uid[CENX4_APP_CFG_MAX_MODULES][PHI_CAN_AUTO_ID_UNIQ_ID_LEN];
+            uint8_t hyperion_mod_num_to_uid[CENX4_APP_CFG_MAX_MODULES][PHI_CAN_AUTO_ID_UNIQ_ID_LEN];
 
             // Ableton specific: Make the last encoder switch banks
             bool ableton_enable_banks_enc;
@@ -57,7 +58,7 @@ static inline uint8_t cenx4_app_cfg_get_mapped_node_id(uint8_t node_id)
 /*
  * Returns a map of "mapped node id" to module number.
  */
-void cenx4_app_cfg_get_node_id_to_mod_num_map(uint8_t * map, uint32_t max_entries);
+void cenx4_app_cfg_get_node_id_to_mod_num_map(uint32_t dev_id, uint8_t * map, uint32_t max_entries);
 
 
 #endif /* CENX4_APP_CFG_H_ */
