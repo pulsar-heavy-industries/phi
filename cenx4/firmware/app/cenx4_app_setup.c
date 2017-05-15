@@ -17,27 +17,6 @@ void cenx4_app_setup_start(void * _ctx)
     cenx4_app_setup_context_t * ctx = (cenx4_app_setup_context_t *) _ctx;
     uint32_t i;
 
-#if 0
-#warning MEGA HACK TODO
-    cenx4_can.auto_alloc_num_devs = 1;
-    cenx4_can.auto_alloc_table[0][0] = 0x59;
-    cenx4_can.auto_alloc_table[0][1] = 0x52;
-    cenx4_can.auto_alloc_table[0][2] = 0x45;
-	cenx4_can.auto_alloc_table[0][3] = 0x42;
-	cenx4_can.auto_alloc_table[0][4] = 0x2f;
-	cenx4_can.auto_alloc_table[0][5] = 0x00;
-	cenx4_can.auto_alloc_table[0][6] = 0x33;
-	cenx4_can.auto_alloc_table[0][7] = 0x00;
-	cenx4_can.auto_alloc_table[0][8] = 0x0d;
-	cenx4_can.auto_alloc_table[0][9] = 0x51;
-	cenx4_can.auto_alloc_table[0][10] = 0x4d;
-	cenx4_can.auto_alloc_table[0][11] = 0x43;
-	cenx4_can.auto_alloc_table[0][12] = 0x34;
-	cenx4_can.auto_alloc_table[0][13] = 0x38;
-	cenx4_can.auto_alloc_table[0][14] = 0x33;
-	cenx4_can.auto_alloc_table[0][15] = 0x20;
-#endif
-
     // Basic init
     chDbgCheck(ctx != NULL);
     chDbgCheck(cenx4_can.node_id == PHI_CAN_AUTO_ID_ALLOCATOR_NODE); // setup app can only run on allocator

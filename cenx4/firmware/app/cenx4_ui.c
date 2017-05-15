@@ -178,22 +178,6 @@ void cenx4_ui_render_boot(cenx4_ui_t * ui)
 
 	chsnprintf(buf, sizeof(buf) - 1, "UP %02d:%02d", up_secs / 60, up_secs % 60);
 	cenx4_ui_text(ui, 0, gdispGGetHeight(ui->g) - font_heights[1] - 3, ui->w, 1, justifyLeft, buf);
-
-    if ((up_secs % 60) == 5)
-    {
-        // NVIC_SystemReset();
-#if 0
-        const WDGConfig wdgcfg = {
-  STM32_IWDG_PR_64,
-  STM32_IWDG_RL(1),
-  STM32_IWDG_WIN_DISABLED
-};
-#endif
-
-
-       ////// wdgStart(&WDGD1, &wdgcfg);
-
-    }
 }
 
 void cenx4_ui_render_texts(cenx4_ui_t * ui)

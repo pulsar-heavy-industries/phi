@@ -86,7 +86,7 @@ void cenx4_app_ableton_start(void * _ctx)
 			goto err_bad_cfg;
 		}
 
-		if (si.dev_id != PHI_DEV_ID('C', 'N', 'X', '4'))
+		if (si.dev_id != CENX4_DEV_ID)
 		{
 			cenx4_app_log_fmt("M%dDevId?", mod_num);
 			cenx4_app_log_fmt("%x", si.dev_id);

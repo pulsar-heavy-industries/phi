@@ -2,13 +2,8 @@
 #define CENX4_UI_H_
 
 #include "phi_lib/phi_lib.h"
-
-#ifndef CENX4_UI_EXPOSE_INTERFACES_ONLY
 #include "gfx.h"
-#else
-typedef int16_t coord_t;
-typedef void * GDisplay;
-#endif
+
 
 #define CENX4_UI_MAX_LINE_TEXT_LEN		16
 #define CENX4_UI_NUM_DISPS              2
