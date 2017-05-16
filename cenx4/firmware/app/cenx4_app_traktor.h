@@ -34,6 +34,19 @@ typedef struct cenx4_app_traktor_context_s
 	uint8_t master_l, master_r;
 	uint8_t master_level, monitor_level;
 	bool_t browse_mode;
+
+    // Number of modules available
+    uint8_t num_modules;
+
+    // Map of node id -> module number
+    uint8_t node_id_to_mod_num[CENX4_APP_CFG_MAX_MODULES];
+
+    // Reverse map (module number -> node id)
+    uint8_t mod_num_to_node_id[CENX4_APP_CFG_MAX_MODULES];
+
+    // Gains
+    uint8_t mod_num_to_gain[CENX4_APP_CFG_MAX_MODULES];
+
 } cenx4_app_traktor_context_t;
 
 
@@ -55,5 +68,6 @@ void cenx4_app_traktor_midi_cc(void * ctx, phi_midi_port_t port, uint8_t ch, uin
 void cenx4_app_traktor_reconfigure_displays(cenx4_app_traktor_context_t * ctx);
 void cenx4_app_traktor_render_browse(cenx4_ui_t * ui, void * _ctx);
 void cenx4_app_traktor_render_custom_1(cenx4_ui_t * ui, void * _ctx);
+msg_t cenx4_app_traktor_update_slave_display(cenx4_app_traktor_context_t * ctx, uint8_t node_id);
 
 #endif /* CENX4_APP_TRAKTOR_H_ */

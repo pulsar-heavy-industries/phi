@@ -362,28 +362,6 @@ msg_t cenx4_app_setup_enter_setup_mode(cenx4_app_setup_context_t * ctx, uint8_t 
 				}
 
 				// Put display 1 in pots mode
-				memset(&msg, 0, sizeof(msg));
-				msg.disp = 1;
-				msg.dispmode = CENX4_UI_DISPMODE_SPLIT_POT;
-
-				ret = phi_can_xfer(
-					&cenx4_can,
-					PHI_CAN_PRIO_LOWEST + 1,
-					PHI_CAN_MSG_ID_CENX4_UPDATE_DISPLAY,
-					node_id,
-					(const uint8_t *) &msg,
-					sizeof(msg),
-					NULL,
-					0,
-					NULL,
-					PHI_CAN_DEFAULT_TIMEOUT
-				);
-				if (MSG_OK != ret)
-				{
-					return ret;
-				}
-
-				// Set pots
 				ret = cenx4_app_setup_update_ui(ctx, node_id);
 				if (MSG_OK != ret)
 				{
@@ -397,28 +375,6 @@ msg_t cenx4_app_setup_enter_setup_mode(cenx4_app_setup_context_t * ctx, uint8_t 
 
 		case HYPERION_DEV_ID:
 			{
-				hyperion_app_slave_msg_update_display_state_t msg;
-
-				memset(&msg, 0, sizeof(msg));
-				msg.dispmode = HYPERION_UI_DISPMODE_SPLIT_POT;
-
-				ret = phi_can_xfer(
-					&cenx4_can,
-					PHI_CAN_PRIO_LOWEST + 1,
-					PHI_CAN_MSG_ID_HYPERION_UPDATE_DISPLAY,
-					node_id,
-					(const uint8_t *) &msg,
-					sizeof(msg),
-					NULL,
-					0,
-					NULL,
-					PHI_CAN_DEFAULT_TIMEOUT
-				);
-				if (MSG_OK != ret)
-				{
-					return ret;
-				}
-
 				// Set pots
 				ret = cenx4_app_setup_update_ui(ctx, node_id);
 				if (MSG_OK != ret)
@@ -604,7 +560,7 @@ msg_t cenx4_app_setup_update_ui(cenx4_app_setup_context_t * ctx, uint8_t node_id
 
 		case HYPERION_DEV_ID:
 			{
-			hyperion_app_slave_msg_update_display_state_t state;
+				hyperion_app_slave_msg_update_display_state_t state;
 
 				memset(&state, 0, sizeof(state));
 				state.dispmode = HYPERION_UI_DISPMODE_SPLIT_POT;
@@ -618,6 +574,8 @@ msg_t cenx4_app_setup_update_ui(cenx4_app_setup_context_t * ctx, uint8_t node_id
 				state.state.split_pot.pots[1].flags = state.state.split_pot.pots[0].flags;
 				chsnprintf(state.state.split_pot.pots[1].text_top, HYPERION_UI_MAX_LINE_TEXT_LEN - 1, "Test");
 				state.state.split_pot.pots[1].val = ctx->test_pot_val[idx];
+
+				strcpy(state.state.split_pot.title, "Setup");
 
 				ret = phi_can_xfer(
 					&cenx4_can,
