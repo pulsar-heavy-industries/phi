@@ -214,6 +214,30 @@ void cenx4_app_traktor_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, 
 			}
 		    break;
 
+		// Shift1
+		case 2:
+			if (event == PHI_BTN_EVENT_PRESSED)
+			{
+				ctx->shift1_mode = TRUE;
+
+				pkt.chn = CENX4_APP_TRAKTOR_MIDI_CH_MASTER;
+				pkt.event = 0xB; // Control Change
+				pkt.val1 = CENX4_APP_TRAKTOR_MIDI_CC_SHIFT1;
+				pkt.val2 = 1;
+				phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
+			}
+			else if (event == PHI_BTN_EVENT_RELEASED)
+			{
+				ctx->shift1_mode = FALSE;
+
+				pkt.chn = CENX4_APP_TRAKTOR_MIDI_CH_MASTER;
+				pkt.event = 0xB; // Control Change
+				pkt.val1 = CENX4_APP_TRAKTOR_MIDI_CC_SHIFT1;
+				pkt.val2 = 0;
+				phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
+			}
+			break;
+
 		case 3:
 			switch (ctx->mode)
 			{
@@ -466,8 +490,16 @@ void cenx4_app_traktor_render_custom_1(cenx4_ui_t * ui, void * _ctx)
     cenx4_app_traktor_context_t * ctx = (cenx4_app_traktor_context_t *) _ctx;
 
     gdispGClear(ui->g, Black);
-    vertical_vu_helper(ui, 0, ctx->master_l);
-    vertical_vu_helper(ui, 1, ctx->master_r);
+
+    if (ctx->shift1_mode)
+    {
+    	cenx4_ui_text(ui, 0, 0, ui->w, 1, justifyCenter, "CUE");
+    }
+    else
+    {
+    	vertical_vu_helper(ui, 0, ctx->master_l);
+    	vertical_vu_helper(ui, 1, ctx->master_r);
+    }
 }
 
 msg_t cenx4_app_traktor_update_slave_display(cenx4_app_traktor_context_t * ctx, uint8_t node_id)
