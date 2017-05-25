@@ -164,8 +164,8 @@ void cenx4_app_traktor_encoder_event(void * _ctx, uint8_t node_id, uint8_t encod
 		{
 			CENX4_APP_TRAKTOR_MIDI_CC_BROWSE_SELECT,
 			CENX4_APP_TRAKTOR_MIDI_CC_BROWSE_SELECT_PAGE,
+			CENX4_APP_TRAKTOR_MIDI_CC_BROWSE_PREVIEW_SEEK,
 			CENX4_APP_TRAKTOR_MIDI_CC_BROWSE_TREE_SELECT,
-			CENX4_APP_TRAKTOR_MIDI_CC_UNUSED,
 		},
     };
 
@@ -202,7 +202,7 @@ void cenx4_app_traktor_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, 
 	{
 		switch (btn_num)
 		{
-		// Browse mode (toggle) / Setup?
+		// Top left button: Browse mode (toggle) / Setup?
 		case 0:
 			if ((event == PHI_BTN_EVENT_HELD) &&
 				(param >= 5000))
@@ -221,7 +221,7 @@ void cenx4_app_traktor_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, 
 			}
 		    break;
 
-		// Shift1/Expand tree (in browse mode)
+		// Top right button: Shift1/Preview (in browse mode)
 		case 2:
 			switch (ctx->mode)
 			{
@@ -249,6 +249,26 @@ void cenx4_app_traktor_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, 
 				break;
 
 			case CENX4_APP_TRAKTOR_MODE_BROWSE:
+				if (event == PHI_BTN_EVENT_PRESSED)
+				{
+					pkt.chn = CENX4_APP_TRAKTOR_MIDI_CH_MASTER;
+					pkt.event = 0xB; // Control Change
+					pkt.val1 = CENX4_APP_TRAKTOR_MIDI_CC_BROWSE_PREVIEW_TOGGLE;
+					pkt.val2 = 1;
+					phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
+				}
+				break;
+			}
+			break;
+
+		/* Bottom right button: Folder (in browse mode) */
+		case 3:
+			switch (ctx->mode)
+			{
+			case CENX4_APP_TRAKTOR_MODE_DEFAULT:
+				break;
+
+			case CENX4_APP_TRAKTOR_MODE_BROWSE:
 				pkt.chn = CENX4_APP_TRAKTOR_MIDI_CH_MASTER;
 				pkt.event = 0xB; // Control Change
 				pkt.val1 = CENX4_APP_TRAKTOR_MIDI_CC_BROWSE_TREE_EXPAND;
@@ -256,6 +276,7 @@ void cenx4_app_traktor_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, 
 				phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
 				break;
 			}
+			break;
 		}
 	}
 	else
@@ -411,13 +432,12 @@ void cenx4_app_traktor_reconfigure_displays(cenx4_app_traktor_context_t * ctx)
 
 	/* Move display 0 */
 	ui = cenx4_ui_lock(0);
+	memset(&(ui->state), 0, sizeof(ui->state));
 
 	switch (ctx->mode)
 	{
 	case CENX4_APP_TRAKTOR_MODE_DEFAULT:
 		ui->dispmode = CENX4_UI_DISPMODE_SPLIT_POT;
-
-		memset(&(ui->state), 0, sizeof(ui->state));
 
 		ui->state.split_pot.pots[0].flags =
 				CENX4_UI_DISPMODE_POT_FLAGS_ROUND |
@@ -433,7 +453,7 @@ void cenx4_app_traktor_reconfigure_displays(cenx4_app_traktor_context_t * ctx)
 		break;
 
 	case CENX4_APP_TRAKTOR_MODE_BROWSE:
-		ui->state.callback.func = cenx4_app_traktor_render_browse;
+		ui->state.callback.func = cenx4_app_traktor_render_browse_left;
 		ui->state.callback.ctx = ctx;
 		ui->dispmode = CENX4_UI_DISPMODE_CALLBACK;
 		break;
@@ -444,24 +464,47 @@ void cenx4_app_traktor_reconfigure_displays(cenx4_app_traktor_context_t * ctx)
 
 	cenx4_ui_unlock(ui);
 
-	/* Move display 1 into custom mode for displaying master VU meters */
+	/* Move display 1 */
 	ui = cenx4_ui_lock(1);
 	memset(&(ui->state), 0, sizeof(ui->state));
-	ui->state.callback.func = cenx4_app_traktor_render_custom_1;
-	ui->state.callback.ctx = ctx;
-	ui->dispmode = CENX4_UI_DISPMODE_CALLBACK;
+
+	switch (ctx->mode)
+	{
+	case CENX4_APP_TRAKTOR_MODE_DEFAULT:
+		ui->state.callback.func = cenx4_app_traktor_render_vu_meters;
+		ui->state.callback.ctx = ctx;
+		ui->dispmode = CENX4_UI_DISPMODE_CALLBACK;
+		break;
+
+	case CENX4_APP_TRAKTOR_MODE_BROWSE:
+		ui->state.callback.func = cenx4_app_traktor_render_browse_right;
+		ui->state.callback.ctx = ctx;
+		ui->dispmode = CENX4_UI_DISPMODE_CALLBACK;
+		break;
+
+	default:
+		chDbgCheck(FALSE);
+	}
+
 	cenx4_ui_unlock(ui);
 }
 
-void cenx4_app_traktor_render_browse(cenx4_ui_t * ui, void * _ctx)
+void cenx4_app_traktor_render_browse_left(cenx4_ui_t * ui, void * _ctx)
 {
-//    cenx4_app_traktor_context_t * ctx = (cenx4_app_traktor_context_t *) _ctx;
-
     gdispGClear(ui->g, Black);
     cenx4_ui_text(ui, 0, 0, ui->w, 1, justifyCenter, "TrackSel");
 	cenx4_ui_text(ui, 0, ui->h / 2 - (cenx4_ui_get_font_h(1) / 2), ui->w, 1, justifyCenter, "[Browse]");
 	cenx4_ui_text(ui, 0, ui->h - cenx4_ui_get_font_h(1), ui->w, 1, justifyCenter, "PageScroll");
 }
+
+void cenx4_app_traktor_render_browse_right(cenx4_ui_t * ui, void * _ctx)
+{
+    gdispGClear(ui->g, Black);
+    cenx4_ui_text(ui, 0, 0, ui->w, 1, justifyCenter, "Preview");
+	cenx4_ui_text(ui, 0, ui->h / 2 - (cenx4_ui_get_font_h(1) / 2), ui->w, 1, justifyCenter, "[Browse]");
+	cenx4_ui_text(ui, 0, ui->h - cenx4_ui_get_font_h(1), ui->w, 1, justifyCenter, "Folder");
+}
+
 
 void vertical_vu_helper(cenx4_ui_t * ui, uint8_t n, uint8_t val)
 {
@@ -491,7 +534,7 @@ void vertical_vu_helper(cenx4_ui_t * ui, uint8_t n, uint8_t val)
 	gdispGFillArea(ui->g, vu_x + vu_bar_x_offset, vu_y + vu_bar_y_offset + (vu_bar_max_height - vu_bar_height), vu_bar_width, vu_bar_height, White);
 }
 
-void cenx4_app_traktor_render_custom_1(cenx4_ui_t * ui, void * _ctx)
+void cenx4_app_traktor_render_vu_meters(cenx4_ui_t * ui, void * _ctx)
 {
     cenx4_app_traktor_context_t * ctx = (cenx4_app_traktor_context_t *) _ctx;
 

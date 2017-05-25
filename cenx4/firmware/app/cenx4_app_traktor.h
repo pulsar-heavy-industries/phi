@@ -17,7 +17,9 @@
 #define CENX4_APP_TRAKTOR_MIDI_CC_BROWSE_SELECT_PAGE		7
 #define CENX4_APP_TRAKTOR_MIDI_CC_BROWSE_TREE_SELECT		8
 #define CENX4_APP_TRAKTOR_MIDI_CC_BROWSE_TREE_EXPAND		9
-#define CENX4_APP_TRAKTOR_MIDI_CC_SHIFT1					10
+#define CENX4_APP_TRAKTOR_MIDI_CC_BROWSE_PREVIEW_TOGGLE		10
+#define CENX4_APP_TRAKTOR_MIDI_CC_BROWSE_PREVIEW_SEEK       11
+#define CENX4_APP_TRAKTOR_MIDI_CC_SHIFT1					12
 
 #define CENX4_APP_TRAKTOR_MIDI_CC_UNUSED			63
 
@@ -68,8 +70,9 @@ void cenx4_app_traktor_btn_event(void * ctx, uint8_t node_id, uint8_t btn_num, p
 void cenx4_app_traktor_pot_event(void * ctx, uint8_t node_id, uint8_t pot_num, uint8_t val);
 void cenx4_app_traktor_midi_cc(void * ctx, phi_midi_port_t port, uint8_t ch, uint8_t cc, uint8_t val);
 void cenx4_app_traktor_reconfigure_displays(cenx4_app_traktor_context_t * ctx);
-void cenx4_app_traktor_render_browse(cenx4_ui_t * ui, void * _ctx);
-void cenx4_app_traktor_render_custom_1(cenx4_ui_t * ui, void * _ctx);
+void cenx4_app_traktor_render_browse_left(cenx4_ui_t * ui, void * _ctx);
+void cenx4_app_traktor_render_browse_right(cenx4_ui_t * ui, void * _ctx);
+void cenx4_app_traktor_render_vu_meters(cenx4_ui_t * ui, void * _ctx);
 msg_t cenx4_app_traktor_update_slave_display(cenx4_app_traktor_context_t * ctx, uint8_t node_id);
 
 #endif /* CENX4_APP_TRAKTOR_H_ */
