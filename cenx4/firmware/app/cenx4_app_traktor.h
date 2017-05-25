@@ -51,6 +51,9 @@ typedef struct cenx4_app_traktor_context_s
     // Gains
     uint8_t mod_num_to_gain[CENX4_APP_CFG_MAX_MODULES];
 
+    // Loop lengths
+    uint8_t mod_num_to_loop_len[CENX4_APP_CFG_MAX_MODULES];
+
 } cenx4_app_traktor_context_t;
 
 

@@ -400,6 +400,12 @@ void cenx4_app_traktor_midi_cc(void * _ctx, phi_midi_port_t port, uint8_t ch, ui
 				cenx4_app_traktor_update_slave_display(ctx, node_id);
 			}
 
+			if (cc == 21)
+			{
+				ctx->mod_num_to_loop_len[mod_num] = val;
+				cenx4_app_traktor_update_slave_display(ctx, node_id);
+			}
+
 			// CC 60 is bar graph
 			if (cc == 60)
 			{
@@ -556,6 +562,25 @@ msg_t cenx4_app_traktor_update_slave_display(cenx4_app_traktor_context_t * ctx, 
 	hyperion_app_slave_msg_update_display_state_t state;
 	const uint8_t mod_num = ctx->node_id_to_mod_num[cenx4_app_cfg_get_mapped_node_id(node_id)];
 
+	static const char * loop_texts[] = {
+		"1/32",
+		"1/16",
+		"1/8",
+		"1/4",
+		"1/2",
+		"1",
+		"2",
+		"4",
+		"8",
+		"16",
+		"32",
+		"?",
+	};
+	const char * loop_text = loop_texts[phi_min(
+		ctx->mod_num_to_loop_len[mod_num],
+		PHI_ARRLEN(loop_texts) - 1
+	)];
+
 	memset(&state, 0, sizeof(state));
 	state.dispmode = HYPERION_UI_DISPMODE_SPLIT_POT;
 
@@ -565,9 +590,10 @@ msg_t cenx4_app_traktor_update_slave_display(cenx4_app_traktor_context_t * ctx, 
 	chsnprintf(state.state.split_pot.pots[0].text_top, HYPERION_UI_MAX_LINE_TEXT_LEN - 1, "Gain");
 	state.state.split_pot.pots[0].val = ctx->mod_num_to_gain[mod_num];
 
-	state.state.split_pot.pots[1].flags = state.state.split_pot.pots[0].flags;
-	chsnprintf(state.state.split_pot.pots[1].text_top, HYPERION_UI_MAX_LINE_TEXT_LEN - 1, "");
-	state.state.split_pot.pots[1].val = 0;
+	state.state.split_pot.pots[1].flags = HYPERION_UI_DISPMODE_POT_FLAGS_FILL;
+	chsnprintf(state.state.split_pot.pots[1].text_top, HYPERION_UI_MAX_LINE_TEXT_LEN - 1, "LoopLen");
+	chsnprintf(state.state.split_pot.pots[1].text_bottom, HYPERION_UI_MAX_LINE_TEXT_LEN - 1, loop_text);
+	state.state.split_pot.pots[1].val = phi_lib_map(ctx->mod_num_to_loop_len[mod_num], 0, 10, 0, 0xff);
 
 	chsnprintf(state.state.split_pot.title, sizeof(state.state.split_pot.title) - 1, "Deck %c", 'A' + mod_num);
 
