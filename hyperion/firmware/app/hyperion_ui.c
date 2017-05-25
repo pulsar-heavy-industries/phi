@@ -292,9 +292,9 @@ void hyperion_ui_render_split_pot_helper(hyperion_ui_t * ui, struct hyperion_ui_
 		ui,
 		x,
 		y + h - font_heights[0],
-		gdispGetStringWidth(pot->text_bottom, fonts[0]) + 2,
+		(pot->flags & HYPERION_UI_DISPMODE_POT_FLAGS_RENDER_VAL) ? gdispGetStringWidth(pot->text_bottom, fonts[0]) + 2 : w,
 		0,
-		justifyLeft,
+		(pot->flags & HYPERION_UI_DISPMODE_POT_FLAGS_RENDER_VAL) ? justifyLeft : justifyCenter,
 		pot->text_bottom);
 }
 
