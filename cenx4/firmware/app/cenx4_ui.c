@@ -392,6 +392,11 @@ uint8_t cenx4_ui_get_biggest_possible_font_idx(cenx4_ui_t * ui, const char * s)
 	return 0;
 }
 
+coord_t cenx4_ui_get_font_h(uint8_t font_idx)
+{
+	return font_heights[font_idx];
+}
+
 const uint8_t phi_logo[][8] = {
     {0, 0, 31, 255, 255, 248, 0, 0},
     {0, 0, 31, 255, 255, 248, 0, 0},

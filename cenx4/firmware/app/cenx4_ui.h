@@ -106,6 +106,7 @@ void cenx4_ui_render_boot(cenx4_ui_t * ui);
 void cenx4_ui_render_texts(cenx4_ui_t * ui);
 void cenx4_ui_render_split_pot(cenx4_ui_t * ui);
 uint8_t cenx4_ui_get_biggest_possible_font_idx(cenx4_ui_t * ui, const char * s);
+coord_t cenx4_ui_get_font_h(uint8_t font_idx);
 
 void cenx4_ui_render_logo(cenx4_ui_t * ui);
 

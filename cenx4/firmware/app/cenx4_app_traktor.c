@@ -458,7 +458,9 @@ void cenx4_app_traktor_render_browse(cenx4_ui_t * ui, void * _ctx)
 //    cenx4_app_traktor_context_t * ctx = (cenx4_app_traktor_context_t *) _ctx;
 
     gdispGClear(ui->g, Black);
-	cenx4_ui_text(ui, 0, 0, ui->w, 1, justifyCenter, "Browse");
+    cenx4_ui_text(ui, 0, 0, ui->w, 1, justifyCenter, "TrackSel");
+	cenx4_ui_text(ui, 0, ui->h / 2 - (cenx4_ui_get_font_h(1) / 2), ui->w, 1, justifyCenter, "[Browse]");
+	cenx4_ui_text(ui, 0, ui->h - cenx4_ui_get_font_h(1), ui->w, 1, justifyCenter, "PageScroll");
 }
 
 void vertical_vu_helper(cenx4_ui_t * ui, uint8_t n, uint8_t val)
