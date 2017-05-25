@@ -34,9 +34,20 @@ void cenx4_app_init_start(void * _ctx)
 	cenx4_app_init_update_slaves(ctx);
 
 	// Lets get this party started
-//	phi_app_mgr_switch_app(&cenx4_app_ableton_desc, &(cenx4_app_contexts.ableton));
-//	phi_app_mgr_switch_app(&cenx4_app_traktor_desc, &(cenx4_app_contexts.traktor));
-	phi_app_mgr_switch_app(&cenx4_app_setup_desc, &(cenx4_app_contexts.setup));
+	switch (cenx4_app_cfg.cur.startup_app)
+	{
+	case CENX4_APP_CFG_STARTUP_APP_ABLETON:
+		phi_app_mgr_switch_app(&cenx4_app_ableton_desc, &(cenx4_app_contexts.ableton));
+		break;
+
+	case CENX4_APP_CFG_STARTUP_APP_TRAKTOR:
+		phi_app_mgr_switch_app(&cenx4_app_traktor_desc, &(cenx4_app_contexts.traktor));
+		break;
+
+	default:
+		phi_app_mgr_switch_app(&cenx4_app_setup_desc, &(cenx4_app_contexts.setup));
+		break;
+	}
 }
 
 void cenx4_app_init_stop(void * ctx)

@@ -185,6 +185,9 @@ void cenx4_app_setup_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, ph
 		switch (ctx->cur_action)
 		{
 		case CENX4_APP_SETUP_ACTION_EXIT:
+			cenx4_app_cfg.cur.startup_app = CENX4_APP_CFG_STARTUP_APP_ABLETON;
+			cenx4_app_cfg_save(&cenx4_app_cfg);
+
 			phi_app_mgr_switch_app(&cenx4_app_ableton_desc, &(cenx4_app_contexts.ableton));
 			break;
 
@@ -270,6 +273,9 @@ void cenx4_app_setup_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, ph
             break;
 
         case CENX4_APP_SETUP_ACTION_TRAKTOR:
+        	cenx4_app_cfg.cur.startup_app = CENX4_APP_CFG_STARTUP_APP_TRAKTOR;
+        	cenx4_app_cfg_save(&cenx4_app_cfg);
+
 			phi_app_mgr_switch_app(&cenx4_app_traktor_desc, &(cenx4_app_contexts.traktor));
 			break;
 

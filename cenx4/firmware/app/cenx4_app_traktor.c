@@ -162,10 +162,10 @@ void cenx4_app_traktor_encoder_event(void * _ctx, uint8_t node_id, uint8_t encod
     	},
 		// CENX4_APP_TRAKTOR_MODE_BROWSE
 		{
-			CENX4_APP_TRAKTOR_MIDI_CC_BROWSE_SELECT_PAGE,
 			CENX4_APP_TRAKTOR_MIDI_CC_BROWSE_SELECT,
-			CENX4_APP_TRAKTOR_MIDI_CC_UNUSED,
+			CENX4_APP_TRAKTOR_MIDI_CC_BROWSE_SELECT_PAGE,
 			CENX4_APP_TRAKTOR_MIDI_CC_BROWSE_TREE_SELECT,
+			CENX4_APP_TRAKTOR_MIDI_CC_UNUSED,
 		},
     };
 
@@ -202,8 +202,15 @@ void cenx4_app_traktor_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, 
 	{
 		switch (btn_num)
 		{
-		// Browse mode (toggle)
-		case 1:
+		// Browse mode (toggle) / Setup?
+		case 0:
+			if ((event == PHI_BTN_EVENT_HELD) &&
+				(param >= 5000))
+			{
+				phi_app_mgr_switch_app(&cenx4_app_setup_desc, &(cenx4_app_contexts.setup));
+				return;
+			}
+
 			if (event == PHI_BTN_EVENT_PRESSED)
 			{
 				pkt.chn = CENX4_APP_TRAKTOR_MIDI_CH_MASTER;
@@ -214,34 +221,31 @@ void cenx4_app_traktor_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, 
 			}
 		    break;
 
-		// Shift1
+		// Shift1/Expand tree (in browse mode)
 		case 2:
-			if (event == PHI_BTN_EVENT_PRESSED)
-			{
-				ctx->shift1_mode = TRUE;
-
-				pkt.chn = CENX4_APP_TRAKTOR_MIDI_CH_MASTER;
-				pkt.event = 0xB; // Control Change
-				pkt.val1 = CENX4_APP_TRAKTOR_MIDI_CC_SHIFT1;
-				pkt.val2 = 1;
-				phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
-			}
-			else if (event == PHI_BTN_EVENT_RELEASED)
-			{
-				ctx->shift1_mode = FALSE;
-
-				pkt.chn = CENX4_APP_TRAKTOR_MIDI_CH_MASTER;
-				pkt.event = 0xB; // Control Change
-				pkt.val1 = CENX4_APP_TRAKTOR_MIDI_CC_SHIFT1;
-				pkt.val2 = 0;
-				phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
-			}
-			break;
-
-		case 3:
 			switch (ctx->mode)
 			{
 			case CENX4_APP_TRAKTOR_MODE_DEFAULT:
+				if (event == PHI_BTN_EVENT_PRESSED)
+				{
+					ctx->shift1_mode = TRUE;
+
+					pkt.chn = CENX4_APP_TRAKTOR_MIDI_CH_MASTER;
+					pkt.event = 0xB; // Control Change
+					pkt.val1 = CENX4_APP_TRAKTOR_MIDI_CC_SHIFT1;
+					pkt.val2 = 1;
+					phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
+				}
+				else if (event == PHI_BTN_EVENT_RELEASED)
+				{
+					ctx->shift1_mode = FALSE;
+
+					pkt.chn = CENX4_APP_TRAKTOR_MIDI_CH_MASTER;
+					pkt.event = 0xB; // Control Change
+					pkt.val1 = CENX4_APP_TRAKTOR_MIDI_CC_SHIFT1;
+					pkt.val2 = 0;
+					phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
+				}
 				break;
 
 			case CENX4_APP_TRAKTOR_MODE_BROWSE:

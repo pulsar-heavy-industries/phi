@@ -26,6 +26,13 @@ typedef struct cenx4_app_cfg_s
             uint8_t cenx4_mod_num_to_uid[CENX4_APP_CFG_MAX_MODULES][PHI_CAN_AUTO_ID_UNIQ_ID_LEN];
             uint8_t hyperion_mod_num_to_uid[CENX4_APP_CFG_MAX_MODULES][PHI_CAN_AUTO_ID_UNIQ_ID_LEN];
 
+            // Startup application
+            enum {
+            	CENX4_APP_CFG_STARTUP_APP_SETUP = 0,
+				CENX4_APP_CFG_STARTUP_APP_ABLETON,
+				CENX4_APP_CFG_STARTUP_APP_TRAKTOR,
+            } startup_app;
+
             // Ableton specific: Make the last encoder switch banks
             bool ableton_enable_banks_enc;
 
