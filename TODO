@@ -1,3 +1,12 @@
+- move headphones button one to the left, so that its available in all modes (normal/browser/cue)
+- when entering browser auto-uncue all and start preview mode, when exiting restore
+- always stop preview mode when exiting browser
+- start preview mode when entering browser
+- restart preview mode when selected track changes
+- after a track is selected maybe enter cue mode?
+
+
+
 at45 multiimg stuff:
  - Improve reporting to PC over midi (send progress messages via midi). This should also clean up error handling
    in the update slaves code inside the init app

@@ -19,7 +19,7 @@
 #define CENX4_APP_TRAKTOR_MIDI_CC_BROWSE_TREE_EXPAND		9
 #define CENX4_APP_TRAKTOR_MIDI_CC_BROWSE_PREVIEW_TOGGLE		10
 #define CENX4_APP_TRAKTOR_MIDI_CC_BROWSE_PREVIEW_SEEK       11
-#define CENX4_APP_TRAKTOR_MIDI_CC_SHIFT1					12
+#define CENX4_APP_TRAKTOR_MIDI_CC_CUE						12
 
 #define CENX4_APP_TRAKTOR_MIDI_CC_UNUSED			63
 
@@ -37,7 +37,7 @@ typedef struct cenx4_app_traktor_context_s
 	uint8_t master_l, master_r;
 	uint8_t master_level, monitor_level;
 	bool_t browse_mode;
-	bool_t shift1_mode;
+	bool_t cue_mode;
 
     // Number of modules available
     uint8_t num_modules;

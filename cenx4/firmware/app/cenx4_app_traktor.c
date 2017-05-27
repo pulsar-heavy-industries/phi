@@ -228,22 +228,10 @@ void cenx4_app_traktor_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, 
 			case CENX4_APP_TRAKTOR_MODE_DEFAULT:
 				if (event == PHI_BTN_EVENT_PRESSED)
 				{
-					ctx->shift1_mode = TRUE;
-
 					pkt.chn = CENX4_APP_TRAKTOR_MIDI_CH_MASTER;
 					pkt.event = 0xB; // Control Change
-					pkt.val1 = CENX4_APP_TRAKTOR_MIDI_CC_SHIFT1;
+					pkt.val1 = CENX4_APP_TRAKTOR_MIDI_CC_CUE;
 					pkt.val2 = 1;
-					phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
-				}
-				else if (event == PHI_BTN_EVENT_RELEASED)
-				{
-					ctx->shift1_mode = FALSE;
-
-					pkt.chn = CENX4_APP_TRAKTOR_MIDI_CH_MASTER;
-					pkt.event = 0xB; // Control Change
-					pkt.val1 = CENX4_APP_TRAKTOR_MIDI_CC_SHIFT1;
-					pkt.val2 = 0;
 					phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
 				}
 				break;
@@ -355,6 +343,10 @@ void cenx4_app_traktor_midi_cc(void * _ctx, phi_midi_port_t port, uint8_t ch, ui
     	case CENX4_APP_TRAKTOR_MIDI_CC_BROWSE_MODE:
     		ctx->mode = val ? CENX4_APP_TRAKTOR_MODE_BROWSE : CENX4_APP_TRAKTOR_MODE_DEFAULT;
     		cenx4_app_traktor_reconfigure_displays(ctx);
+    		break;
+
+    	case CENX4_APP_TRAKTOR_MIDI_CC_CUE:
+    		ctx->cue_mode = val ? TRUE : FALSE;
     		break;
     	}
     	break;
@@ -546,7 +538,7 @@ void cenx4_app_traktor_render_vu_meters(cenx4_ui_t * ui, void * _ctx)
 
     gdispGClear(ui->g, Black);
 
-    if (ctx->shift1_mode)
+    if (ctx->cue_mode)
     {
     	cenx4_ui_text(ui, 0, 0, ui->w, 1, justifyCenter, "CUE");
     }
