@@ -1,3 +1,7 @@
+narvi:
+ - Bootloaderize the app, create bootloader tree
+
+
 - move headphones button one to the left, so that its available in all modes (normal/browser/cue)
 - when entering browser auto-uncue all and start preview mode, when exiting restore
 - always stop preview mode when exiting browser
