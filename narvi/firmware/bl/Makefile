@@ -5,13 +5,12 @@
 
 # Compiler options here.
 ifeq ($(USE_OPT),)
-  # USE_OPT = -O2 -ggdb -fomit-frame-pointer -falign-functions=16
-  USE_OPT = -Og -ggdb -falign-functions=16 -Wno-unused-parameter
+  USE_OPT = -Og -ggdb -falign-functions=16
 endif
 
 # C specific options here (added to USE_OPT).
 ifeq ($(USE_COPT),)
-  USE_COPT =
+  USE_COPT = -Wno-unused-parameter
 endif
 
 # C++ specific options here (added to USE_OPT).
@@ -26,7 +25,7 @@ endif
 
 # Linker extra options here.
 ifeq ($(USE_LDOPT),)
-  USE_LDOPT =
+  USE_LDOPT = 
 endif
 
 # Enable this if you want link time optimizations (LTO)
@@ -93,22 +92,20 @@ GFXLIB = $(PHI_ROOT)/vendor/ugfx_2.7
 PHI_LIB = $(PHI_ROOT)/phi_lib
 
 # Startup files.
-include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/startup_stm32f3xx.mk
+include $(CHIBIOS)/os/common/ports/ARMCMx/compilers/GCC/mk/startup_stm32f4xx.mk
 # HAL-OSAL files (optional).
 include $(CHIBIOS)/os/hal/hal.mk
-include $(CHIBIOS)/os/hal/ports/STM32/STM32F3xx/platform.mk
+include $(CHIBIOS)/os/hal/ports/STM32/STM32F4xx/platform.mk
 include board/board.mk
 include $(CHIBIOS)/os/hal/osal/rt/osal.mk
 # RTOS files (optional).
 include $(CHIBIOS)/os/rt/rt.mk
 include $(CHIBIOS)/os/rt/ports/ARMCMx/compilers/GCC/mk/port_v7m.mk
-
-# ugfx
-include $(GFXLIB)/gfx.mk
-include $(GFXLIB)/drivers/gdisp/SSD1306/driver.mk                  # additional driver
+# Other files (optional).
+include $(CHIBIOS)/test/rt/test.mk
 
 # Define linker script file here
-LDSCRIPT= STM32F303xC-bootloader.ld
+LDSCRIPT= STM32F427-bl.ld
 
 # C sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -120,28 +117,26 @@ CSRC = $(STARTUPSRC) \
        $(PLATFORMSRC) \
        $(BOARDSRC) \
        $(TESTSRC) \
-       $(GFXSRC) \
        $(CHIBIOS)/os/hal/lib/streams/memstreams.c \
        $(CHIBIOS)/os/hal/lib/streams/chprintf.c \
-       $(PHI_LIB)/phi_bl_multiimg.c \
+	   $(PHI_LIB)/phi_at45.c \
+	   $(PHI_LIB)/phi_bl_multiimg.c \
+	   $(PHI_LIB)/phi_btn.c \
 	   $(PHI_LIB)/phi_can.c \
 	   $(PHI_LIB)/phi_lib.c \
-	   $(PHI_LIB)/phi_midi.c \
-	   $(PHI_LIB)/phi_usb_midi.c \
-	   $(PHI_LIB)/phi_at45.c \
-	   $(PHI_LIB)/st/stm32f3xx_hal_flash.c \
-	   $(PHI_LIB)/st/stm32f3xx_hal_flash_ex.c \
-       main.c \
+	   $(PHI_LIB)/phi_rotenc.c \
+	   $(PHI_LIB)/st/stm32f4xx_flash.c \
+       $(PHI_LIB)/phi_midi.c \
+       $(PHI_LIB)/phi_msgq.c \
+       $(PHI_LIB)/phi_mtf.c \
+       $(PHI_LIB)/phi_usb_midi.c \
 	   usbcfg.c \
-       cenx4_ui.c \
-       cenx4_can.c \
-       cenx4_can_bl.c \
-	   cenx4_midi.c
-
+	   main.c \
+	   lcd.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
-CPPSRC = $(CHCPPSRC)
+CPPSRC =
 
 # C sources to be compiled in ARM mode regardless of the global setting.
 # NOTE: Mixing ARM and THUMB mode enables the -mthumb-interwork compiler
@@ -168,9 +163,8 @@ ASMSRC = $(STARTUPASM) $(PORTASM) $(OSALASM)
 
 INCDIR = $(STARTUPINC) $(KERNINC) $(PORTINC) $(OSALINC) \
          $(HALINC) $(PLATFORMINC) $(BOARDINC) $(TESTINC) \
-         $(GFXINC) \
-         $(PHI_ROOT) \
-         $(CHCPPINC) $(CHIBIOS)/os/various  $(CHIBIOS)/os/hal/lib/streams
+         $(CHIBIOS)/os/hal/lib/streams $(CHIBIOS)/os/various \
+		 $(PHI_ROOT)
 
 #
 # Project, sources and paths

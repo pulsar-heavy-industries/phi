@@ -137,7 +137,6 @@ CSRC = $(STARTUPSRC) \
        $(PHI_LIB)/phi_midi.c \
        $(PHI_LIB)/phi_msgq.c \
        $(PHI_LIB)/phi_mtf.c \
-       $(PHI_LIB)/phi_usb_bulk.c \
        $(PHI_LIB)/phi_usb_midi.c \
 	   usbcfg.c \
        main.c \

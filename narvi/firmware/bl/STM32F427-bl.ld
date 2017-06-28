@@ -15,12 +15,11 @@
 */
 
 /*
- * ST32F427xI memory setup.
- * Note: Use of ram1, ram2 and ram3 is mutually exclusive with use of ram0.
+ * STM32F405xG memory setup.
  */
 MEMORY
 {
-    flash : org = BL_START_ADDR, len = 2M - BL_RESERVED_SIZE - (BL_START_ADDR - BL_FLASH_START) - 2k
+    flash : org = BL_FLASH_START, len = BL_RESERVED_SIZE
     ram0  : org = 0x20000000, len = 192k    /* SRAM1 + SRAM2 + SRAM3 */
     ram1  : org = 0x20000000, len = 112k    /* SRAM1 */
     ram2  : org = 0x2001C000, len = 16k     /* SRAM2 */

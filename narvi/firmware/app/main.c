@@ -343,7 +343,7 @@ int main(void) {
 
 
   lcdStart(&LCDD1, &lcdcfg);
-//  lcdWriteString(&LCDD1, "12345678901234567890", 0);
+  lcdWriteString(&LCDD1, "Narvi :)", 0);
 //  lcdWriteString(&LCDD1, "abcdefghijklmnopqrstuvwxyz",40);
 
 
