@@ -4,6 +4,7 @@ This repository contains the source code, Ableton remote script and hardware des
 
 ![Hyperion](http://rundste.in/assets/diy-music-machines-mixer-and-audio-interface/phi-3-hyperions.jpg)
 
+Each Hyperion module provides you with:
 * Fader.
 * 2 Pressable rotary encoders.
 * 7 Pots with center detent.
