@@ -12,12 +12,15 @@ Our goal is to leverage technology from the last few years to push the DIY audio
 # Showing off some of our prototypes
 
 Cenx4:
+
 ![CENX4](http://rundste.in/assets/diy-music-machines-ableton-live-controller-update/front.jpg)
 
 Hyperion:
+
 ![Hyperion](http://rundste.in/assets/diy-music-machines-mixer-and-audio-interface/phi-3-hyperions.jpg)
 
 Narvi:
+
 ![Narvi](http://rundste.in/assets/diy-music-machines-mixer-and-audio-interface/phi-4ch-enclosure-rear.jpg)
 
 # Who is behind this?
