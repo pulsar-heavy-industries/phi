@@ -254,7 +254,7 @@ static THD_FUNCTION(Thread1, arg) {
 			"####### ",
 			"#######!",
 		};
-
+#if 0
 		if (cnt == 10) {
 		  lcdReturnHome(&LCDD1);
 
@@ -266,7 +266,7 @@ static THD_FUNCTION(Thread1, arg) {
 
 		  cnt = 0;
 		}
-
+#endif
 	  chThdSleepMicroseconds(100);
   }
 }
@@ -341,11 +341,11 @@ int main(void) {
   palSetLineMode(LINE_E, PAL_MODE_OUTPUT_PUSHPULL |
                 PAL_STM32_OSPEED_HIGHEST);
 
-
+#if 0
   lcdStart(&LCDD1, &lcdcfg);
   lcdWriteString(&LCDD1, "Narvi :)", 0);
 //  lcdWriteString(&LCDD1, "abcdefghijklmnopqrstuvwxyz",40);
-
+#endif
 
 //  ab_main_midi_init();
   mduObjectInit(&MDU1);
