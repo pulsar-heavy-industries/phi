@@ -29,9 +29,9 @@
 
 static uint8_t ii;
 
-#define LINE_RS                     PAL_LINE(GPIOE, 14U) // MOSI
-#define LINE_RW                     PAL_LINE(GPIOE, 13U) // MISO
-#define LINE_E                      PAL_LINE(GPIOE, 12U) // CLK
+#define LINE_RS                     PAL_LINE(GPIOE, 13U) // MISO
+//#define LINE_RW                     PAL_LINE(GPIOE, 13U) // ??
+#define LINE_E                      PAL_LINE(GPIOE, 14U) // MOSI
 #define LINE_A                      PAL_LINE(GPIOE, 11U) // D4 unused
 
 /* Data PIN are connected from PC0 to PC7 */
@@ -65,7 +65,7 @@ static const PWMConfig pwmcfg = {
 
 static const lcd_pins_t lcdpins = {
   LINE_RS,
-  LINE_RW,
+//  LINE_RW,
   LINE_E,
   LINE_A,
   {
@@ -292,110 +292,52 @@ static THD_FUNCTION(Thread2, arg) {
 
 extern audio_state_t audio;
 
-
-
 /*
  * Application entry point.
  */
-int main(void) {
-  /*
-   * System initializations.
-   * - HAL initialization, this also initializes the configured device drivers
-   *   and performs the board-specific initializations.
-   * - Kernel initialization, the main() function becomes a thread and the
-   *   RTOS is active.
-   */
-  halInit();
-  chSysInit();
-//
-//  sdStart(&SD6, NULL);
-//
-////u8 i = 0;
-//while (TRUE) {
-////	i = chIOGet(&SD1);
-////	if(i!=0)
-//	uint8_t buf[] = {0};
-//	sdRead(&SD6, buf, sizeof(buf));
-//	  chThdSleepMilliseconds(100);
-//}
+int main(void)
+{
+	char buf[21];
+    static event_listener_t listener;
+
+	halInit();
+	chSysInit();
+
+    lcdInit();
+    palSetLineMode(LINE_RS, PAL_MODE_OUTPUT_PUSHPULL | PAL_STM32_OSPEED_HIGHEST);
+    palSetLineMode(LINE_E, PAL_MODE_OUTPUT_PUSHPULL | PAL_STM32_OSPEED_HIGHEST);
+
+    buf[20] = 0;
+    chsnprintf(buf, sizeof(buf) - 1, "Hw:%x Sw:%x", PHI_BL_HW_VER, PHI_BL_SW_VER);
+    lcdStart(&LCDD1, &lcdcfg);
+    lcdWriteString(&LCDD1, "PHI Narvi", 0);
+    lcdWriteString(&LCDD1, buf, 40);
+
+    //  ab_main_midi_init();
+    mduObjectInit(&MDU1);
+    mduStart(&MDU1, &midiusbcfg);
+
+    audioObjectInit(&audio);
 
 
-  lcdInit();
+    usbDisconnectBus(midiusbcfg.usbp);
+    chThdSleepMilliseconds(1000);
+    usbStart(midiusbcfg.usbp, &usbcfg);
+    usbConnectBus(midiusbcfg.usbp);
 
-#if LCD_USE_DIMMABLE_BACKLIGHT
-  /* Configuring Anode PIN as TIM1 CH1 alternate function. */
-  palSetLineMode(LINE_A, PAL_MODE_ALTERNATE(1));
-#else
-  /* Configuring Anode PIN as TIM1 CH1 alternate function. */
-  palSetLineMode(LINE_A, PAL_MODE_OUTPUT_PUSHPULL |
-                 PAL_STM32_OSPEED_HIGHEST);
-#endif
+    codec_init();
+    chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO + 10, Thread1, NULL);
+    chThdCreateStatic(waThread2, sizeof(waThread2), NORMALPRIO + 10, Thread2, NULL);
 
-
-  /* Configuring RW, RS and E PIN as Output Push Pull. Note that Data PIN are
-     managed Internally */
-  palSetLineMode(LINE_RW, PAL_MODE_OUTPUT_PUSHPULL |
-                PAL_STM32_OSPEED_HIGHEST);
-  palSetLineMode(LINE_RS, PAL_MODE_OUTPUT_PUSHPULL |
-                PAL_STM32_OSPEED_HIGHEST);
-  palSetLineMode(LINE_E, PAL_MODE_OUTPUT_PUSHPULL |
-                PAL_STM32_OSPEED_HIGHEST);
-
-#if 0
-  lcdStart(&LCDD1, &lcdcfg);
-  lcdWriteString(&LCDD1, "Narvi :)", 0);
-//  lcdWriteString(&LCDD1, "abcdefghijklmnopqrstuvwxyz",40);
-#endif
-
-//  ab_main_midi_init();
-  mduObjectInit(&MDU1);
-  mduStart(&MDU1, &midiusbcfg);
-
-
-  audioObjectInit(&audio);
-
-
-
-  /*
-   * Activates the USB driver and then the USB bus pull-up on D+.
-   * Note, a delay is inserted in order to not have to disconnect the cable
-   * after a reset.
-   */
-  usbDisconnectBus(midiusbcfg.usbp);
-  chThdSleepMilliseconds(1000);
-  usbStart(midiusbcfg.usbp, &usbcfg);
-  usbConnectBus(midiusbcfg.usbp);
-
-
-
-  /*
-   * Creating the blinker threads.
-
-   */
-  codec_init();
-  chThdCreateStatic(waThread1, sizeof(waThread1),
-                    NORMALPRIO + 10, Thread1, NULL);
-  chThdCreateStatic(waThread2, sizeof(waThread2),
-                    NORMALPRIO + 10, Thread2, NULL);
-
-//	 while (1) chThdSleepMilliseconds(10);
-
-
-
-
-  static event_listener_t listener;
     chEvtRegisterMask(&audio.audio_events, &listener, AUDIO_EVENT);
 
-    for(;;) {
-        /*
-         * Wait for audio event.
-         */
+    for (;;)
+    {
+        /* Wait for audio event */
         chEvtWaitOne(AUDIO_EVENT);
         eventflags_t evt = chEvtGetAndClearFlags(&listener);
 
-        /*
-         * USB state cahanged, switch LED3.
-         */
+        /* USB state changed */
         if (evt & AUDIO_EVENT_USB_STATE) {
       /*    if (USBD1.state == USB_ACTIVE)
             palSetPad(GPIOD, GPIOD_LED3);
@@ -413,9 +355,9 @@ int main(void) {
     //        palSetPad(GPIOD, GPIOD_LED6);
   //          i2sStart(&I2SD3, &i2scfg);
   //          i2sStartExchange(&I2SD3);
-            start_sof_capture();
+        	  start_sof_capture();
           } else {
-            stop_sof_capture();
+        	  stop_sof_capture();
   //          i2sStopExchange(&I2SD3);
   //          i2sStop(&I2SD3);
   //          palClearPad(GPIOD, GPIOD_LED6);
@@ -426,17 +368,6 @@ int main(void) {
          * Set mute request received.
          */
         if (evt & AUDIO_EVENT_MUTE) {
-        	/*
-          if (audio.mute[0])
-            palSetPad(GPIOD, GPIOD_LED4);
-          else
-            palClearPad(GPIOD, GPIOD_LED4);
-          if (audio.mute[1])
-            palSetPad(GPIOD, GPIOD_LED5);
-          else
-            palClearPad(GPIOD, GPIOD_LED5);
-*/
-          //audio_dac_update_mute(&audio);
         	set_mute(audio.mute[0]);
         }
 
@@ -456,18 +387,6 @@ int main(void) {
         	}
         	vol = 255 + (vol_in_db * 2);
         	set_vol(vol);
-          //audio_dac_update_volume(&audio);
         }
-      }
-
-
-
-
-  /*
-   * Normal main() thread activity, in this demo it just performs
-   * a shell respawn upon its termination.
-   */
-  while (true) {
-    chThdSleepMilliseconds(500);
-  }
+    }
 }

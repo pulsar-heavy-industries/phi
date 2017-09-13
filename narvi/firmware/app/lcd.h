@@ -114,7 +114,10 @@ typedef struct {
   /**
    * @brief  Read/Write PIN
    */
+#if LCD_USE_RW
   ioline_t RW;
+#endif
+
   /**
    * @brief  Enable PIN
    */
