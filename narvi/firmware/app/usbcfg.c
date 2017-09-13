@@ -448,6 +448,13 @@ uint32_t HAL_SAI_GetVULevels(void)
 }
 
 
+void usb_reset_audio_bufs(void)
+{
+	memset(dac_buffer, 0, sizeof(dac_buffer));
+	memset(dac_buffer2, 0, sizeof(dac_buffer2));
+	dac_buffer_wr_addr = 0;
+}
+
 void audio_received(USBDriver *usbp, usbep_t ep) {
   if (audio.playback) {
       int samples_received = usbGetReceiveTransactionSizeX(usbp, ep) / 8;

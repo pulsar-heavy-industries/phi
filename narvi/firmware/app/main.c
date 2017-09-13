@@ -272,9 +272,13 @@ int main(void)
     //        palSetPad(GPIOD, GPIOD_LED6);
   //          i2sStart(&I2SD3, &i2scfg);
   //          i2sStartExchange(&I2SD3);
+
+
         	  start_sof_capture();
           } else {
         	  stop_sof_capture();
+
+        	  usb_reset_audio_bufs();
   //          i2sStopExchange(&I2SD3);
   //          i2sStop(&I2SD3);
   //          palClearPad(GPIOD, GPIOD_LED6);
