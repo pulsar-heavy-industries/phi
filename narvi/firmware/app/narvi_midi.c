@@ -6,11 +6,12 @@
 
 
 const phi_midi_cfg_t narvi_midi_cfg = {
-    .in_handler   = narvi_midi_in_handler,
-    .in_sysex     = narvi_midi_in_sysex,
-    .get_dev_info = narvi_midi_get_dev_info,
-	.tx_pkt       = narvi_midi_tx_pkt,
-	.tx_sysex     = narvi_midi_tx_sysex,
+    .in_handler            = narvi_midi_in_handler,
+    .in_sysex              = narvi_midi_in_sysex,
+    .get_dev_info          = narvi_midi_get_dev_info,
+	.tx_pkt                = narvi_midi_tx_pkt,
+	.tx_sysex              = narvi_midi_tx_sysex,
+	.builtin_cmd_port_mask = PHI_MIDI_PORT_USB1,
 };
 
 static THD_WORKING_AREA(midi_thread_wa, 512 + PHI_MIDI_SYSEX_MAX_LEN);
@@ -62,23 +63,20 @@ void narvi_midi_in_handler(phi_midi_port_t port, const phi_midi_pkt_t * pkt)
 {
 	(void) port;
 
-	// broken? midi_usb_MidiSend3(1, pkt->b[0], pkt->b[1], pkt->b[2]);
+	// Based on table from http://www.usb.org/developers/docs/devclass_docs/midi10.pdf page 16
+	uint8_t pkt_sizes[] = {
+		3, 3, 2, 3, 3, 1, 2, 3, 3, 3, 3, 3, 2, 2, 3, 1,
+	};
 
-	phi_midi_tx_pkt(port, pkt);
-
-	switch (pkt->event)
+	switch (port)
 	{
-	case 0x09: //MIDI_NOTE_ON:
-		// phi_daw_midi_note_on(PHI_MIDI_PORT_USB, pkt->chn, pkt->val1, pkt->val2);
-		break;
+		// Forward packets on the external port
+		case PHI_MIDI_PORT_USB2:
+			sdWrite(&SD6, (uint8_t *) pkt->b, pkt_sizes[pkt->type]);
+			break;
 
-	case 0x08:// MIDI_NOTE_OFF:
-		// phi_daw_midi_note_off(PHI_MIDI_PORT_USB, pkt->chn, pkt->val1, pkt->val2);
-		break;
-
-	case 0x0B: //MIDI_CONTROL_CHANGE:
-//		phi_app_mgr_notify_midi_cc(PHI_MIDI_PORT_USB, pkt->chn, pkt->val1, pkt->val2);
-		break;
+		default:
+			break;
 	}
 }
 

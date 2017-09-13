@@ -477,6 +477,7 @@ class MidiDevice {
 
                     const deviceNames = {
                         0x34584e43: 'CENX4',
+                        0x4956524e: 'Narvi',
                     }
                     fields.dev_name = deviceNames[fields.dev_id] || 'Unknown'
 
