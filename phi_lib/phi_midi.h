@@ -17,11 +17,26 @@ extern "C" {
 typedef enum phi_midi_port_e
 {
     PHI_MIDI_PORT_INVALID  = 0,
-    PHI_MIDI_PORT_USB      = 1,
-    PHI_MIDI_PORT_INTERNAL = 2,
-    PHI_MIDI_PORT_SERIAL   = 4,
-	PHI_MIDI_PORT_CAN      = 8,
-    PHI_MIDI_PORT_ALL      = 0xFF,
+
+	PHI_MIDI_PORT_USB1     = (1 << 0),
+	PHI_MIDI_PORT_USB2     = (1 << 1),
+	PHI_MIDI_PORT_USB3     = (1 << 2),
+	PHI_MIDI_PORT_USB4     = (1 << 3),
+
+    PHI_MIDI_PORT_INTERNAL1 = (1 << 4),
+	PHI_MIDI_PORT_INTERNAL2 = (1 << 5),
+	PHI_MIDI_PORT_INTERNAL3 = (1 << 6),
+	PHI_MIDI_PORT_INTERNAL4 = (1 << 7),
+
+    PHI_MIDI_PORT_SERIAL1  = (1 << 7),
+	PHI_MIDI_PORT_SERIAL2  = (1 << 8),
+	PHI_MIDI_PORT_SERIAL3  = (1 << 9),
+	PHI_MIDI_PORT_SERIAL4  = (1 << 10),
+
+	PHI_MIDI_PORT_CAN      = (1 << 11),
+
+    PHI_MIDI_PORT_ALL      = 0xFFFFFFFF,
+
 } phi_midi_port_t;
 
 typedef union phi_midi_pkt_s

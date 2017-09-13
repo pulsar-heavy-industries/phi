@@ -133,7 +133,8 @@ CSRC = $(STARTUPSRC) \
        codec.c \
 	   usbcfg.c \
 	   main.c \
-	   lcd.c
+	   lcd.c \
+	   narvi_midi.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.

@@ -18,6 +18,7 @@
 #include "usbcfg.h"
 #include "lcd.h"
 #include "codec.h"
+#include "narvi_midi.h"
 
 /*===========================================================================*/
 /* LCD configuration                                                         */
@@ -56,12 +57,8 @@ static const LCDConfig lcdcfg = {
 };
 
 
-
-/*
- * Red LED blinker thread, times are in milliseconds.
- */
-static THD_WORKING_AREA(waThread1, 1024);
-static THD_FUNCTION(Thread1, arg) {
+static THD_WORKING_AREA(lcd_thread_wa, 1024);
+static THD_FUNCTION(lcd_thread, arg) {
 	(void)arg;
 	chRegSetThreadName("blinker1");
 	const char vu_map[][9] = {
@@ -111,6 +108,7 @@ static THD_FUNCTION(Thread1, arg) {
 	char buf[20];
 	uint32_t cnt = 0;
 
+	/* TODO cleanup this mess */
 	while (true) {
 	  memset(buf, 0, sizeof(buf));
 
@@ -175,16 +173,27 @@ static THD_FUNCTION(Thread1, arg) {
 /*
  * Green LED blinker thread, times are in milliseconds.
  */
+#include "phi_lib/phi_midi.h"
 static THD_WORKING_AREA(waThread2, 128);
 static THD_FUNCTION(Thread2, arg) {
 
   (void)arg;
+  int i = 0;
   chRegSetThreadName("blinker2");
   while (true) {
     palClearPad(GPIOA, GPIOA_USER_LED);
     chThdSleepMilliseconds(250);
     palSetPad(GPIOA, GPIOA_USER_LED);
     chThdSleepMilliseconds(250);
+
+    {
+    	phi_midi_pkt_t pkt;
+		pkt.chn = 1;
+		pkt.event = 0xB; // Control Change
+		pkt.val1 = 1;
+		pkt.val2 = i++;
+		phi_midi_tx_pkt(PHI_MIDI_PORT_USB1, &pkt);
+    }
   }
 }
 /*===========================================================================*/
@@ -230,7 +239,10 @@ int main(void)
     lcdWriteString(&LCDD1, "PHI Narvi", 0);
     lcdWriteString(&LCDD1, buf, 40);
 
-    //  ab_main_midi_init();
+    // MIDI is on SD6, baudrate is configured in hal.conf (SERIAL_DEFAULT_BITRATE)
+    sdStart(&SD6, NULL);
+
+    narvi_midi_init();
     mduObjectInit(&MDU1);
     mduStart(&MDU1, &midiusbcfg);
 
@@ -243,7 +255,7 @@ int main(void)
     usbConnectBus(midiusbcfg.usbp);
 
     codec_init();
-    chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO + 10, Thread1, NULL);
+    chThdCreateStatic(lcd_thread_wa, sizeof(lcd_thread_wa), NORMALPRIO + 10, lcd_thread, NULL);
     chThdCreateStatic(waThread2, sizeof(waThread2), NORMALPRIO + 10, Thread2, NULL);
 
     chEvtRegisterMask(&audio.audio_events, &listener, AUDIO_EVENT);
@@ -269,19 +281,10 @@ int main(void)
          */
         if (evt & AUDIO_EVENT_PLAYBACK) {
           if (audio.playback) {
-    //        palSetPad(GPIOD, GPIOD_LED6);
-  //          i2sStart(&I2SD3, &i2scfg);
-  //          i2sStartExchange(&I2SD3);
-
-
         	  start_sof_capture();
           } else {
         	  stop_sof_capture();
-
         	  usb_reset_audio_bufs();
-  //          i2sStopExchange(&I2SD3);
-  //          i2sStop(&I2SD3);
-  //          palClearPad(GPIOD, GPIOD_LED6);
           }
         }
 

@@ -16,6 +16,7 @@
 #include <string.h>
 #include "hal.h"
 #include "usbcfg.h"
+#include "phi_lib/phi_lib.h"
 
 /* Virtual serial port over USB.*/
 //SerialUSBDriver SDU1;
@@ -57,8 +58,8 @@ static const uint8_t audio_device_descriptor_data[18] = {
                          0x00,          /* bDeviceSubClass.                 */
                          0x00,          /* bDeviceProtocol.                 */
                          0x40,          /* bMaxPacketSize.                  */
-                         0x0483,        /* idVendor (ST).                   */
-                         0x5343,        /* idProduct.                       */
+                         0x0483 + 11,        /* idVendor (ST).                   */
+                         0x5343 + 11,        /* idProduct.                       */
                          0x0001,        /* bcdDevice.                       */
                          1,             /* iManufacturer.                   */
                          2,             /* iProduct.                        */
@@ -75,9 +76,9 @@ static const USBDescriptor audio_device_descriptor = {
 };
 
 
-static const uint8_t audio_configuration_descriptor_data[122 + 4 + (9+66)] = {
+static const uint8_t audio_configuration_descriptor_data[122 + 4 + (9+66) + 9+9+1] = {
   /* Configuration Descriptor. (UAC 4.2) */
-  USB_DESC_CONFIGURATION(122 + 4 + (9+66),           /* wTotalLength.                    */
+  USB_DESC_CONFIGURATION(122 + 4 + (9+66) + 9+9+1,           /* wTotalLength.                    */
                          0x03,          /* bNumInterfaces.                  */
                          0x01,          /* bConfigurationValue.             */
                          0,             /* iConfiguration.                  */
@@ -210,15 +211,17 @@ static const uint8_t audio_configuration_descriptor_data[122 + 4 + (9+66)] = {
                          0x00,          /* bInterfaceProtocol (none).       */
                          0),            /* iInterface.                      */
 
-         0x07, 0x24, 0x01, 0x00, 0x01, 0x41, 0x00,             // CS Interface (midi)      CLASS SPECIFIC MS INTERFACE DESC
+         0x07, 0x24, 0x01, 0x00, 0x01, 0x41 + 9+9+1, 0x00,             // CS Interface (midi)      CLASS SPECIFIC MS INTERFACE DESC
          0x06, 0x24, 0x02, 0x01, 0x01, 0x05,                   //   IN  Jack 1 (emb)       MIDI IN JACK DESC (bLength bDescType bDescSubType bJackType bJackID iJack)
          0x06, 0x24, 0x02, 0x02, 0x02, 0x06,                   //   IN  Jack 2 (ext)       MIDI IN JACK DESC (bLength bDescType bDescSubType bJackType bJackID iJack)
-         0x09, 0x24, 0x03, 0x01, 0x03, 0x01, 0x02, 0x01, 0x06, //   OUT Jack 3 (emb)       MIDI OUT JACK DESC (bLength bDescType bDescSubType bJackType bJackID bNrInputPins baSourceID(1) baSourceID(1) iJack)
-         0x09, 0x24, 0x03, 0x02, 0x04, 0x01, 0x01, 0x01, 0x02, //   OUT Jack 4 (ext)       MIDI OUT JACK DESC (bLength bDescType bDescSubType bJackType bJackID bNrInputPins baSourceID(1) baSourceID(1) iJack)
+         0x09, 0x24, 0x03, 0x01, 0x03, 0x01, 0x02, 0x01, 0x07, //   OUT Jack 3 (emb)       MIDI OUT JACK DESC (bLength bDescType bDescSubType bJackType bJackID bNrInputPins baSourceID(1) baSourceID(1) iJack)
+         0x09, 0x24, 0x03, 0x02, 0x04, 0x01, 0x01, 0x01, 0x08, //   OUT Jack 4 (ext)       MIDI OUT JACK DESC (bLength bDescType bDescSubType bJackType bJackID bNrInputPins baSourceID(1) baSourceID(1) iJack)
+		 0x09, 0x24, 0x03, 0x01, 0x05, 0x01, 0x02, 0x01, 0x09, //   OUT Jack 5 (emb)       MIDI OUT JACK DESC (bLength bDescType bDescSubType bJackType bJackID bNrInputPins baSourceID(1) baSourceID(1) iJack)
+		 0x09, 0x24, 0x03, 0x02, 0x06, 0x01, 0x01, 0x01, 0x0a, //   OUT Jack 6 (ext)       MIDI OUT JACK DESC (bLength bDescType bDescSubType bJackType bJackID bNrInputPins baSourceID(1) baSourceID(1) iJack)
          0x09, 0x05, 0x03, 0x02, 0x40, 0x00, 0x00, 0x00, 0x00, // Endpoint OUT             ENDPOINT DESC  (bLength bDescType bEndpointAddr bmAttr wMaxPacketSize(2 bytes)  bInterval bRefresh bSyncAddress)
          0x05, 0x25, 0x01, 0x01, 0x01,                         //   CS EP IN  Jack         CLASS SPECIFIC MS BULK DATA EP DESC
          0x09, 0x05, 0x83, 0x02, 0x40, 0x00, 0x00, 0x00, 0x00, // Endpoint IN              ENDPOINT DESC  (bLength bDescType bEndpointAddr bmAttr wMaxPacketSize(2 bytes)  bInterval bRefresh bSyncAddress)
-         0x05, 0x25, 0x01, 0x01, 0x03,                         //   CS EP OUT Jack          CLASS SPECIFIC MS BULK DATA EP DESC};
+         0x06, 0x25, 0x01, 0x02, 0x05, 0x03,                         //   CS EP OUT Jack          CLASS SPECIFIC MS BULK DATA EP DESC};
 };
 
 /*
@@ -246,7 +249,7 @@ static const uint8_t audio_string1[] = {
   USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
   'S', 0, 'T', 0, 'M', 0, 'i', 0, 'c', 0, 'r', 0, 'o', 0, 'e', 0,
   'l', 0, 'e', 0, 'c', 0, 't', 0, 'r', 0, 'o', 0, 'n', 0, 'i', 0,
-  'X', 0, 'X', 0
+  'X', 0, 'A', 0
 };
 
 /*
@@ -258,7 +261,7 @@ static const uint8_t audio_string2[] = {
   'C', 0, 'h', 0, 'i', 0, 'b', 0, 'i', 0, 'O', 0, 'S', 0, '/', 0,
   'R', 0, 'T', 0, ' ', 0, 'U', 0, 'S', 0, 'B', 0, ' ', 0, 'A', 0,
   'u', 0, 'd', 0, 'i', 0, 'o', 0, ' ', 0, 'D', 0, 'e', 0, 'v', 0,
-  'i', 0, 'X', 0, 'X', 0
+  'i', 0, 'X', 0, '1', 0
 };
 
 /*
@@ -272,6 +275,63 @@ static const uint8_t audio_string3[] = {
   '0' + CH_KERNEL_PATCH, 0
 };
 
+static const uint8_t audio_string4[] = {
+  USB_DESC_BYTE(56),                    /* bLength.                         */
+  USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
+  'C', 0, 'h', 0, 'i', 0, 'b', 0, 'i', 0, 'O', 0, 'S', 0, '/', 0,
+  'R', 0, 'T', 0, ' ', 0, 'U', 0, 'S', 0, 'B', 0, ' ', 0, 'A', 0,
+  'u', 0, 'd', 0, 'i', 0, 'o', 0, ' ', 0, 'D', 0, 'e', 0, 'v', 0,
+  'i', 0, 'X', 0, '2', 0
+};
+
+static const uint8_t audio_string5[] = {
+  USB_DESC_BYTE(8),                     /* bLength.                         */
+  USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
+  'A', 0,
+  'B', 0,
+  '5', 0
+};
+
+static const uint8_t audio_string6[] = {
+  USB_DESC_BYTE(8),                     /* bLength.                         */
+  USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
+  'A', 0,
+  'B', 0,
+  '6', 0
+
+};
+static const uint8_t audio_string7[] = {
+  USB_DESC_BYTE(8),                     /* bLength.                         */
+  USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
+  'A', 0,
+  'B', 0,
+  '7', 0
+
+};
+static const uint8_t audio_string8[] = {
+  USB_DESC_BYTE(8),                     /* bLength.                         */
+  USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
+  'A', 0,
+  'B', 0,
+  '8', 0
+
+};
+static const uint8_t audio_string9[] = {
+  USB_DESC_BYTE(8),                     /* bLength.                         */
+  USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
+  'A', 0,
+  'B', 0,
+  '9', 0
+
+};
+static const uint8_t audio_string10[] = {
+  USB_DESC_BYTE(8),                     /* bLength.                         */
+  USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
+  'A', 0,
+  'B', 0,
+  'a', 0
+
+};
 /*
  * Strings wrappers array.
  */
@@ -279,7 +339,15 @@ static const USBDescriptor audio_strings[] = {
   {sizeof audio_string0, audio_string0},
   {sizeof audio_string1, audio_string1},
   {sizeof audio_string2, audio_string2},
-  {sizeof audio_string3, audio_string3}
+  {sizeof audio_string3, audio_string3},
+  {sizeof audio_string3, audio_string4},
+  {sizeof audio_string3, audio_string5},
+  {sizeof audio_string3, audio_string6},
+  {sizeof audio_string3, audio_string7},
+  {sizeof audio_string3, audio_string8},
+  {sizeof audio_string3, audio_string9},
+  {sizeof audio_string3, audio_string10},
+
 };
 
 
@@ -309,8 +377,10 @@ static const USBDescriptor *get_descriptor(USBDriver *usbp,
   case USB_DESCRIPTOR_CONFIGURATION:
     return &audio_configuration_descriptor;
   case USB_DESCRIPTOR_STRING:
-    if (dindex < 4)
+    if (dindex < PHI_ARRLEN(audio_strings))
       return &audio_strings[dindex];
+    else
+    	chDbgCheck(FALSE);
   }
   return NULL;
 }
