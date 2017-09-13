@@ -134,7 +134,7 @@ static bool hd44780IsBusy(LCDDriver *lcdp) {
   return busy;
 
 #else
-//  chThdSleepMicroseconds(50);
+  chThdSleepMicroseconds(50);
   return FALSE;
 #endif
 }

@@ -108,7 +108,7 @@ static THD_FUNCTION(Thread1, arg) {
 	};
 
 	uint8_t fVULevelL = 0, fVULevelR = 0;
-	char buf[17];
+	char buf[20];
 	uint32_t cnt = 0;
 
 	while (true) {
@@ -151,11 +151,19 @@ static THD_FUNCTION(Thread1, arg) {
 		if (cnt == 10) {
 		  lcdReturnHome(&LCDD1);
 
-		  chsnprintf(buf, sizeof(buf) - 1, "L: %s", vu_map[phi_lib_map(fVULevelL, 0, 0xFF, 0, PHI_ARRLEN(vu_map))]);
-		  lcdWriteString(&LCDD1, buf, 0);
+		  if (USBD2.state == USB_ACTIVE)
+		  {
+			  chsnprintf(buf, sizeof(buf) - 1, "L [%s]    ", vu_map[phi_lib_map(fVULevelL, 0, 0xFF, 0, PHI_ARRLEN(vu_map))]);
+			  lcdWriteString(&LCDD1, buf, 0);
 
-		  chsnprintf(buf, sizeof(buf) - 1, "R: %s", vu_map[phi_lib_map(fVULevelR, 0, 0xFF, 0, PHI_ARRLEN(vu_map))]);
-		  lcdWriteString(&LCDD1, buf, 40);
+			  chsnprintf(buf, sizeof(buf) - 1, "R [%s]    ", vu_map[phi_lib_map(fVULevelR, 0, 0xFF, 0, PHI_ARRLEN(vu_map))]);
+			  lcdWriteString(&LCDD1, buf, 40);
+		  }
+		  else
+		  {
+			  lcdWriteString(&LCDD1, "PHI Narvi       ", 0);
+			  lcdWriteString(&LCDD1, "USB Disconnected", 40);
+		  }
 
 		  cnt = 0;
 		}
@@ -187,55 +195,11 @@ extern audio_state_t audio;
 
 /* Create custom characters for nicer VU muter */
 void lcd_create_custom_chars(void) {
-	uint8_t p1[8] = {
-	  0x10,
-	  0x10,
-	  0x10,
-	  0x10,
-	  0x10,
-	  0x10,
-	  0x10,
-	  0x10};
-
-	uint8_t p2[8] = {
-	  0x18,
-	  0x18,
-	  0x18,
-	  0x18,
-	  0x18,
-	  0x18,
-	  0x18,
-	  0x18};
-
-	uint8_t p3[8] = {
-	  0x1C,
-	  0x1C,
-	  0x1C,
-	  0x1C,
-	  0x1C,
-	  0x1C,
-	  0x1C,
-	  0x1C};
-
-	uint8_t p4[8] = {
-	  0x1E,
-	  0x1E,
-	  0x1E,
-	  0x1E,
-	  0x1E,
-	  0x1E,
-	  0x1E,
-	  0x1E};
-
-	uint8_t p5[8] = {
-	  0x1F,
-	  0x1F,
-	  0x1F,
-	  0x1F,
-	  0x1F,
-	  0x1F,
-	  0x1F,
-	  0x1F};
+	uint8_t p1[8] = {0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, };
+	uint8_t p2[8] = {0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, };
+	uint8_t p3[8] = {0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, };
+	uint8_t p4[8] = {0x1E, 0x1E, 0x1E, 0x1E, 0x1E, 0x1E, 0x1E, 0x1E, };
+	uint8_t p5[8] = {0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, 0x1F, };
 
 	lcdCreateChar(&LCDD1, 1, p1);
 	lcdCreateChar(&LCDD1, 2, p2);
