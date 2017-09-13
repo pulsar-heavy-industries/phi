@@ -20,16 +20,31 @@ static THD_WORKING_AREA(midi_thread_wa, 512 + PHI_MIDI_SYSEX_MAX_LEN);
 
 	chRegSetThreadName("midi");
 
-	uint8_t r[4];
+	phi_midi_pkt_t pkt;
+	chDbgCheck(sizeof(pkt) == 4);
+
 	while (1)
 	{
-		if (!chnReadTimeout(&MDU1, &r[0], 4, TIME_INFINITE)) {
+		if (!chnReadTimeout(&MDU1, &pkt, 4, TIME_INFINITE)) {
 			// USB not active, yuck
 			chThdSleepMilliseconds(10);
 			continue;
 		}
 
-		phi_midi_rx_pkt(PHI_MIDI_PORT_USB1, (const phi_midi_pkt_t *) r);
+		switch (pkt.cable)
+		{
+		case 0:
+			phi_midi_rx_pkt(PHI_MIDI_PORT_USB1, &pkt);
+			break;
+
+		case 1:
+			phi_midi_rx_pkt(PHI_MIDI_PORT_USB2, &pkt);
+			break;
+
+		default:
+			chDbgCheck(FALSE);
+			break;
+		}
 	}
 }
 
@@ -48,6 +63,8 @@ void narvi_midi_in_handler(phi_midi_port_t port, const phi_midi_pkt_t * pkt)
 	(void) port;
 
 	// broken? midi_usb_MidiSend3(1, pkt->b[0], pkt->b[1], pkt->b[2]);
+
+	phi_midi_tx_pkt(port, pkt);
 
 	switch (pkt->event)
 	{

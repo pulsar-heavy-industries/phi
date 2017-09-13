@@ -192,7 +192,7 @@ static THD_FUNCTION(Thread2, arg) {
 		pkt.event = 0xB; // Control Change
 		pkt.val1 = 1;
 		pkt.val2 = i++;
-		phi_midi_tx_pkt(PHI_MIDI_PORT_USB1, &pkt);
+//		phi_midi_tx_pkt(PHI_MIDI_PORT_USB1, &pkt);
     }
   }
 }
