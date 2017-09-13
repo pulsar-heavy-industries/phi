@@ -14,27 +14,18 @@
     limitations under the License.
 */
 
-#include "ch.h"
-#include "hal.h"
-#include "test.h"
-
-#include "chprintf.h"
-
+#include "phi_lib/phi_lib.h"
 #include "usbcfg.h"
-
-
-
-
 #include "lcd.h"
+#include "codec.h"
 
-static uint8_t ii;
+/*===========================================================================*/
+/* LCD configuration                                                         */
+/*===========================================================================*/
 
 #define LINE_RS                     PAL_LINE(GPIOE, 13U) // MISO
-//#define LINE_RW                     PAL_LINE(GPIOE, 13U) // ??
 #define LINE_E                      PAL_LINE(GPIOE, 14U) // MOSI
-#define LINE_A                      PAL_LINE(GPIOE, 11U) // D4 unused
-
-/* Data PIN are connected from PC0 to PC7 */
+#define LINE_A                      PAL_LINE(GPIOE, 14U) // UNUSED
 #if !LCD_USE_4_BIT_MODE
 #error sux
 #endif
@@ -43,38 +34,11 @@ static uint8_t ii;
 #define LINE_D6                     PAL_LINE(GPIOE, 9U)
 #define LINE_D7                     PAL_LINE(GPIOE, 10U)
 
-/*===========================================================================*/
-/* LCD configuration                                                         */
-/*===========================================================================*/
-
-#if LCD_USE_DIMMABLE_BACKLIGHT
-static const PWMConfig pwmcfg = {
-  100000,                                   /* 100kHz PWM clock frequency.   */
-  100,                                      /* PWM period is 1000 cycles.    */
-  NULL,
-  {
-   {PWM_OUTPUT_ACTIVE_HIGH, NULL},
-   {PWM_OUTPUT_DISABLED, NULL},
-   {PWM_OUTPUT_DISABLED, NULL},
-   {PWM_OUTPUT_DISABLED, NULL}
-  },
-  0,
-  0
-};
-#endif
-
 static const lcd_pins_t lcdpins = {
   LINE_RS,
-//  LINE_RW,
   LINE_E,
   LINE_A,
   {
-#if !LCD_USE_4_BIT_MODE
-   LINE_D0,
-   LINE_D1,
-   LINE_D2,
-   LINE_D3,
-#endif
    LINE_D4,
    LINE_D5,
    LINE_D6,
@@ -88,15 +52,8 @@ static const LCDConfig lcdcfg = {
   LCD_SET_FONT_5X10,        /* Font 5x10 */
   LCD_SET_2LINES,           /* 2 lines */
   &lcdpins,                 /* pin map */
-#if LCD_USE_DIMMABLE_BACKLIGHT
-  &PWMD1,                   /* PWM Driver for back-light */
-  &pwmcfg,                  /* PWM driver configuration for back-light */
-  0,                        /* PWM channel */
-#endif
   100,                      /* Back-light */
 };
-
-
 
 
 
@@ -105,101 +62,56 @@ static const LCDConfig lcdcfg = {
  */
 static THD_WORKING_AREA(waThread1, 1024);
 static THD_FUNCTION(Thread1, arg) {
+	(void)arg;
+	chRegSetThreadName("blinker1");
+	const char vu_map[][9] = {
+		"\x01       ",
+		"\x02       ",
+		"\x03       ",
+		"\x04       ",
+		"\x05       ",
+		"\x05\x01      ",
+		"\x05\x02      ",
+		"\x05\x03      ",
+		"\x05\x04      ",
+		"\x05\x05      ",
+		"\x05\x05\x01     ",
+		"\x05\x05\x02     ",
+		"\x05\x05\x03     ",
+		"\x05\x05\x04     ",
+		"\x05\x05\x05     ",
+		"\x05\x05\x05\x01    ",
+		"\x05\x05\x05\x02    ",
+		"\x05\x05\x05\x03    ",
+		"\x05\x05\x05\x04    ",
+		"\x05\x05\x05\x05    ",
+		"\x05\x05\x05\x05\x01   ",
+		"\x05\x05\x05\x05\x02   ",
+		"\x05\x05\x05\x05\x03   ",
+		"\x05\x05\x05\x05\x04   ",
+		"\x05\x05\x05\x05\x05   ",
+		"\x05\x05\x05\x05\x05\x01  ",
+		"\x05\x05\x05\x05\x05\x02  ",
+		"\x05\x05\x05\x05\x05\x03  ",
+		"\x05\x05\x05\x05\x05\x04  ",
+		"\x05\x05\x05\x05\x05\x05  ",
+		"\x05\x05\x05\x05\x05\x05\x01 ",
+		"\x05\x05\x05\x05\x05\x05\x02 ",
+		"\x05\x05\x05\x05\x05\x05\x03 ",
+		"\x05\x05\x05\x05\x05\x05\x04 ",
+		"\x05\x05\x05\x05\x05\x05\x05 ",
+		"\x05\x05\x05\x05\x05\x05\x05\x01",
+		"\x05\x05\x05\x05\x05\x05\x05\x02",
+		"\x05\x05\x05\x05\x05\x05\x05\x03",
+		"\x05\x05\x05\x05\x05\x05\x05\x04",
+		"\x05\x05\x05\x05\x05\x05\x05\x05",
+	};
 
-  (void)arg;
-  chRegSetThreadName("blinker1");
+	uint8_t fVULevelL = 0, fVULevelR = 0;
+	char buf[17];
+	uint32_t cnt = 0;
 
-//
-//  {
-//
-//	  palSetPadMode(GPIOF, 7, PAL_MODE_ALTERNATE(5) | PAL_STM32_OSPEED_HIGHEST); // SCK
-//	  palSetPadMode(GPIOF, 8, PAL_MODE_ALTERNATE(5)); // MISO
-//	  palSetPadMode(GPIOF, 9, PAL_MODE_ALTERNATE(5) | PAL_STM32_OSPEED_HIGHEST); // MOSI
-//
-//	  palSetPadMode(GPIOC, 7, PAL_MODE_OUTPUT_PUSHPULL | PAL_STM32_OSPEED_HIGHEST); // CS
-//	  palSetPadMode(GPIOC, 8, PAL_MODE_OUTPUT_PUSHPULL | PAL_STM32_OSPEED_HIGHEST); // CS
-//
-//	  palSetPadMode(GPIOC, 9, PAL_MODE_OUTPUT_PUSHPULL | PAL_STM32_OSPEED_HIGHEST); // CS
-//	  spiUnselect(&SPID5);
-//
-//	  set_vol(0xff);
-//
-//	  return;
-//
-//while (1) {
-//	  //{
-//	  static SPIConfig spi_cfg = {
-//	  	NULL,
-//	  	GPIOC,
-//		8,
-//		SPI_CR1_BR_1 | SPI_CR1_BR_2,// | SPI_CR1_CPOL |SPI_CR1_CPHA,
-//	  };
-//
-//	  volatile uint8_t ch;
-////	  volatile uint8_t ch2[2] = {0x80 | 23, 00};
-//	  volatile uint8_t ch2[2] = {0x80 | 18, 0};
-//	  volatile uint8_t ch3[2] = {2,2};
-//
-//	  spiAcquireBus(&SPID5);
-//	  spiStart(&SPID5, &spi_cfg);
-///*
-//	  spiSelect(&SPID5);
-//	  spiExchange(&SPID5, 2, ch2, ch3);
-//	  spiUnselect(&SPID5);*/
-///*
-//	  ch2[0] = 16;
-//	  ch2[1] = 0xff;
-//	  ch3[0] = ch3[1] = 0;
-//	  spiSelect(&SPID5);
-//	  spiExchange(&SPID5, 2, ch2, ch3);
-//	  spiUnselect(&SPID5);
-//*/
-//	  ch2[0] = 0x80 | 18;
-//	  ch2[1] = 0;
-//	  ch3[0] = ch3[1] = 0;
-//	  spiSelect(&SPID5);
-//	  spiExchange(&SPID5, 2, ch2, ch3);
-//	  spiUnselect(&SPID5);
-//
-//	/*  ch2[0] = 18;
-//	  ch2[1] = 0x50 | 0x80;
-//	  ch3[0] = ch3[1] = 0;
-//	  spiSelect(&SPID5);
-//	  spiExchange(&SPID5, 2, ch2, ch3);
-//	  spiUnselect(&SPID5);
-//*/
-//	/*  ch2[0] = 0x80 | 16;
-//	  ch2[1] = 0;
-//	  ch3[0] = ch3[1] = 0;
-//	  spiSelect(&SPID5);
-//	  spiExchange(&SPID5, 2, ch2, ch3);
-//	  spiUnselect(&SPID5);*/
-///*
-//	  ch2[0] = 0x80 | 17;
-//	  ch2[1] = 0;
-//	  ch3[0] = ch3[1] = 0;
-//	  spiSelect(&SPID5);
-//	  spiExchange(&SPID5, 2, ch2, ch3);
-//	  spiUnselect(&SPID5);
-//*/
-//
-//	  spiReleaseBus(&SPID5);
-//}
-//
-//
-//
-//
-//  }
-
-  uint8_t fVULevelL, fVULevelR;
-
-  uint32_t cnt = 0;
-
-  while (true) {
-	  char buf[17];
-//	  uint32_t vu = HAL_SAI_GetVULevels();
-//	  uint16_t vu_l = (vu >> 16) & 0xffff;
-//	  uint16_t vu_r = vu & 0xffff;
+	while (true) {
 	  memset(buf, 0, sizeof(buf));
 
 
@@ -207,7 +119,9 @@ static THD_FUNCTION(Thread1, arg) {
 	  uint16_t new_l = (vuLevel >> 16);// >> 12;
 	  uint16_t new_r = (vuLevel & 0xFFFF);// >> 12;
 		if (fVULevelL < new_l)
+		{
 			fVULevelL = new_l;
+		}
 		else
 		{
 			if (fVULevelL > 0)
@@ -219,7 +133,9 @@ static THD_FUNCTION(Thread1, arg) {
 		}
 
 		if (fVULevelR < new_r)
+		{
 			fVULevelR = new_r;
+		}
 		else
 		{
 			if (fVULevelR > 0)
@@ -230,43 +146,20 @@ static THD_FUNCTION(Thread1, arg) {
 						fVULevelR--;
 		}
 
-//    palClearPad(GPIOG, GPIOG_LED4_RED);
-//    chThdSleepMilliseconds(500);
-//    palSetPad(GPIOG, GPIOG_LED4_RED);
-//    chThdSleepMilliseconds(500);
 		++cnt;
 
-		const char vu[][9] = {
-			"        ",
-			"|       ",
-			"#       ",
-			"#|      ",
-			"##      ",
-			"##|     ",
-			"###     ",
-			"###|    ",
-			"####    ",
-			"####!   ",
-			"#####   ",
-			"#####!  ",
-			"######  ",
-			"######! ",
-			"####### ",
-			"#######!",
-		};
-#if 0
 		if (cnt == 10) {
 		  lcdReturnHome(&LCDD1);
 
-		  chsnprintf(buf, sizeof(buf) - 1, "L: %s", vu[fVULevelL >> 3]);
+		  chsnprintf(buf, sizeof(buf) - 1, "L: %s", vu_map[phi_lib_map(fVULevelL, 0, 0xFF, 0, PHI_ARRLEN(vu_map))]);
 		  lcdWriteString(&LCDD1, buf, 0);
 
-		  chsnprintf(buf, sizeof(buf) - 1, "R: %s", vu[fVULevelR >> 3]);
+		  chsnprintf(buf, sizeof(buf) - 1, "R: %s", vu_map[phi_lib_map(fVULevelR, 0, 0xFF, 0, PHI_ARRLEN(vu_map))]);
 		  lcdWriteString(&LCDD1, buf, 40);
 
 		  cnt = 0;
 		}
-#endif
+
 	  chThdSleepMicroseconds(100);
   }
 }
@@ -292,6 +185,65 @@ static THD_FUNCTION(Thread2, arg) {
 
 extern audio_state_t audio;
 
+/* Create custom characters for nicer VU muter */
+void lcd_create_custom_chars(void) {
+	uint8_t p1[8] = {
+	  0x10,
+	  0x10,
+	  0x10,
+	  0x10,
+	  0x10,
+	  0x10,
+	  0x10,
+	  0x10};
+
+	uint8_t p2[8] = {
+	  0x18,
+	  0x18,
+	  0x18,
+	  0x18,
+	  0x18,
+	  0x18,
+	  0x18,
+	  0x18};
+
+	uint8_t p3[8] = {
+	  0x1C,
+	  0x1C,
+	  0x1C,
+	  0x1C,
+	  0x1C,
+	  0x1C,
+	  0x1C,
+	  0x1C};
+
+	uint8_t p4[8] = {
+	  0x1E,
+	  0x1E,
+	  0x1E,
+	  0x1E,
+	  0x1E,
+	  0x1E,
+	  0x1E,
+	  0x1E};
+
+	uint8_t p5[8] = {
+	  0x1F,
+	  0x1F,
+	  0x1F,
+	  0x1F,
+	  0x1F,
+	  0x1F,
+	  0x1F,
+	  0x1F};
+
+	lcdCreateChar(&LCDD1, 1, p1);
+	lcdCreateChar(&LCDD1, 2, p2);
+	lcdCreateChar(&LCDD1, 3, p3);
+	lcdCreateChar(&LCDD1, 4, p4);
+	lcdCreateChar(&LCDD1, 5, p5);
+}
+
 /*
  * Application entry point.
  */
@@ -310,6 +262,7 @@ int main(void)
     buf[20] = 0;
     chsnprintf(buf, sizeof(buf) - 1, "Hw:%x Sw:%x", PHI_BL_HW_VER, PHI_BL_SW_VER);
     lcdStart(&LCDD1, &lcdcfg);
+    lcd_create_custom_chars();
     lcdWriteString(&LCDD1, "PHI Narvi", 0);
     lcdWriteString(&LCDD1, buf, 40);
 
@@ -368,7 +321,7 @@ int main(void)
          * Set mute request received.
          */
         if (evt & AUDIO_EVENT_MUTE) {
-        	set_mute(audio.mute[0]);
+        	codec_set_mute(audio.mute[0]);
         }
 
         /*
@@ -379,14 +332,14 @@ int main(void)
 
         	volatile float vol_in_db = (float)audio.volume[0] * 0.0039;
         	if (vol_in_db > 0) {
-        		set_vol(0xff); // max
+        		codec_set_vol(0xff); // max
         	}
         	if (vol_in_db < -120) {
-        		set_vol(14); // mute
-        		return;
+        		codec_set_vol(14); // mute
+        	} else {
+        		vol = 255 + (vol_in_db * 2);
+        		codec_set_vol(vol);
         	}
-        	vol = 255 + (vol_in_db * 2);
-        	set_vol(vol);
         }
     }
 }

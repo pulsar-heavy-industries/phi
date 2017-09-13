@@ -26,11 +26,10 @@ void codec_clearbuffer(void);
 #define CODEC_I2S SPI2
 
 
-extern void codec_CS43L22_hw_init(void);
-
-extern void codec_CS43L22_hw_reset(void);
-
-
-extern void codec_CS43L22_i2s_init_48k(void);
+void codec_CS43L22_hw_init(void);
+void codec_CS43L22_hw_reset(void);
+void codec_CS43L22_i2s_init_48k(void);
+void codec_set_mute(bool mute);
+void codec_set_vol(uint8_t vol);
 
 #endif /* __CODEC_H */

@@ -28,7 +28,7 @@ static uint32_t i2stxdmamode = 0;
 static uint32_t i2stxdmamode2 = 0;
 
 
-void set_vol(uint8_t vol)
+void codec_set_vol(uint8_t vol)
 {
   uint8_t buf[2];
 
@@ -69,7 +69,7 @@ void set_vol(uint8_t vol)
   spiReleaseBus(&SPID3);
 }
 
-void set_mute(bool mute)
+void codec_set_mute(bool mute)
 {
   uint8_t buf[2];
 

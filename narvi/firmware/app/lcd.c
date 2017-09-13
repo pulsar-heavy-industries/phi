@@ -108,11 +108,9 @@ LCDDriver LCDD1;
  * @notapi
  */
 static bool hd44780IsBusy(LCDDriver *lcdp) {
+#if LCD_USE_RW
   bool busy;
   unsigned ii;
-
-
-#if LCD_USE_RW
 
   /* Configuring Data PINs as Input. */
   for(ii = 0; ii < LINE_DATA_LEN; ii++)
@@ -488,6 +486,18 @@ void lcdDoDisplayShift(LCDDriver *lcdp, uint8_t dir){
   osalDbgAssert((lcdp->state == LCD_ACTIVE),
                 "lcdDoDisplayShift(), invalid state");
   hd44780WriteRegister(lcdp, LCD_INSTRUCTION_R, LCD_CDS | LCD_CDS_SC | dir);
+}
+
+void lcdCreateChar(LCDDriver *lcdp, uint8_t char_idx, uint8_t * data)
+{
+	osalDbgCheck((lcdp != NULL) && (data != NULL) && (char_idx < 8));
+	osalDbgAssert((lcdp->state == LCD_ACTIVE),
+				"lcdCreateChar(), invalid state");
+
+	hd44780WriteRegister(lcdp, LCD_INSTRUCTION_R, LCD_SET_CGRAM_ADDRESS | (char_idx << 3));
+	for (int i=0; i<8; i++) {
+		hd44780WriteRegister(lcdp, LCD_DATA_R, data[i]);
+	 }
 }
 
 #if LCD_USE_DIMMABLE_BACKLIGHT
