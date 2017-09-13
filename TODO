@@ -6,7 +6,7 @@ narvi:
 - bl need massive cleanup including usbcfg.c, maybe without audio? bl over midi?
 - bl + app need rnd number generator init
 - CAN
-- USB MIDI bootloading...
+- USB<->MIDI forwarding code is hacky and needs sysex support, fix in narvi_midi.c
 
 
 - move headphones button one to the left, so that its available in all modes (normal/browser/cue)
