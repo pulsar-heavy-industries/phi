@@ -58,8 +58,8 @@ static const uint8_t audio_device_descriptor_data[18] = {
                          0x00,          /* bDeviceSubClass.                 */
                          0x00,          /* bDeviceProtocol.                 */
                          0x40,          /* bMaxPacketSize.                  */
-                         0x0483 + 13,        /* idVendor (ST).                   */
-                         0x5343 + 13,        /* idProduct.                       */
+                         0x0483 + 17,        /* idVendor (ST).                   */
+                         0x5343 + 17,        /* idProduct.                       */
                          0x0001,        /* bcdDevice.                       */
                          1,             /* iManufacturer.                   */
                          2,             /* iProduct.                        */
@@ -216,14 +216,14 @@ static const uint8_t audio_configuration_descriptor_data[122 + 4 + (9+66) + 9+9+
          0x06, 0x24, 0x02, 0x02, 0x02, 0x06,                   //   IN  Jack 2 (ext)       MIDI IN JACK DESC (bLength bDescType bDescSubType bJackType bJackID iJack)
          0x06, 0x24, 0x02, 0x01, 0x03, 0x07,                   //   IN  Jack 3 (emb)       MIDI IN JACK DESC (bLength bDescType bDescSubType bJackType bJackID iJack)
          0x06, 0x24, 0x02, 0x02, 0x04, 0x08,                   //   IN  Jack 4 (ext)       MIDI IN JACK DESC (bLength bDescType bDescSubType bJackType bJackID iJack)
-         0x09, 0x24, 0x03, 0x01, 0x05, 0x01, 0x02, 0x01, 0x09, //   OUT Jack 5 (emb)       MIDI OUT JACK DESC (bLength bDescType bDescSubType bJackType bJackID bNrInputPins baSourceID(1) baSourceID(1) iJack)
+         0x09, 0x24, 0x03, 0x01, 0x05, 0x01, 0x02, 0x01, 0x05, //   OUT Jack 5 (emb)       MIDI OUT JACK DESC (bLength bDescType bDescSubType bJackType bJackID bNrInputPins baSourceID(1) baSourceID(1) iJack)
          0x09, 0x24, 0x03, 0x02, 0x06, 0x01, 0x01, 0x01, 0x0a, //   OUT Jack 6 (ext)       MIDI OUT JACK DESC (bLength bDescType bDescSubType bJackType bJackID bNrInputPins baSourceID(1) baSourceID(1) iJack)
-		 0x09, 0x24, 0x03, 0x01, 0x07, 0x01, 0x04, 0x01, 0x0b, //   OUT Jack 7 (emb)       MIDI OUT JACK DESC (bLength bDescType bDescSubType bJackType bJackID bNrInputPins baSourceID(1) baSourceID(1) iJack)
+		 0x09, 0x24, 0x03, 0x01, 0x07, 0x01, 0x04, 0x01, 0x07, //   OUT Jack 7 (emb)       MIDI OUT JACK DESC (bLength bDescType bDescSubType bJackType bJackID bNrInputPins baSourceID(1) baSourceID(1) iJack)
 		 0x09, 0x24, 0x03, 0x02, 0x08, 0x01, 0x03, 0x01, 0x0c, //   OUT Jack 8 (ext)       MIDI OUT JACK DESC (bLength bDescType bDescSubType bJackType bJackID bNrInputPins baSourceID(1) baSourceID(1) iJack)
          0x09, 0x05, 0x03, 0x02, 0x40, 0x00, 0x00, 0x00, 0x00, // Endpoint OUT             ENDPOINT DESC  (bLength bDescType bEndpointAddr bmAttr wMaxPacketSize(2 bytes)  bInterval bRefresh bSyncAddress)
          0x06, 0x25, 0x01, 0x02, 0x01, 0x03,                         //   CS EP IN  Jack         CLASS SPECIFIC MS BULK DATA EP DESC
          0x09, 0x05, 0x83, 0x02, 0x40, 0x00, 0x00, 0x00, 0x00, // Endpoint IN              ENDPOINT DESC  (bLength bDescType bEndpointAddr bmAttr wMaxPacketSize(2 bytes)  bInterval bRefresh bSyncAddress)
-         0x06, 0x25, 0x01, 0x02, 0x07, 0x05,                         //   CS EP OUT Jack          CLASS SPECIFIC MS BULK DATA EP DESC};
+         0x06, 0x25, 0x01, 0x02, 0x05, 0x07,                         //   CS EP OUT Jack          CLASS SPECIFIC MS BULK DATA EP DESC};
 };
 
 /*
@@ -258,12 +258,17 @@ static const uint8_t audio_string1[] = {
  * Device Description string.
  */
 static const uint8_t audio_string2[] = {
-  USB_DESC_BYTE(56),                    /* bLength.                         */
+  USB_DESC_BYTE(20),                    /* bLength.                         */
   USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
-  'C', 0, 'h', 0, 'i', 0, 'b', 0, 'i', 0, 'O', 0, 'S', 0, '/', 0,
-  'R', 0, 'T', 0, ' ', 0, 'U', 0, 'S', 0, 'B', 0, ' ', 0, 'A', 0,
-  'u', 0, 'd', 0, 'i', 0, 'o', 0, ' ', 0, 'D', 0, 'e', 0, 'v', 0,
-  'i', 0, 'X', 0, '1', 0
+  'P', 0,
+  'H', 0,
+  'I', 0,
+  ' ', 0,
+  'N', 0,
+  'a', 0,
+  'r', 0,
+  'v', 0,
+  'i', 0,
 };
 
 /*
@@ -287,11 +292,17 @@ static const uint8_t audio_string4[] = {
 };
 
 static const uint8_t audio_string5[] = {
-  USB_DESC_BYTE(8),                     /* bLength.                         */
+  USB_DESC_BYTE(20),                     /* bLength.                         */
   USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
-  'A', 0,
-  'B', 0,
-  '5', 0
+  'N', 0,
+  'a', 0,
+  'r', 0,
+  'v', 0,
+  'i', 0,
+  'C', 0,
+  't', 0,
+  'r', 0,
+  'l', 0,
 };
 
 static const uint8_t audio_string6[] = {
@@ -303,12 +314,16 @@ static const uint8_t audio_string6[] = {
 
 };
 static const uint8_t audio_string7[] = {
-  USB_DESC_BYTE(8),                     /* bLength.                         */
-  USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
-  'A', 0,
-  'B', 0,
-  '7', 0
-
+	USB_DESC_BYTE(18),                     /* bLength.                         */
+	USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
+	'N', 0,
+	'a', 0,
+	'r', 0,
+	'v', 0,
+	'i', 0,
+	'E', 0,
+	'x', 0,
+	't', 0,
 };
 static const uint8_t audio_string8[] = {
   USB_DESC_BYTE(8),                     /* bLength.                         */
@@ -358,15 +373,15 @@ static const USBDescriptor audio_strings[] = {
   {sizeof audio_string1, audio_string1},
   {sizeof audio_string2, audio_string2},
   {sizeof audio_string3, audio_string3},
-  {sizeof audio_string3, audio_string4},
-  {sizeof audio_string3, audio_string5},
-  {sizeof audio_string3, audio_string6},
-  {sizeof audio_string3, audio_string7},
-  {sizeof audio_string3, audio_string8},
-  {sizeof audio_string3, audio_string9},
-  {sizeof audio_string3, audio_string10},
-  {sizeof audio_string3, audio_string11},
-  {sizeof audio_string3, audio_string12},
+  {sizeof audio_string4, audio_string4},
+  {sizeof audio_string5, audio_string5},
+  {sizeof audio_string6, audio_string6},
+  {sizeof audio_string7, audio_string7},
+  {sizeof audio_string8, audio_string8},
+  {sizeof audio_string9, audio_string9},
+  {sizeof audio_string10, audio_string10},
+  {sizeof audio_string11, audio_string11},
+  {sizeof audio_string12, audio_string12},
 
 };
 
