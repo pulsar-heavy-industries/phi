@@ -14,8 +14,8 @@ const phi_midi_cfg_t narvi_midi_cfg = {
 	.builtin_cmd_port_mask = PHI_MIDI_PORT_USB1,
 };
 
-static THD_WORKING_AREA(midi_thread_wa, 512 + PHI_MIDI_SYSEX_MAX_LEN);
-/*__attribute__((noreturn)) */static THD_FUNCTION(midi_thread, arg)
+static THD_WORKING_AREA(usb_midi_thread_wa, 512 + PHI_MIDI_SYSEX_MAX_LEN);
+/*__attribute__((noreturn)) */static THD_FUNCTION(usb_midi_thread, arg)
 {
 	(void)arg;
 
@@ -49,6 +49,112 @@ static THD_WORKING_AREA(midi_thread_wa, 512 + PHI_MIDI_SYSEX_MAX_LEN);
 	}
 }
 
+static THD_WORKING_AREA(serial_midi_thread_wa, 512 + PHI_MIDI_SYSEX_MAX_LEN);
+/*__attribute__((noreturn)) */static THD_FUNCTION(serial_midi_thread, arg)
+{
+	// Based on https://github.com/axoloti/axoloti/blob/master/firmware/serial_midi.c
+	const int8_t status_len[16] = {
+		0, 0, 0, 0, 0, 0, 0, 0,
+		3, // 0x80=note off, 3 bytes
+	    3, // 0x90=note on, 3 bytes
+	    3, // 0xa0=poly pressure, 3 bytes
+	    3, // 0xb0=control change, 3 bytes
+	    2, // 0xc0=program change, 2 bytes
+	    2, // 0xd0=channel pressure, 2 bytes
+	    3, // 0xe0=pitch bend, 3 bytes
+	    -1 // 0xf0=other things. may vary.
+	};
+	const int8_t sys_len[16] = {
+		-1, // 0xf0=sysex start. may vary
+	    2, // 0xf1=MIDI Time Code. 2 bytes
+	    3, // 0xf2=MIDI Song position. 3 bytes
+	    2, // 0xf3=MIDI Song Select. 2 bytes.
+	    1, // 0xf4=undefined
+	    1, // 0xf5=undefined
+	    1, // 0xf6=TUNE Request
+	    1, // 0xf7=sysex end.
+	    1, // 0xf8=timing clock. 1 byte
+	    1, // 0xf9=proposed measure end?
+	    1, // 0xfa=start. 1 byte
+	    1, // 0xfb=continue. 1 byte
+	    1, // 0xfc=stop. 1 byte
+	    1, // 0xfd=undefined
+	    1, // 0xfe=active sensing. 1 byte
+	    3 // 0xff= not reset, but a META-EVENT, which is always 3 bytes
+	    };
+
+	(void)arg;
+	chRegSetThreadName("midi");
+
+	uint8_t data;
+	int8_t len;
+	unsigned char MidiByte0;
+	unsigned char MidiByte1;
+	unsigned char MidiByte2;
+	unsigned char MidiCurData;
+	unsigned char MidiNumData;
+	phi_midi_pkt_t pkt;
+	chDbgCheck(sizeof(pkt) == 4);
+
+	while (1)
+	{
+		data = sdGet(&SD6);
+
+		// Status byte
+		if (data & 0x80) {
+			len = status_len[data >> 4];
+			if (len == -1) {
+				len = sys_len[data - 0xF0];
+				if (len == 1) {
+		        	pkt.type = 0xFF; // TODO! - this probably breaks sysex fwding
+		        	pkt.b[0] = data;
+		        	pkt.b[1] = 0;
+		        	pkt.b[2] = 0;
+		        	phi_midi_rx_pkt(PHI_MIDI_PORT_SERIAL1, &pkt);
+				}
+				else
+				{
+					MidiByte0 = data;
+					MidiNumData = len - 1;
+					MidiCurData = 0;
+				}
+			}
+			else
+			{
+				MidiByte0 = data;
+				MidiNumData = len - 1;
+				MidiCurData = 0;
+			}
+		} else { // Not status
+			if (MidiCurData == 0) {
+				MidiByte1 = data;
+		        if (MidiNumData == 1) {
+		        	// 2 byte packet
+		        	pkt.type = 0xFF; // TODO! - this probably breaks sysex fwding
+		        	pkt.b[0] = MidiByte0;
+		        	pkt.b[1] = MidiByte1;
+		        	pkt.b[2] = 0;
+		        	phi_midi_rx_pkt(PHI_MIDI_PORT_SERIAL1, &pkt);
+		        	MidiCurData = 0;
+		        } else {
+		        	MidiCurData++;
+		        }
+			} else if (MidiCurData == 1) {
+				MidiByte2 = data;
+				if (MidiNumData == 2) {
+		        	// 3 byte packet
+					pkt.type = 0xFF; // TODO! - this probably breaks sysex fwding
+		        	pkt.b[0] = MidiByte0;
+		        	pkt.b[1] = MidiByte1;
+		        	pkt.b[2] = MidiByte2;
+		        	phi_midi_rx_pkt(PHI_MIDI_PORT_SERIAL1, &pkt);
+
+					MidiCurData = 0;
+				}
+			}
+		}
+	}
+}
 void narvi_midi_init(void)
 {
     phi_midi_init(&narvi_midi_cfg);
@@ -56,23 +162,24 @@ void narvi_midi_init(void)
     mduObjectInit(&MDU1);
     mduStart(&MDU1, &midiusbcfg);
 
-    chThdCreateStatic(midi_thread_wa, sizeof(midi_thread_wa), NORMALPRIO + 1, midi_thread, NULL);
+    chThdCreateStatic(usb_midi_thread_wa, sizeof(usb_midi_thread_wa), NORMALPRIO + 1, usb_midi_thread, NULL);
+    chThdCreateStatic(serial_midi_thread_wa, sizeof(serial_midi_thread_wa), NORMALPRIO + 2, serial_midi_thread, NULL);
 }
 
 void narvi_midi_in_handler(phi_midi_port_t port, const phi_midi_pkt_t * pkt)
 {
 	(void) port;
 
-	// Based on table from http://www.usb.org/developers/docs/devclass_docs/midi10.pdf page 16
-	uint8_t pkt_sizes[] = {
-		3, 3, 2, 3, 3, 1, 2, 3, 3, 3, 3, 3, 2, 2, 3, 1,
-	};
-
 	switch (port)
 	{
-		// Forward packets on the external port
+		// Forward: USB2->EXT
 		case PHI_MIDI_PORT_USB2:
-			sdWrite(&SD6, (uint8_t *) pkt->b, pkt_sizes[pkt->type]);
+			phi_midi_tx_pkt(PHI_MIDI_PORT_SERIAL1, pkt);
+			break;
+
+		// Forward: EXT->USB
+		case PHI_MIDI_PORT_SERIAL1:
+			phi_midi_tx_pkt(PHI_MIDI_PORT_USB2, pkt);
 			break;
 
 		default:
@@ -116,12 +223,18 @@ void narvi_midi_get_dev_info(phi_midi_sysex_dev_info_t * dev_info)
 
 void narvi_midi_tx_pkt(phi_midi_port_t port, const phi_midi_pkt_t * pkt)
 {
-	if  (port & PHI_MIDI_PORT_USB1)	phi_usb_midi_send3(&MDU1, 1, pkt->chn_event, pkt->val1, pkt->val2);
-	if  (port & PHI_MIDI_PORT_USB2)	phi_usb_midi_send3(&MDU1, 2, pkt->chn_event, pkt->val1, pkt->val2);
+	// Based on table from http://www.usb.org/developers/docs/devclass_docs/midi10.pdf page 16
+	uint8_t pkt_sizes[] = {
+		3, 3, 2, 3, 3, 1, 2, 3, 3, 3, 3, 3, 2, 2, 3, 1,
+	};
+
+	if (port & PHI_MIDI_PORT_USB1) phi_usb_midi_send3(&MDU1, 1, pkt->chn_event, pkt->val1, pkt->val2);
+	if (port & PHI_MIDI_PORT_USB2) phi_usb_midi_send3(&MDU1, 2, pkt->chn_event, pkt->val1, pkt->val2);
+	if (port & PHI_MIDI_PORT_SERIAL1) sdWrite(&SD6, (uint8_t *) pkt->b, pkt_sizes[pkt->type]);
 }
 
 void narvi_midi_tx_sysex(phi_midi_port_t port, const uint8_t * data, size_t len)
 {
-	if  (port & PHI_MIDI_PORT_USB1) phi_usb_midi_send_sysex(&MDU1, 1, data, len);
-	if  (port & PHI_MIDI_PORT_USB2) phi_usb_midi_send_sysex(&MDU1, 2, data, len);
+	if (port & PHI_MIDI_PORT_USB1) phi_usb_midi_send_sysex(&MDU1, 1, data, len);
+	if (port & PHI_MIDI_PORT_USB2) phi_usb_midi_send_sysex(&MDU1, 2, data, len);
 }
