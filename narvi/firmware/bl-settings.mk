@@ -5,7 +5,7 @@
 
 # See phi_bl.mk for an explanation of these variables
 BL_DEV_ID = 0x4956524e # "NRVI"
-BL_SW_VER = 1
+BL_SW_VER = 2
 BL_HW_VER = 1
 BL_HW_VER_MASK = 0x7f
 

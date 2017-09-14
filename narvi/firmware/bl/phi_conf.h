@@ -8,7 +8,7 @@
  * NARVI Specific stuff
  *****************************************************************************/
 
-#define NARVI_HW_SW_VER  PHI_HW_SW_VER(0, PHI_BL_HW_VER, PHI_BL_SW_VER)
+#define NARVI_HW_SW_VER  PHI_HW_SW_VER(1, PHI_BL_HW_VER, PHI_BL_SW_VER)
 #define NARVI_DEV_ID     PHI_BL_DEV_ID
 
 

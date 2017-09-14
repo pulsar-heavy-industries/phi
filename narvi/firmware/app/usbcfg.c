@@ -58,8 +58,8 @@ static const uint8_t audio_device_descriptor_data[18] = {
                          0x00,          /* bDeviceSubClass.                 */
                          0x00,          /* bDeviceProtocol.                 */
                          0x40,          /* bMaxPacketSize.                  */
-                         0x0483 + 19,        /* idVendor (ST).                   */
-                         0x5343 + 19,        /* idProduct.                       */
+                         0x0483 + 20,        /* idVendor (ST).                   */
+                         0x5343 + 20,        /* idProduct.                       */
                          0x0001,        /* bcdDevice.                       */
                          1,             /* iManufacturer.                   */
                          2,             /* iProduct.                        */
@@ -247,28 +247,23 @@ static const uint8_t audio_string0[] = {
  * Vendor string.
  */
 static const uint8_t audio_string1[] = {
-  USB_DESC_BYTE(38),                    /* bLength.                         */
-  USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
-  'S', 0, 'T', 0, 'M', 0, 'i', 0, 'c', 0, 'r', 0, 'o', 0, 'e', 0,
-  'l', 0, 'e', 0, 'c', 0, 't', 0, 'r', 0, 'o', 0, 'n', 0, 'i', 0,
-  'X', 0, 'A', 0
+	USB_DESC_BYTE(2 + 46),                /* bLength.                         */
+	USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
+	'P', 0, 'u', 0, 'l', 0, 's', 0, 'a', 0, 'r', 0, ' ', 0,
+	'H', 0, 'e', 0, 'a', 0, 'v', 0, 'y', 0, ' ', 0,
+	'I', 0, 'n', 0, 'd', 0, 'u', 0, 's', 0, 't', 0, 'r', 0, 'i', 0, 'e', 0, 's', 0,
 };
 
 /*
  * Device Description string.
  */
 static const uint8_t audio_string2[] = {
-  USB_DESC_BYTE(20),                    /* bLength.                         */
-  USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
-  'P', 0,
-  'H', 0,
-  'I', 0,
-  ' ', 0,
-  'N', 0,
-  'a', 0,
-  'r', 0,
-  'v', 0,
-  'i', 0,
+	USB_DESC_BYTE(2 + 58),                    /* bLength.                         */
+	USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
+	'P', 0, 'u', 0, 'l', 0, 's', 0, 'a', 0, 'r', 0, ' ', 0,
+	'H', 0, 'e', 0, 'a', 0, 'v', 0, 'y', 0, ' ', 0,
+	'I', 0, 'n', 0, 'd', 0, 'u', 0, 's', 0, 't', 0, 'r', 0, 'i', 0, 'e', 0, 's', 0, ' ', 0,
+	'N', 0, 'a', 0, 'r', 0, 'v', 0, 'i', 0,
 };
 
 /*
@@ -284,12 +279,12 @@ static const uint8_t audio_string3[] = {
 
 /* Unused? */
 static const uint8_t audio_string4[] = {
-  USB_DESC_BYTE(56),                    /* bLength.                         */
-  USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
-  'C', 0, 'h', 0, 'i', 0, 'b', 0, 'i', 0, 'O', 0, 'S', 0, '/', 0,
-  'R', 0, 'T', 0, ' ', 0, 'U', 0, 'S', 0, 'B', 0, ' ', 0, 'A', 0,
-  'u', 0, 'd', 0, 'i', 0, 'o', 0, ' ', 0, 'D', 0, 'e', 0, 'v', 0,
-  'i', 0, 'X', 0, '2', 0
+	  USB_DESC_BYTE(2 + 58),                    /* bLength.                         */
+	  USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
+	  'P', 0, 'u', 0, 'l', 0, 's', 0, 'a', 0, 'r', 0, ' ', 0,
+	  'H', 0, 'e', 0, 'a', 0, 'v', 0, 'y', 0, ' ', 0,
+	  'I', 0, 'n', 0, 'd', 0, 'u', 0, 's', 0, 't', 0, 'r', 0, 'i', 0, 'e', 0, 's', 0, ' ', 0,
+	  'N', 0, 'a', 0, 'r', 0, 'v', 0, 'i', 0,
 };
 
 static const uint8_t audio_string5[] = {
@@ -376,6 +371,39 @@ static const USBDescriptor audio_strings[] = {
   {sizeof audio_string8, audio_string8},
 };
 
+void inttohex(uint32_t v, unsigned char *p){
+  int nibble;
+  for (nibble = 0;nibble<8;nibble++){
+    unsigned char c = (v>>(28-nibble*4))&0xF;
+    if (c<10) c=c+'0';
+    else c=c+'A'-10;
+    *p = c;
+    p += 2;
+  }
+}
+
+
+static uint8_t descriptor_serial_string[] = {
+  USB_DESC_BYTE(50),                    /* bLength.                         */
+  USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
+  '0', 0, '0', 0, '0', 0, '0', 0,
+  '0', 0, '0', 0, '0', 0, '0', 0,
+  '0', 0, '0', 0, '0', 0, '0', 0,
+  '0', 0, '0', 0, '0', 0, '0', 0,
+  '0', 0, '0', 0, '0', 0, '0', 0,
+  '0', 0, '0', 0, '0', 0, '0', 0,
+  '0', 0, '0', 0, '0', 0, '0', 0,
+  '0', 0, '0', 0, '0', 0, '0', 0,
+  '0', 0, '0', 0, '0', 0, '0', 0,
+  '0', 0, '0', 0, '0', 0, '0', 0,
+  '0', 0, '0', 0, '0', 0, '0', 0,
+  '0', 0, '0', 0, '0', 0, '0', 0
+};
+
+static const USBDescriptor descriptor_serial = {
+   sizeof descriptor_serial_string, descriptor_serial_string,
+};
+
 
 
 audio_state_t audio;
@@ -403,6 +431,13 @@ static const USBDescriptor *get_descriptor(USBDriver *usbp,
   case USB_DESCRIPTOR_CONFIGURATION:
     return &audio_configuration_descriptor;
   case USB_DESCRIPTOR_STRING:
+	  if (dindex == 3) {
+	        inttohex(*((uint32_t*)STM32_REG_UNIQUE_ID),&descriptor_serial_string[2]);
+	        inttohex(*((uint32_t*)STM32_REG_UNIQUE_ID + 4),&descriptor_serial_string[2+16]);
+	        inttohex(*((uint32_t*)STM32_REG_UNIQUE_ID + 8),&descriptor_serial_string[2+32]);
+	        return &descriptor_serial;
+	      }
+
     if (dindex < PHI_ARRLEN(audio_strings))
       return &audio_strings[dindex];
     else

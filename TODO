@@ -1,12 +1,12 @@
 narvi:
- - Bootloaderize the app, create bootloader tree
  - Look at GPIOB_OTG_HS_VBUS not being alternate in board.h
 - Also at GPIOB_OTG_HS_ID ?
 - GPIOA_TIM2_ETR ?
-- bl need massive cleanup including usbcfg.c, maybe without audio? bl over midi?
 - bl + app need rnd number generator init
 - CAN
 - USB<->MIDI forwarding code is hacky and needs sysex support, fix in narvi_midi.c
+- BL code review + cleanup
+- BL add support for forcing BL using pushbutton
 
 
 - move headphones button one to the left, so that its available in all modes (normal/browser/cue)

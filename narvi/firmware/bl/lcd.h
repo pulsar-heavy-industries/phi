@@ -58,6 +58,10 @@
 /* Driver pre-compile time settings.                                         */
 /*===========================================================================*/
 
+#if !defined(LCD_USE_RW)
+#define LCD_USE_RW FALSE
+#endif
+
 /**
  * @brief   Enables back-light APIs.
  *
@@ -114,7 +118,10 @@ typedef struct {
   /**
    * @brief  Read/Write PIN
    */
+#if LCD_USE_RW
   ioline_t RW;
+#endif
+
   /**
    * @brief  Enable PIN
    */
@@ -260,6 +267,7 @@ extern "C" {
   void lcdSetAddress(LCDDriver *lcdp, uint8_t add);
   void lcdWriteString(LCDDriver *lcdp, char* string, uint8_t pos);
   void lcdDoDisplayShift(LCDDriver *lcdp, uint8_t dir);
+  void lcdCreateChar(LCDDriver *lcdp, uint8_t char_idx, uint8_t * data);
 #if LCD_USE_DIMMABLE_BACKLIGHT
   void lcdSetBacklight(LCDDriver *lcdp, uint32_t perc);
   void lcdBacklightFadeOut(LCDDriver *lcdp);

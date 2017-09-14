@@ -108,6 +108,7 @@ LCDDriver LCDD1;
  * @notapi
  */
 static bool hd44780IsBusy(LCDDriver *lcdp) {
+#if LCD_USE_RW
   bool busy;
   unsigned ii;
 
@@ -131,6 +132,11 @@ static bool hd44780IsBusy(LCDDriver *lcdp) {
   osalThreadSleepMilliseconds(1);
 #endif
   return busy;
+
+#else
+//  chThdSleepMicroseconds(50);
+  return FALSE;
+#endif
 }
 
 /**
@@ -154,7 +160,9 @@ static void hd44780WriteRegister(LCDDriver *lcdp, uint8_t reg, uint8_t value){
     palSetLineMode(lcdp->config->pinmap->D[ii], PAL_MODE_OUTPUT_PUSHPULL |
                    PAL_STM32_OSPEED_HIGHEST);
 
+#if LCD_USE_RW
   palClearLine(lcdp->config->pinmap->RW);
+#endif
   palWriteLine(lcdp->config->pinmap->RS, reg);
 
 #if LCD_USE_4_BIT_MODE
@@ -165,9 +173,9 @@ static void hd44780WriteRegister(LCDDriver *lcdp, uint8_t reg, uint8_t value){
       palClearLine(lcdp->config->pinmap->D[ii]);
   }
   palSetLine(lcdp->config->pinmap->E);
-  osalThreadSleepMilliseconds(1);
+  osalThreadSleepMicroseconds(500);
   palClearLine(lcdp->config->pinmap->E);
-  osalThreadSleepMilliseconds(1);
+  osalThreadSleepMicroseconds(500);
 
   for(ii = 0; ii < LINE_DATA_LEN; ii++) {
     if(value & (1 << ii))
@@ -176,7 +184,7 @@ static void hd44780WriteRegister(LCDDriver *lcdp, uint8_t reg, uint8_t value){
       palClearLine(lcdp->config->pinmap->D[ii]);
   }
   palSetLine(lcdp->config->pinmap->E);
-  osalThreadSleepMilliseconds(1);
+  osalThreadSleepMicroseconds(500);
   palClearLine(lcdp->config->pinmap->E);
   osalThreadSleepMilliseconds(1);
 #else
@@ -214,7 +222,9 @@ static void hd44780InitByIstructions(LCDDriver *lcdp) {
   }
 
   palClearLine(lcdp->config->pinmap->E);
+#if LCD_USE_RW
   palClearLine(lcdp->config->pinmap->RW);
+#endif
   palClearLine(lcdp->config->pinmap->RS);
   palSetLine(lcdp->config->pinmap->D[LINE_DATA_LEN - 3]);
   palSetLine(lcdp->config->pinmap->D[LINE_DATA_LEN - 4]);
@@ -476,6 +486,18 @@ void lcdDoDisplayShift(LCDDriver *lcdp, uint8_t dir){
   osalDbgAssert((lcdp->state == LCD_ACTIVE),
                 "lcdDoDisplayShift(), invalid state");
   hd44780WriteRegister(lcdp, LCD_INSTRUCTION_R, LCD_CDS | LCD_CDS_SC | dir);
+}
+
+void lcdCreateChar(LCDDriver *lcdp, uint8_t char_idx, uint8_t * data)
+{
+	osalDbgCheck((lcdp != NULL) && (data != NULL) && (char_idx < 8));
+	osalDbgAssert((lcdp->state == LCD_ACTIVE),
+				"lcdCreateChar(), invalid state");
+
+	hd44780WriteRegister(lcdp, LCD_INSTRUCTION_R, LCD_SET_CGRAM_ADDRESS | (char_idx << 3));
+	for (int i=0; i<8; i++) {
+		hd44780WriteRegister(lcdp, LCD_DATA_R, data[i]);
+	 }
 }
 
 #if LCD_USE_DIMMABLE_BACKLIGHT
