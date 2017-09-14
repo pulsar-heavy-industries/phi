@@ -151,10 +151,10 @@ static THD_FUNCTION(lcd_thread, arg) {
 
 		  if (USBD2.state == USB_ACTIVE)
 		  {
-			  chsnprintf(buf, sizeof(buf) - 1, "L [%s]    ", vu_map[phi_lib_map(fVULevelL, 0, 0xFF, 0, PHI_ARRLEN(vu_map))]);
+			  chsnprintf(buf, sizeof(buf) - 1, "L [%s]    ", vu_map[phi_lib_map(fVULevelL * 2, 0, 0xFF, 0, PHI_ARRLEN(vu_map))]);
 			  lcdWriteString(&LCDD1, buf, 0);
 
-			  chsnprintf(buf, sizeof(buf) - 1, "R [%s]    ", vu_map[phi_lib_map(fVULevelR, 0, 0xFF, 0, PHI_ARRLEN(vu_map))]);
+			  chsnprintf(buf, sizeof(buf) - 1, "R [%s]    ", vu_map[phi_lib_map(fVULevelR * 2, 0, 0xFF, 0, PHI_ARRLEN(vu_map))]);
 			  lcdWriteString(&LCDD1, buf, 40);
 		  }
 		  else

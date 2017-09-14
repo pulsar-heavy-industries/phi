@@ -58,8 +58,8 @@ static const uint8_t audio_device_descriptor_data[18] = {
                          0x00,          /* bDeviceSubClass.                 */
                          0x00,          /* bDeviceProtocol.                 */
                          0x40,          /* bMaxPacketSize.                  */
-                         0x0483 + 17,        /* idVendor (ST).                   */
-                         0x5343 + 17,        /* idProduct.                       */
+                         0x0483 + 19,        /* idVendor (ST).                   */
+                         0x5343 + 19,        /* idProduct.                       */
                          0x0001,        /* bcdDevice.                       */
                          1,             /* iManufacturer.                   */
                          2,             /* iProduct.                        */
@@ -112,8 +112,8 @@ static const uint8_t audio_configuration_descriptor_data[122 + 4 + (9+66) + 9+9+
   USB_DESC_WORD         (0x0101),       /* wTerminalType (USB streaming).   */
   USB_DESC_BYTE         (0x00),         /* bAssocTerminal (none).           */
   USB_DESC_BYTE         (4),            /* bNrChannels (2).                 */
-  USB_DESC_WORD         (0x0003 + 4 +8),       /* wChannelConfig (left, right).    */
-  USB_DESC_BYTE         (0x00),         /* iChannelNames (none).            */
+  USB_DESC_WORD         (0x0003),       /* wChannelConfig (left, right).    */
+  USB_DESC_BYTE         (0x07),         /* iChannelNames (none).            */
   USB_DESC_BYTE         (0x00),         /* iTerminal (none).                */
   /* Feature Unit Descriptor (UAC 4.3.2.5) */
   USB_DESC_BYTE         (13 + 4),           /* bLength.                         */
@@ -213,13 +213,13 @@ static const uint8_t audio_configuration_descriptor_data[122 + 4 + (9+66) + 9+9+
 
          0x07, 0x24, 0x01, 0x00, 0x01, 0x41 + 9+9+1+13, 0x00,             // CS Interface (midi)      CLASS SPECIFIC MS INTERFACE DESC
          0x06, 0x24, 0x02, 0x01, 0x01, 0x05,                   //   IN  Jack 1 (emb)       MIDI IN JACK DESC (bLength bDescType bDescSubType bJackType bJackID iJack)
-         0x06, 0x24, 0x02, 0x02, 0x02, 0x06,                   //   IN  Jack 2 (ext)       MIDI IN JACK DESC (bLength bDescType bDescSubType bJackType bJackID iJack)
-         0x06, 0x24, 0x02, 0x01, 0x03, 0x07,                   //   IN  Jack 3 (emb)       MIDI IN JACK DESC (bLength bDescType bDescSubType bJackType bJackID iJack)
-         0x06, 0x24, 0x02, 0x02, 0x04, 0x08,                   //   IN  Jack 4 (ext)       MIDI IN JACK DESC (bLength bDescType bDescSubType bJackType bJackID iJack)
+         0x06, 0x24, 0x02, 0x02, 0x02, 0x05,                   //   IN  Jack 2 (ext)       MIDI IN JACK DESC (bLength bDescType bDescSubType bJackType bJackID iJack)
+         0x06, 0x24, 0x02, 0x01, 0x03, 0x06,                   //   IN  Jack 3 (emb)       MIDI IN JACK DESC (bLength bDescType bDescSubType bJackType bJackID iJack)
+         0x06, 0x24, 0x02, 0x02, 0x04, 0x06,                   //   IN  Jack 4 (ext)       MIDI IN JACK DESC (bLength bDescType bDescSubType bJackType bJackID iJack)
          0x09, 0x24, 0x03, 0x01, 0x05, 0x01, 0x02, 0x01, 0x05, //   OUT Jack 5 (emb)       MIDI OUT JACK DESC (bLength bDescType bDescSubType bJackType bJackID bNrInputPins baSourceID(1) baSourceID(1) iJack)
-         0x09, 0x24, 0x03, 0x02, 0x06, 0x01, 0x01, 0x01, 0x0a, //   OUT Jack 6 (ext)       MIDI OUT JACK DESC (bLength bDescType bDescSubType bJackType bJackID bNrInputPins baSourceID(1) baSourceID(1) iJack)
-		 0x09, 0x24, 0x03, 0x01, 0x07, 0x01, 0x04, 0x01, 0x07, //   OUT Jack 7 (emb)       MIDI OUT JACK DESC (bLength bDescType bDescSubType bJackType bJackID bNrInputPins baSourceID(1) baSourceID(1) iJack)
-		 0x09, 0x24, 0x03, 0x02, 0x08, 0x01, 0x03, 0x01, 0x0c, //   OUT Jack 8 (ext)       MIDI OUT JACK DESC (bLength bDescType bDescSubType bJackType bJackID bNrInputPins baSourceID(1) baSourceID(1) iJack)
+         0x09, 0x24, 0x03, 0x02, 0x06, 0x01, 0x01, 0x01, 0x05, //   OUT Jack 6 (ext)       MIDI OUT JACK DESC (bLength bDescType bDescSubType bJackType bJackID bNrInputPins baSourceID(1) baSourceID(1) iJack)
+		 0x09, 0x24, 0x03, 0x01, 0x07, 0x01, 0x04, 0x01, 0x06, //   OUT Jack 7 (emb)       MIDI OUT JACK DESC (bLength bDescType bDescSubType bJackType bJackID bNrInputPins baSourceID(1) baSourceID(1) iJack)
+		 0x09, 0x24, 0x03, 0x02, 0x08, 0x01, 0x03, 0x01, 0x06, //   OUT Jack 8 (ext)       MIDI OUT JACK DESC (bLength bDescType bDescSubType bJackType bJackID bNrInputPins baSourceID(1) baSourceID(1) iJack)
          0x09, 0x05, 0x03, 0x02, 0x40, 0x00, 0x00, 0x00, 0x00, // Endpoint OUT             ENDPOINT DESC  (bLength bDescType bEndpointAddr bmAttr wMaxPacketSize(2 bytes)  bInterval bRefresh bSyncAddress)
          0x06, 0x25, 0x01, 0x02, 0x01, 0x03,                         //   CS EP IN  Jack         CLASS SPECIFIC MS BULK DATA EP DESC
          0x09, 0x05, 0x83, 0x02, 0x40, 0x00, 0x00, 0x00, 0x00, // Endpoint IN              ENDPOINT DESC  (bLength bDescType bEndpointAddr bmAttr wMaxPacketSize(2 bytes)  bInterval bRefresh bSyncAddress)
@@ -282,6 +282,7 @@ static const uint8_t audio_string3[] = {
   '0' + CH_KERNEL_PATCH, 0
 };
 
+/* Unused? */
 static const uint8_t audio_string4[] = {
   USB_DESC_BYTE(56),                    /* bLength.                         */
   USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
@@ -306,14 +307,6 @@ static const uint8_t audio_string5[] = {
 };
 
 static const uint8_t audio_string6[] = {
-  USB_DESC_BYTE(8),                     /* bLength.                         */
-  USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
-  'A', 0,
-  'B', 0,
-  '6', 0
-
-};
-static const uint8_t audio_string7[] = {
 	USB_DESC_BYTE(18),                     /* bLength.                         */
 	USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
 	'N', 0,
@@ -325,46 +318,49 @@ static const uint8_t audio_string7[] = {
 	'x', 0,
 	't', 0,
 };
+
+
+static const uint8_t audio_string7[] = {
+	USB_DESC_BYTE(34),                     /* bLength.                         */
+	USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
+	'H', 0,
+	'e', 0,
+	'a', 0,
+	'd', 0,
+	'p', 0,
+	'h', 0,
+	'o', 0,
+	'n', 0,
+	'e', 0,
+	's', 0,
+	' ', 0,
+	'R', 0,
+	'i', 0,
+	'g', 0,
+	'h', 0,
+	't', 0,
+};
+
 static const uint8_t audio_string8[] = {
-  USB_DESC_BYTE(8),                     /* bLength.                         */
-  USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
-  'A', 0,
-  'B', 0,
-  '8', 0
-
+	USB_DESC_BYTE(32),                     /* bLength.                         */
+	USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
+	'H', 0,
+	'e', 0,
+	'a', 0,
+	'd', 0,
+	'p', 0,
+	'h', 0,
+	'o', 0,
+	'n', 0,
+	'e', 0,
+	's', 0,
+	' ', 0,
+	'L', 0,
+	'e', 0,
+	'f', 0,
+	't', 0,
 };
-static const uint8_t audio_string9[] = {
-  USB_DESC_BYTE(8),                     /* bLength.                         */
-  USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
-  'A', 0,
-  'B', 0,
-  '9', 0
 
-};
-static const uint8_t audio_string10[] = {
-  USB_DESC_BYTE(8),                     /* bLength.                         */
-  USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
-  'A', 0,
-  'B', 0,
-  'a', 0
-
-};
-static const uint8_t audio_string11[] = {
-  USB_DESC_BYTE(8),                     /* bLength.                         */
-  USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
-  'A', 0,
-  'B', 0,
-  'b', 0
-
-};
-static const uint8_t audio_string12[] = {
-  USB_DESC_BYTE(8),                     /* bLength.                         */
-  USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
-  'A', 0,
-  'B', 0,
-  'c', 0
-
-};
 /*
  * Strings wrappers array.
  */
@@ -378,11 +374,6 @@ static const USBDescriptor audio_strings[] = {
   {sizeof audio_string6, audio_string6},
   {sizeof audio_string7, audio_string7},
   {sizeof audio_string8, audio_string8},
-  {sizeof audio_string9, audio_string9},
-  {sizeof audio_string10, audio_string10},
-  {sizeof audio_string11, audio_string11},
-  {sizeof audio_string12, audio_string12},
-
 };
 
 
@@ -579,19 +570,26 @@ void audio_received(USBDriver *usbp, usbep_t ep) {
 
           s = usb_buffer[j++] >> 8;
           dac_buffer2[dac_buffer_wr_addr + i] = s;
-          if (!(s & 0x800000))
+
+          if (s & 0x800000)
 		  {
-			  if (s > VU_Level_Left)
-				  VU_Level_Left = s;
+        	  s |= 0xff << 24;
+		  }
+          s = abs(s);
+          if (s > VU_Level_Left) {
+        	  VU_Level_Left = s;
 		  }
 
 
           s = usb_buffer[j++] >> 8;
           dac_buffer2[dac_buffer_wr_addr + i + 1] = s;
-          if (!(s & 0x800000))
+          if (s & 0x800000)
 		  {
-			  if (s > VU_Level_Right)
-				  VU_Level_Right = s;
+        	  s |= 0xff << 24;
+		  }
+          s = abs(s);
+          if (s > VU_Level_Right) {
+        	  VU_Level_Right = s;
 		  }
 
           s = usb_buffer[j++];// << 8;

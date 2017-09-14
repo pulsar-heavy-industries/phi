@@ -88,11 +88,8 @@ static THD_WORKING_AREA(serial_midi_thread_wa, 512 + PHI_MIDI_SYSEX_MAX_LEN);
 
 	uint8_t data;
 	int8_t len;
-	unsigned char MidiByte0;
-	unsigned char MidiByte1;
-	unsigned char MidiByte2;
-	unsigned char MidiCurData;
-	unsigned char MidiNumData;
+	unsigned char extra_bytes_received;
+	unsigned char extra_bytes_needed;
 	phi_midi_pkt_t pkt;
 	chDbgCheck(sizeof(pkt) == 4);
 
@@ -114,42 +111,37 @@ static THD_WORKING_AREA(serial_midi_thread_wa, 512 + PHI_MIDI_SYSEX_MAX_LEN);
 				}
 				else
 				{
-					MidiByte0 = data;
-					MidiNumData = len - 1;
-					MidiCurData = 0;
+					pkt.b[0] = data;
+					extra_bytes_needed = len - 1;
+					extra_bytes_received = 0;
 				}
 			}
 			else
 			{
-				MidiByte0 = data;
-				MidiNumData = len - 1;
-				MidiCurData = 0;
+				pkt.b[0] = data;
+				extra_bytes_needed = len - 1;
+				extra_bytes_received = 0;
 			}
 		} else { // Not status
-			if (MidiCurData == 0) {
-				MidiByte1 = data;
-		        if (MidiNumData == 1) {
+			if (extra_bytes_received == 0) {
+				pkt.b[1]  = data;
+		        if (extra_bytes_needed == 1) {
 		        	// 2 byte packet
 		        	pkt.type = 0xFF; // TODO! - this probably breaks sysex fwding
-		        	pkt.b[0] = MidiByte0;
-		        	pkt.b[1] = MidiByte1;
 		        	pkt.b[2] = 0;
 		        	phi_midi_rx_pkt(PHI_MIDI_PORT_SERIAL1, &pkt);
-		        	MidiCurData = 0;
+		        	extra_bytes_received = 0;
 		        } else {
-		        	MidiCurData++;
+		        	extra_bytes_received++;
 		        }
-			} else if (MidiCurData == 1) {
-				MidiByte2 = data;
-				if (MidiNumData == 2) {
+			} else if (extra_bytes_received == 1) {
+				pkt.b[2]  = data;
+				if (extra_bytes_needed == 2) {
 		        	// 3 byte packet
 					pkt.type = 0xFF; // TODO! - this probably breaks sysex fwding
-		        	pkt.b[0] = MidiByte0;
-		        	pkt.b[1] = MidiByte1;
-		        	pkt.b[2] = MidiByte2;
 		        	phi_midi_rx_pkt(PHI_MIDI_PORT_SERIAL1, &pkt);
 
-					MidiCurData = 0;
+		        	extra_bytes_received = 0;
 				}
 			}
 		}

@@ -134,7 +134,7 @@ static bool hd44780IsBusy(LCDDriver *lcdp) {
   return busy;
 
 #else
-  chThdSleepMicroseconds(50);
+//  chThdSleepMicroseconds(50);
   return FALSE;
 #endif
 }
@@ -173,9 +173,9 @@ static void hd44780WriteRegister(LCDDriver *lcdp, uint8_t reg, uint8_t value){
       palClearLine(lcdp->config->pinmap->D[ii]);
   }
   palSetLine(lcdp->config->pinmap->E);
-  osalThreadSleepMilliseconds(1);
+  osalThreadSleepMicroseconds(500);
   palClearLine(lcdp->config->pinmap->E);
-  osalThreadSleepMilliseconds(1);
+  osalThreadSleepMicroseconds(500);
 
   for(ii = 0; ii < LINE_DATA_LEN; ii++) {
     if(value & (1 << ii))
@@ -184,7 +184,7 @@ static void hd44780WriteRegister(LCDDriver *lcdp, uint8_t reg, uint8_t value){
       palClearLine(lcdp->config->pinmap->D[ii]);
   }
   palSetLine(lcdp->config->pinmap->E);
-  osalThreadSleepMilliseconds(1);
+  osalThreadSleepMicroseconds(500);
   palClearLine(lcdp->config->pinmap->E);
   osalThreadSleepMilliseconds(1);
 #else
