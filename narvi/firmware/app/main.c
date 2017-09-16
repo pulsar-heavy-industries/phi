@@ -4,9 +4,9 @@
 #include "codec.h"
 #include "narvi_midi.h"
 
-/*===========================================================================*/
-/* LCD configuration                                                         */
-/*===========================================================================*/
+/******************************************************************************
+ * LCD
+ *****************************************************************************/
 
 #define LINE_RS                     PAL_LINE(GPIOE, 13U) // MISO
 #define LINE_E                      PAL_LINE(GPIOE, 14U) // MOSI
@@ -39,7 +39,6 @@ static const LCDConfig lcdcfg = {
   &lcdpins,                 /* pin map */
   100,                      /* Back-light */
 };
-
 
 static THD_WORKING_AREA(lcd_thread_wa, 1024);
 static THD_FUNCTION(lcd_thread, arg) {
@@ -154,40 +153,9 @@ static THD_FUNCTION(lcd_thread, arg) {
   }
 }
 
-/*
- * Green LED blinker thread, times are in milliseconds.
- */
-#include "phi_lib/phi_midi.h"
-static THD_WORKING_AREA(waThread2, 128);
-static THD_FUNCTION(Thread2, arg) {
-
-  (void)arg;
-  int i = 0;
-  chRegSetThreadName("blinker2");
-  while (true) {
-    palClearPad(GPIOA, GPIOA_USER_LED);
-    chThdSleepMilliseconds(250);
-    palSetPad(GPIOA, GPIOA_USER_LED);
-    chThdSleepMilliseconds(250);
-
-    {
-    	phi_midi_pkt_t pkt;
-		pkt.chn = 1;
-		pkt.event = 0xB; // Control Change
-		pkt.val1 = 1;
-		pkt.val2 = i++;
-//		phi_midi_tx_pkt(PHI_MIDI_PORT_USB1, &pkt);
-    }
-  }
-}
-/*===========================================================================*/
-/* Initialization and main thread.                                           */
-/*===========================================================================*/
-
-extern audio_state_t audio;
-
 /* Create custom characters for nicer VU muter */
-void lcd_create_custom_chars(void) {
+void lcd_create_custom_chars(void)
+{
 	uint8_t p1[8] = {0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, };
 	uint8_t p2[8] = {0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, };
 	uint8_t p3[8] = {0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, 0x1C, };
@@ -201,9 +169,32 @@ void lcd_create_custom_chars(void) {
 	lcdCreateChar(&LCDD1, 5, p5);
 }
 
-/*
- * Application entry point.
- */
+
+/******************************************************************************
+ * blinker
+ *****************************************************************************/
+
+static THD_WORKING_AREA(blinker_thread_wa, 128);
+static THD_FUNCTION(blinker_thread, arg)
+{
+    (void)arg;
+    chRegSetThreadName("blinker");
+
+    while (true) {
+    	palClearPad(GPIOA, GPIOA_USER_LED);
+    	chThdSleepMilliseconds(250);
+    	palSetPad(GPIOA, GPIOA_USER_LED);
+    	chThdSleepMilliseconds(250);
+    }
+}
+
+
+/******************************************************************************
+ * Main
+ *****************************************************************************/
+
+extern audio_state_t audio;
+
 int main(void)
 {
 	char buf[21];
@@ -216,7 +207,7 @@ int main(void)
     palSetLineMode(LINE_RS, PAL_MODE_OUTPUT_PUSHPULL | PAL_STM32_OSPEED_HIGHEST);
     palSetLineMode(LINE_E, PAL_MODE_OUTPUT_PUSHPULL | PAL_STM32_OSPEED_HIGHEST);
 
-    buf[20] = 0;
+    memset(buf, 0, sizeof(buf));
     chsnprintf(buf, sizeof(buf) - 1, "Hw:%x Sw:%x", PHI_BL_HW_VER, PHI_BL_SW_VER);
     lcdStart(&LCDD1, &lcdcfg);
     lcd_create_custom_chars();
@@ -232,7 +223,6 @@ int main(void)
 
     audioObjectInit(&audio);
 
-
     usbDisconnectBus(midiusbcfg.usbp);
     chThdSleepMilliseconds(1000);
     usbStart(midiusbcfg.usbp, &usbcfg);
@@ -240,7 +230,7 @@ int main(void)
 
     codec_init();
     chThdCreateStatic(lcd_thread_wa, sizeof(lcd_thread_wa), NORMALPRIO + 10, lcd_thread, NULL);
-    chThdCreateStatic(waThread2, sizeof(waThread2), NORMALPRIO + 10, Thread2, NULL);
+    chThdCreateStatic(blinker_thread_wa, sizeof(blinker_thread_wa), NORMALPRIO + 10, blinker_thread, NULL);
 
     chEvtRegisterMask(&audio.audio_events, &listener, AUDIO_EVENT);
 
@@ -252,7 +242,7 @@ int main(void)
 
         /* USB state changed */
         if (evt & AUDIO_EVENT_USB_STATE) {
-      /*    if (USBD1.state == USB_ACTIVE)
+        	/*    if (USBD1.state == USB_ACTIVE)
             palSetPad(GPIOD, GPIOD_LED3);
           else
             palClearPad(GPIOD, GPIOD_LED3);*/
@@ -264,24 +254,20 @@ int main(void)
          * Enable (Disable) SOF capture.
          */
         if (evt & AUDIO_EVENT_PLAYBACK) {
-          if (audio.playback) {
-        	  start_sof_capture();
-          } else {
-        	  stop_sof_capture();
-        	  usb_reset_audio_bufs();
-          }
+        	if (audio.playback) {
+        		start_sof_capture();
+        	} else {
+        		stop_sof_capture();
+        		usb_reset_audio_bufs();
+        	}
         }
 
-        /*
-         * Set mute request received.
-         */
+        /* Set mute request received. */
         if (evt & AUDIO_EVENT_MUTE) {
         	codec_set_mute(audio.mute[0]);
         }
 
-        /*
-         * Set volume request received.
-         */
+        /* Set volume request received. */
         if (evt & AUDIO_EVENT_VOLUME) {
         	uint8_t vol = audio.volume[0] / 128;
 

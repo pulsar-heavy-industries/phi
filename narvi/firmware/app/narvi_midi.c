@@ -88,8 +88,8 @@ static THD_WORKING_AREA(serial_midi_thread_wa, 512 + PHI_MIDI_SYSEX_MAX_LEN);
 
 	uint8_t data;
 	int8_t len;
-	unsigned char extra_bytes_received;
-	unsigned char extra_bytes_needed;
+	unsigned char extra_bytes_received = 0xff;
+	unsigned char extra_bytes_needed = 0xff;
 	phi_midi_pkt_t pkt;
 	chDbgCheck(sizeof(pkt) == 4);
 

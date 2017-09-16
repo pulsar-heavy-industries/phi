@@ -1,31 +1,14 @@
-/*
-    ChibiOS - Copyright (C) 2006..2015 Giovanni Di Sirio
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-        http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-*/
-#include <string.h>
-#include "hal.h"
-#include "usbcfg.h"
 #include "phi_lib/phi_lib.h"
+#include "usbcfg.h"
 
-/* Virtual serial port over USB.*/
-//SerialUSBDriver SDU1;
 MIDIUSBDriver MDU1;
+audio_state_t audio;
 volatile int32_t dac_buffer[DAC_AUDIO_BUFFER_SIZE + DAC_AUDIO_MAX_PACKET_SIZE];
 volatile int32_t dac_buffer2[DAC_AUDIO_BUFFER_SIZE + DAC_AUDIO_MAX_PACKET_SIZE];
-/*
- * Endpoints to be used for USBD1.
- */
+static uint32_t usb_buffer[USB_AUDIO_BUFFER_SIZE + USB_AUDIO_MAX_PACKET_SIZE];
+static uint32_t dac_buffer_wr_addr = 0;
+
+
 #define USBD1_DATA_REQUEST_EP           1
 #define USBD1_DATA_AVAILABLE_EP         1
 #define USBD2_DATA_REQUEST_EP           2
@@ -33,25 +16,15 @@ volatile int32_t dac_buffer2[DAC_AUDIO_BUFFER_SIZE + DAC_AUDIO_MAX_PACKET_SIZE];
 
 
 void audioObjectInit(audio_state_t *ap) {
-  chEvtObjectInit(&ap->audio_events);
+	memset(ap, 0, sizeof(*ap));
+	memset((void *) dac_buffer, 0, sizeof(dac_buffer));
+	memset((void *) dac_buffer2, 0, sizeof(dac_buffer2));
 
-  ap->mute[0] = 0;
-  ap->mute[1] = 0;
-  ap->playback = false;
-  ap->sof_feedback_valid = false;
-  ap->buffer_errors = 0;
-  ap->volume[0] = 0;
-  ap->volume[1] = 0;
-
-  memset(dac_buffer,0,sizeof(dac_buffer));
+	chEvtObjectInit(&ap->audio_events);
 }
 
 
-/*
- * USB Device Descriptor.
- */
-
-
+/* USB Device Descriptor. */
 static const uint8_t audio_device_descriptor_data[18] = {
   USB_DESC_DEVICE       (0x0110,        /* bcdUSB (1.1).                    */
                          0x00,          /* bDeviceClass (None).             */
@@ -67,18 +40,16 @@ static const uint8_t audio_device_descriptor_data[18] = {
                          1)             /* bNumConfigurations.              */
 };
 
-/*
- * Device Descriptor wrapper.
- */
+/* Device Descriptor wrapper. */
 static const USBDescriptor audio_device_descriptor = {
-  sizeof audio_device_descriptor_data,
-  audio_device_descriptor_data
+	sizeof audio_device_descriptor_data,
+    audio_device_descriptor_data
 };
 
 
-static const uint8_t audio_configuration_descriptor_data[122 + 4 + (9+66) + 9+9+1+13] = {
+static const uint8_t audio_configuration_descriptor_data[233] = {
   /* Configuration Descriptor. (UAC 4.2) */
-  USB_DESC_CONFIGURATION(122 + 4 + (9+66) + 9+9+1+13,           /* wTotalLength.                    */
+  USB_DESC_CONFIGURATION(233,           /* wTotalLength.                    */
                          0x03,          /* bNumInterfaces.                  */
                          0x01,          /* bConfigurationValue.             */
                          0,             /* iConfiguration.                  */
@@ -116,7 +87,7 @@ static const uint8_t audio_configuration_descriptor_data[122 + 4 + (9+66) + 9+9+
   USB_DESC_BYTE         (0x07),         /* iChannelNames (none).            */
   USB_DESC_BYTE         (0x00),         /* iTerminal (none).                */
   /* Feature Unit Descriptor (UAC 4.3.2.5) */
-  USB_DESC_BYTE         (13 + 4),           /* bLength.                         */
+  USB_DESC_BYTE         (17),           /* bLength.                         */
   USB_DESC_BYTE         (0x24),         /* bDescriptorType.                 */
   USB_DESC_BYTE         (0x06),         /* bDescriptorSubtype (Feature
                                            Unit).                           */
@@ -126,8 +97,8 @@ static const uint8_t audio_configuration_descriptor_data[122 + 4 + (9+66) + 9+9+
   USB_DESC_WORD         (0x0000),       /* Master controls.                 */
   USB_DESC_WORD         (0x0003),       /* Channel 0 controls               */
   USB_DESC_WORD         (0x0003),       /* Channel 1 controls               */
-  USB_DESC_WORD         (0x0003),       /* Channel 0 controls               */
-  USB_DESC_WORD         (0x0003),       /* Channel 1 controls               */
+  USB_DESC_WORD         (0x0003),       /* Channel 2 controls               */
+  USB_DESC_WORD         (0x0003),       /* Channel 3 controls               */
   USB_DESC_BYTE         (0x00),         /* iFeature (none)                  */
   /* Output Terminal Descriptor (UAC 4.3.2.2) */
   USB_DESC_BYTE         (9),            /* bLength.                         */
@@ -211,7 +182,7 @@ static const uint8_t audio_configuration_descriptor_data[122 + 4 + (9+66) + 9+9+
                          0x00,          /* bInterfaceProtocol (none).       */
                          0),            /* iInterface.                      */
 
-         0x07, 0x24, 0x01, 0x00, 0x01, 0x41 + 9+9+1+13, 0x00,             // CS Interface (midi)      CLASS SPECIFIC MS INTERFACE DESC
+         0x07, 0x24, 0x01, 0x00, 0x01, 0x61, 0x00,             // CS Interface (midi)      CLASS SPECIFIC MS INTERFACE DESC
          0x06, 0x24, 0x02, 0x01, 0x01, 0x05,                   //   IN  Jack 1 (emb)       MIDI IN JACK DESC (bLength bDescType bDescSubType bJackType bJackID iJack)
          0x06, 0x24, 0x02, 0x02, 0x02, 0x05,                   //   IN  Jack 2 (ext)       MIDI IN JACK DESC (bLength bDescType bDescSubType bJackType bJackID iJack)
          0x06, 0x24, 0x02, 0x01, 0x03, 0x06,                   //   IN  Jack 3 (emb)       MIDI IN JACK DESC (bLength bDescType bDescSubType bJackType bJackID iJack)
@@ -230,24 +201,24 @@ static const uint8_t audio_configuration_descriptor_data[122 + 4 + (9+66) + 9+9+
  * Configuration Descriptor wrapper.
  */
 static const USBDescriptor audio_configuration_descriptor = {
-  sizeof audio_configuration_descriptor_data,
-  audio_configuration_descriptor_data
+    sizeof audio_configuration_descriptor_data,
+    audio_configuration_descriptor_data
 };
 
 /*
  * U.S. English language identifier.
  */
 static const uint8_t audio_string0[] = {
-  USB_DESC_BYTE(4),                     /* bLength.                         */
-  USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
-  USB_DESC_WORD(0x0409)                 /* wLANGID (U.S. English).          */
+    USB_DESC_BYTE(4),                     /* bLength.                         */
+    USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
+    USB_DESC_WORD(0x0409)                 /* wLANGID (U.S. English).          */
 };
 
 /*
  * Vendor string.
  */
 static const uint8_t audio_string1[] = {
-	USB_DESC_BYTE(2 + 46),                /* bLength.                         */
+	USB_DESC_BYTE(48),                    /* bLength.                         */
 	USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
 	'P', 0, 'u', 0, 'l', 0, 's', 0, 'a', 0, 'r', 0, ' ', 0,
 	'H', 0, 'e', 0, 'a', 0, 'v', 0, 'y', 0, ' ', 0,
@@ -258,7 +229,7 @@ static const uint8_t audio_string1[] = {
  * Device Description string.
  */
 static const uint8_t audio_string2[] = {
-	USB_DESC_BYTE(2 + 58),                    /* bLength.                         */
+	USB_DESC_BYTE(60),                    /* bLength.                         */
 	USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
 	'P', 0, 'u', 0, 'l', 0, 's', 0, 'a', 0, 'r', 0, ' ', 0,
 	'H', 0, 'e', 0, 'a', 0, 'v', 0, 'y', 0, ' ', 0,
@@ -279,7 +250,7 @@ static const uint8_t audio_string3[] = {
 
 /* Unused? */
 static const uint8_t audio_string4[] = {
-	  USB_DESC_BYTE(2 + 58),                    /* bLength.                         */
+	  USB_DESC_BYTE(60),                    /* bLength.                         */
 	  USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
 	  'P', 0, 'u', 0, 'l', 0, 's', 0, 'a', 0, 'r', 0, ' ', 0,
 	  'H', 0, 'e', 0, 'a', 0, 'v', 0, 'y', 0, ' ', 0,
@@ -360,44 +331,44 @@ static const uint8_t audio_string8[] = {
  * Strings wrappers array.
  */
 static const USBDescriptor audio_strings[] = {
-  {sizeof audio_string0, audio_string0},
-  {sizeof audio_string1, audio_string1},
-  {sizeof audio_string2, audio_string2},
-  {sizeof audio_string3, audio_string3},
-  {sizeof audio_string4, audio_string4},
-  {sizeof audio_string5, audio_string5},
-  {sizeof audio_string6, audio_string6},
-  {sizeof audio_string7, audio_string7},
-  {sizeof audio_string8, audio_string8},
+	{sizeof audio_string0, audio_string0},
+	{sizeof audio_string1, audio_string1},
+	{sizeof audio_string2, audio_string2},
+	{sizeof audio_string3, audio_string3},
+	{sizeof audio_string4, audio_string4},
+	{sizeof audio_string5, audio_string5},
+	{sizeof audio_string6, audio_string6},
+	{sizeof audio_string7, audio_string7},
+	{sizeof audio_string8, audio_string8},
 };
 
-void inttohex(uint32_t v, unsigned char *p){
-  int nibble;
-  for (nibble = 0;nibble<8;nibble++){
-    unsigned char c = (v>>(28-nibble*4))&0xF;
-    if (c<10) c=c+'0';
-    else c=c+'A'-10;
-    *p = c;
-    p += 2;
-  }
+static void inttohex(uint32_t v, unsigned char *p)
+{
+	int nibble;
+	for (nibble = 0; nibble<8; nibble++) {
+		unsigned char c = (v >> (28 - nibble * 4)) & 0xF;
+		if (c<10) c += '0';
+		else c += 'A' - 10;
+		*p = c;
+		p += 2;
+	}
 }
 
-
 static uint8_t descriptor_serial_string[] = {
-  USB_DESC_BYTE(50),                    /* bLength.                         */
-  USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
-  '0', 0, '0', 0, '0', 0, '0', 0,
-  '0', 0, '0', 0, '0', 0, '0', 0,
-  '0', 0, '0', 0, '0', 0, '0', 0,
-  '0', 0, '0', 0, '0', 0, '0', 0,
-  '0', 0, '0', 0, '0', 0, '0', 0,
-  '0', 0, '0', 0, '0', 0, '0', 0,
-  '0', 0, '0', 0, '0', 0, '0', 0,
-  '0', 0, '0', 0, '0', 0, '0', 0,
-  '0', 0, '0', 0, '0', 0, '0', 0,
-  '0', 0, '0', 0, '0', 0, '0', 0,
-  '0', 0, '0', 0, '0', 0, '0', 0,
-  '0', 0, '0', 0, '0', 0, '0', 0
+	USB_DESC_BYTE(50),                    /* bLength.                         */
+	USB_DESC_BYTE(USB_DESCRIPTOR_STRING), /* bDescriptorType.                 */
+	'0', 0, '0', 0, '0', 0, '0', 0,
+	'0', 0, '0', 0, '0', 0, '0', 0,
+	'0', 0, '0', 0, '0', 0, '0', 0,
+	'0', 0, '0', 0, '0', 0, '0', 0,
+	'0', 0, '0', 0, '0', 0, '0', 0,
+	'0', 0, '0', 0, '0', 0, '0', 0,
+	'0', 0, '0', 0, '0', 0, '0', 0,
+	'0', 0, '0', 0, '0', 0, '0', 0,
+	'0', 0, '0', 0, '0', 0, '0', 0,
+	'0', 0, '0', 0, '0', 0, '0', 0,
+	'0', 0, '0', 0, '0', 0, '0', 0,
+	'0', 0, '0', 0, '0', 0, '0', 0,
 };
 
 static const USBDescriptor descriptor_serial = {
@@ -406,44 +377,39 @@ static const USBDescriptor descriptor_serial = {
 
 
 
-audio_state_t audio;
-/* I2S buffer */
-static uint32_t usb_buffer[USB_AUDIO_BUFFER_SIZE + USB_AUDIO_MAX_PACKET_SIZE];
-
-/* I2S buffer write address */
-static uint32_t dac_buffer_wr_addr = 0;
-static uint32_t dac_buffer_wr_addr2 = 0;
-
 /*
  * Handles the GET_DESCRIPTOR callback. All required descriptors must be
  * handled here.
  */
-static const USBDescriptor *get_descriptor(USBDriver *usbp,
-                                           uint8_t dtype,
-                                           uint8_t dindex,
-                                           uint16_t lang) {
+static const USBDescriptor *get_descriptor(USBDriver *usbp, uint8_t dtype, uint8_t dindex, uint16_t lang)
+{
 
-  (void)usbp;
-  (void)lang;
-  switch (dtype) {
-  case USB_DESCRIPTOR_DEVICE:
-    return &audio_device_descriptor;
-  case USB_DESCRIPTOR_CONFIGURATION:
-    return &audio_configuration_descriptor;
-  case USB_DESCRIPTOR_STRING:
-	  if (dindex == 3) {
-	        inttohex(*((uint32_t*)STM32_REG_UNIQUE_ID),&descriptor_serial_string[2]);
-	        inttohex(*((uint32_t*)STM32_REG_UNIQUE_ID + 4),&descriptor_serial_string[2+16]);
-	        inttohex(*((uint32_t*)STM32_REG_UNIQUE_ID + 8),&descriptor_serial_string[2+32]);
-	        return &descriptor_serial;
-	      }
+	(void)usbp;
+	(void)lang;
 
-    if (dindex < PHI_ARRLEN(audio_strings))
-      return &audio_strings[dindex];
-    else
-    	chDbgCheck(FALSE);
-  }
-  return NULL;
+	switch (dtype) {
+	case USB_DESCRIPTOR_DEVICE:
+		return &audio_device_descriptor;
+
+	case USB_DESCRIPTOR_CONFIGURATION:
+		return &audio_configuration_descriptor;
+
+	case USB_DESCRIPTOR_STRING:
+		if (dindex == 3) {
+			inttohex(*((uint32_t*)STM32_REG_UNIQUE_ID),&descriptor_serial_string[2]);
+			inttohex(*((uint32_t*)STM32_REG_UNIQUE_ID + 4),&descriptor_serial_string[2+16]);
+			inttohex(*((uint32_t*)STM32_REG_UNIQUE_ID + 8),&descriptor_serial_string[2+32]);
+			return &descriptor_serial;
+		 }
+
+		if (dindex < PHI_ARRLEN(audio_strings))
+			return &audio_strings[dindex];
+
+		chDbgCheck(FALSE);
+		return NULL;
+	}
+
+	return NULL;
 }
 
 
@@ -460,114 +426,101 @@ static uint8_t sof_feedback_data[3];
  * TIM2 triggers on USB start of frame.
  */
 OSAL_IRQ_HANDLER(STM32_TIM2_HANDLER) {
-  OSAL_IRQ_PROLOGUE();
+	OSAL_IRQ_PROLOGUE();
 
-  uint32_t value = TIM2->CNT;
-  uint32_t sr = TIM2->SR;
-  TIM2->SR = 0;
+	uint32_t value = TIM2->CNT;
+	uint32_t sr = TIM2->SR;
+	TIM2->SR = 0;
 
-  if (sr & TIM_SR_TIF) {
-    chSysLockFromISR();
-    if (!sof_first) {
-      if (sof_last_counter < value)
-        sof_delta += value - sof_last_counter;
-      else
-        sof_delta += UINT32_MAX - sof_last_counter + value;
+	if (sr & TIM_SR_TIF) {
+		chSysLockFromISR();
+		if (!sof_first) {
+			if (sof_last_counter < value)
+				sof_delta += value - sof_last_counter;
+			else
+				sof_delta += UINT32_MAX - sof_last_counter + value;
 
-      /* Feedback value calculated every 32 SOFs = 32 ms */
-      if (sof_delta_count == 31) {
-        /* 10.14 format F = 256fs (8 bit), 32 frames (5 bits) = 19.13 */
-        uint32_t f1014 = (sof_delta << 1) & 0xFFFFFFUL;
-        sof_feedback_data[0] = f1014 & 0xFF;
-        sof_feedback_data[1] = (f1014 >> 8) & 0xFF;
-        sof_feedback_data[2] = (f1014 >> 16) & 0xFF;
-        sof_delta = 0;
-        sof_delta_count = 0;
-        audio.sof_feedback_valid = true;
-      } else {
-        sof_delta_count++;
-      }
-    }
-    sof_first = false;
-    sof_last_counter = value;
-    chSysUnlockFromISR();
-  }
+			/* Feedback value calculated every 32 SOFs = 32 ms */
+			if (sof_delta_count == 31) {
+				/* 10.14 format F = 256fs (8 bit), 32 frames (5 bits) = 19.13 */
+				uint32_t f1014 = (sof_delta << 1) & 0xFFFFFFUL;
+				sof_feedback_data[0] = f1014 & 0xFF;
+				sof_feedback_data[1] = (f1014 >> 8) & 0xFF;
+				sof_feedback_data[2] = (f1014 >> 16) & 0xFF;
+				sof_delta = 0;
+				sof_delta_count = 0;
+				audio.sof_feedback_valid = true;
+			} else {
+				sof_delta_count++;
+			}
+		}
+		sof_first = false;
+		sof_last_counter = value;
+		chSysUnlockFromISR();
+	}
 
-  OSAL_IRQ_EPILOGUE();
-}
-
-/*
- * Start frame interval measure.
- */
-void start_sof_capture(void) {
-	  palSetPadMode(GPIOA, 5, PAL_MODE_ALTERNATE(1));
-
-	  rccEnableTIM2(FALSE);
-
-  /* Reset TIM2 */
-  rccResetTIM2();
-  nvicEnableVector(STM32_TIM2_NUMBER, STM32_GPT_TIM2_IRQ_PRIORITY);
-
-  chSysLock();
-  sof_last_counter = 0;
-  sof_delta = 0;
-  sof_first = true;
-  sof_delta_count = 0;
-  audio.sof_feedback_valid = false;
-
-  /* Enable TIM2 counting */
-  TIM2->CR1 = TIM_CR1_CEN;
-  /* Timer clock = ETR pin, slave mode, trigger on ITR1 */
-  TIM2->SMCR = TIM_SMCR_ECE | TIM_SMCR_TS_0 | TIM_SMCR_SMS_2 | TIM_SMCR_SMS_1;
-  /* TIM2 enable interrupt */
-  TIM2->DIER = TIM_DIER_TIE;
-  /* Remap ITR1 to USB_FS SOF signal */
-  TIM2->OR = TIM_OR_ITR1_RMP_1 | TIM_OR_ITR1_RMP_0;
-  chSysUnlock();
-}
-
-/*
- * Stop frame interval measure.
- */
-void stop_sof_capture(void) {
-  chSysLock();
-  nvicDisableVector(STM32_TIM2_NUMBER);
-  TIM2->CR1 = 0;
-  audio.sof_feedback_valid = false;
-  chSysUnlock();
-}
-
-/*
- * Feedback transmitted (or dropped) in current frame.
- */
-void audio_feedback(USBDriver *usbp, usbep_t ep) {
-  if (audio.playback) {
-    /* Transmit feedback data */
-    chSysLockFromISR();
-    if (audio.sof_feedback_valid)
-      usbStartTransmitI(usbp, ep, sof_feedback_data, 3);
-    else
-      usbStartTransmitI(usbp, ep, NULL, 0);
-    chSysUnlockFromISR();
-  }
+	OSAL_IRQ_EPILOGUE();
 }
 
 
-/*
- */
-uint16_t usb_w;
+/* Start frame interval measure */
+void start_sof_capture(void)
+{
+	palSetPadMode(GPIOA, 5, PAL_MODE_ALTERNATE(1));
+	rccEnableTIM2(FALSE);
 
-#define M_PI  3.14159265358979323846f
-#define FREQUENCY 440.0f // that extra ".0" is important
-#define SAMPLES  48000
-#define PERIOD (1.0f / FREQUENCY)
-const float TIME_STEP = 1 / (float)SAMPLES;
+	rccResetTIM2();
+	nvicEnableVector(STM32_TIM2_NUMBER, STM32_GPT_TIM2_IRQ_PRIORITY);
+
+	chSysLock();
+	sof_last_counter = 0;
+	sof_delta = 0;
+	sof_first = true;
+	sof_delta_count = 0;
+	audio.sof_feedback_valid = false;
+
+	/* Enable TIM2 counting */
+	TIM2->CR1 = TIM_CR1_CEN;
+	/* Timer clock = ETR pin, slave mode, trigger on ITR1 */
+	TIM2->SMCR = TIM_SMCR_ECE | TIM_SMCR_TS_0 | TIM_SMCR_SMS_2 | TIM_SMCR_SMS_1;
+	/* TIM2 enable interrupt */
+	TIM2->DIER = TIM_DIER_TIE;
+	/* Remap ITR1 to USB_FS SOF signal */
+	TIM2->OR = TIM_OR_ITR1_RMP_1 | TIM_OR_ITR1_RMP_0;
+	chSysUnlock();
+}
+
+/* Stop frame interval measure */
+void stop_sof_capture(void)
+{
+	chSysLock();
+	nvicDisableVector(STM32_TIM2_NUMBER);
+	TIM2->CR1 = 0;
+	audio.sof_feedback_valid = false;
+	chSysUnlock();
+}
+
+/* Feedback transmitted (or dropped) in current frame. */
+void audio_feedback(USBDriver *usbp, usbep_t ep)
+{
+	if (audio.playback) {
+		/* Transmit feedback data */
+		chSysLockFromISR();
+		if (audio.sof_feedback_valid)
+			usbStartTransmitI(usbp, ep, sof_feedback_data, 3);
+		else
+			usbStartTransmitI(usbp, ep, NULL, 0);
+		chSysUnlockFromISR();
+	}
+}
+
+
 
 volatile int total_samples_received = 0;
 volatile int last = 0;
 volatile int calls = 0;
 
-uint32_t VU_Level_Left, VU_Level_Right;
+int32_t VU_Level_Left, VU_Level_Right;
 uint32_t HAL_SAI_GetVULevels(void)
 {
 	uint32_t vuLevel;
@@ -581,8 +534,8 @@ uint32_t HAL_SAI_GetVULevels(void)
 
 void usb_reset_audio_bufs(void)
 {
-	memset(dac_buffer, 0, sizeof(dac_buffer));
-	memset(dac_buffer2, 0, sizeof(dac_buffer2));
+	memset((void *) dac_buffer, 0, sizeof(dac_buffer));
+	memset((void *) dac_buffer2, 0, sizeof(dac_buffer2));
 	dac_buffer_wr_addr = 0;
 }
 
@@ -595,11 +548,8 @@ void audio_received(USBDriver *usbp, usbep_t ep) {
       total_samples_received += samples_received;
       ++calls;
 
-      int i, j, i2;
-      static float time = 0;
-
-
-      for (i = 0, j = 0, i2 = 0; i < samples_received; )
+      int i, j;
+      for (i = 0, j = 0; i < samples_received; )
       {
           int32_t s;
 
@@ -931,46 +881,51 @@ bool audio_requests_hook(USBDriver *usbp) {
  * Handles the USB driver global events.
  */
 static void usb_event(USBDriver *usbp, usbevent_t event) {
-  chSysLockFromISR();
-  chEvtBroadcastFlagsI(&audio.audio_events, AUDIO_EVENT_USB_STATE);
-  chSysUnlockFromISR();
+	chSysLockFromISR();
+	chEvtBroadcastFlagsI(&audio.audio_events, AUDIO_EVENT_USB_STATE);
+	chSysUnlockFromISR();
 
-  switch (event) {
-  case USB_EVENT_RESET:
-    stop_playback(usbp);
-    return;
-  case USB_EVENT_ADDRESS:
-    return;
-  case USB_EVENT_CONFIGURED:
-    chSysLockFromISR();
-    /* Enables the endpoints specified into the configuration.
-       Note, this callback is invoked from an ISR so I-Class functions
-       must be used.*/
-    usbInitEndpointI(usbp, AUDIO_PLAYBACK_ENDPOINT, &ep1config);
-    usbInitEndpointI(usbp, AUDIO_FEEDBACK_ENDPOINT, &ep2config);
-    usbInitEndpointI(usbp, MIDI_ENDPOINT, &ep3config);
+	switch (event) {
+	case USB_EVENT_RESET:
+		stop_playback(usbp);
+		return;
 
-    mduConfigureHookI(&MDU1);
+	case USB_EVENT_ADDRESS:
+		return;
 
-    chSysUnlockFromISR();
-    return;
-  case USB_EVENT_SUSPEND:
-    return;
-  case USB_EVENT_WAKEUP:
-    return;
-  case USB_EVENT_STALLED:
-    return;
-  }
-  return;
+	case USB_EVENT_CONFIGURED:
+		chSysLockFromISR();
+
+		/* Enables the endpoints specified into the configuration.
+		   Note, this callback is invoked from an ISR so I-Class functions
+		   must be used.*/
+		usbInitEndpointI(usbp, AUDIO_PLAYBACK_ENDPOINT, &ep1config);
+		usbInitEndpointI(usbp, AUDIO_FEEDBACK_ENDPOINT, &ep2config);
+		usbInitEndpointI(usbp, MIDI_ENDPOINT, &ep3config);
+
+		mduConfigureHookI(&MDU1);
+
+		chSysUnlockFromISR();
+		return;
+
+	case USB_EVENT_SUSPEND:
+		return;
+
+	case USB_EVENT_WAKEUP:
+		return;
+
+	case USB_EVENT_STALLED:
+		return;
+
+	case USB_EVENT_UNCONFIGURED:
+		return;
+	}
 }
 
-/*
- * USB driver configuration.
- */
- const USBConfig usbcfg = {
-  usb_event,
-  get_descriptor,
-  audio_requests_hook,
-  NULL,
+/* USB driver configuration. */
+const USBConfig usbcfg = {
+	usb_event,
+	get_descriptor,
+	audio_requests_hook,
+	NULL,
 };
-

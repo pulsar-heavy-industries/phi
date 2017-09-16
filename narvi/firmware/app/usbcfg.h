@@ -110,8 +110,9 @@ typedef struct {
   /* Audio events source */
   event_source_t audio_events;
 
-  /* Audio playback occurs */
+  /* Audio playback active */
   bool playback;
+
   /* Samplerate feedback valid */
   bool sof_feedback_valid;
 
