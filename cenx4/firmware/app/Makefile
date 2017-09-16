@@ -26,7 +26,7 @@ endif
 
 # Linker extra options here.
 ifeq ($(USE_LDOPT),)
-  USE_LDOPT = 
+  USE_LDOPT =
 endif
 
 # Enable this if you want link time optimizations (LTO)
@@ -260,3 +260,6 @@ include ../bl-settings.mk
 include $(PHI_LIB)/phi_bl.mk
 
 POST_MAKE_ALL_RULE_HOOK: $(BUILDDIR)/bl-$(PROJECT).bin $(BUILDDIR)/bl-$(PROJECT).elf
+
+multi-img:
+	python $(PHI_LIB)/phi_bl_multiimg_make_img.py $(BUILDDIR)/multi.img $(PHI_ROOT)/hyperion/firmware/app/build/bl-ch.bin $(BUILDDIR)/bl-ch.bin
