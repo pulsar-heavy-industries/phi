@@ -177,7 +177,7 @@ void cenx4_app_traktor_encoder_event(void * _ctx, uint8_t node_id, uint8_t encod
 		pkt.event = 0xB; // Control Change
 		pkt.val1 = encoder_to_cc_map[ctx->mode][encoder_num];
 		pkt.val2 = 64 + val_change; // "Relative Binary Offset". Positive offsets are sent as offset plus 64 and negative offsets are sent as 64 minus offset
-		phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
+		phi_midi_tx_pkt(PHI_MIDI_PORT_USB1, &pkt);
 	}
 	else
 	{
@@ -188,7 +188,7 @@ void cenx4_app_traktor_encoder_event(void * _ctx, uint8_t node_id, uint8_t encod
 			pkt.event = 0xB; // Control Change
 			pkt.val1 = 20 + encoder_num;
 			pkt.val2 = 64 + val_change; // "Relative Binary Offset". Positive offsets are sent as offset plus 64 and negative offsets are sent as 64 minus offset
-			phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
+			phi_midi_tx_pkt(PHI_MIDI_PORT_USB1, &pkt);
 		}
 	}
 }
@@ -217,7 +217,7 @@ void cenx4_app_traktor_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, 
 				pkt.event = 0xB; // Control Change
 				pkt.val1 = CENX4_APP_TRAKTOR_MIDI_CC_BROWSE_MODE;
 				pkt.val2 = 1;
-				phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
+				phi_midi_tx_pkt(PHI_MIDI_PORT_USB1, &pkt);
 			}
 		    break;
 
@@ -232,7 +232,7 @@ void cenx4_app_traktor_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, 
 					pkt.event = 0xB; // Control Change
 					pkt.val1 = CENX4_APP_TRAKTOR_MIDI_CC_CUE;
 					pkt.val2 = 1;
-					phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
+					phi_midi_tx_pkt(PHI_MIDI_PORT_USB1, &pkt);
 				}
 				break;
 
@@ -243,7 +243,7 @@ void cenx4_app_traktor_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, 
 					pkt.event = 0xB; // Control Change
 					pkt.val1 = CENX4_APP_TRAKTOR_MIDI_CC_BROWSE_PREVIEW_TOGGLE;
 					pkt.val2 = 1;
-					phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
+					phi_midi_tx_pkt(PHI_MIDI_PORT_USB1, &pkt);
 				}
 				break;
 			}
@@ -261,7 +261,7 @@ void cenx4_app_traktor_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, 
 				pkt.event = 0xB; // Control Change
 				pkt.val1 = CENX4_APP_TRAKTOR_MIDI_CC_BROWSE_TREE_EXPAND;
 				pkt.val2 = 1;
-				phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
+				phi_midi_tx_pkt(PHI_MIDI_PORT_USB1, &pkt);
 				break;
 			}
 			break;
@@ -281,12 +281,12 @@ void cenx4_app_traktor_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, 
 			{
 			case PHI_BTN_EVENT_PRESSED:
 				pkt.val2 = 0x7f;
-				phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
+				phi_midi_tx_pkt(PHI_MIDI_PORT_USB1, &pkt);
 				break;
 
 			case PHI_BTN_EVENT_RELEASED:
 				pkt.val2 = 0;
-				phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
+				phi_midi_tx_pkt(PHI_MIDI_PORT_USB1, &pkt);
 				break;
 
 			default:
@@ -310,7 +310,7 @@ void cenx4_app_traktor_pot_event(void * _ctx, uint8_t node_id, uint8_t pot_num, 
 		pkt.event = 0xB; // Control Change
 		pkt.val1 = pot_num + 30;
 		pkt.val2 = val >> 1;
-		phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
+		phi_midi_tx_pkt(PHI_MIDI_PORT_USB1, &pkt);
 	}
 }
 

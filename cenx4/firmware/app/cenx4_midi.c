@@ -7,11 +7,12 @@
 
 
 const phi_midi_cfg_t cenx4_midi_cfg = {
-    .in_handler   = cenx4_midi_in_handler,
-    .in_sysex     = cenx4_midi_in_sysex,
-    .get_dev_info = cenx4_midi_get_dev_info,
-	.tx_pkt       = cenx4_midi_tx_pkt,
-	.tx_sysex     = cenx4_midi_tx_sysex,
+    .in_handler            = cenx4_midi_in_handler,
+    .in_sysex              = cenx4_midi_in_sysex,
+    .get_dev_info          = cenx4_midi_get_dev_info,
+	.tx_pkt                = cenx4_midi_tx_pkt,
+	.tx_sysex              = cenx4_midi_tx_sysex,
+    .builtin_cmd_port_mask = PHI_MIDI_PORT_ALL,
 };
 
 static THD_WORKING_AREA(midi_thread_wa, 512 + PHI_MIDI_SYSEX_MAX_LEN);
@@ -30,7 +31,7 @@ static THD_WORKING_AREA(midi_thread_wa, 512 + PHI_MIDI_SYSEX_MAX_LEN);
 			continue;
 		}
 
-		phi_midi_rx_pkt(PHI_MIDI_PORT_USB, (const phi_midi_pkt_t *) r);
+		phi_midi_rx_pkt(PHI_MIDI_PORT_USB1, (const phi_midi_pkt_t *) r);
 	}
 }
 
@@ -53,15 +54,15 @@ void cenx4_midi_in_handler(phi_midi_port_t port, const phi_midi_pkt_t * pkt)
 	switch (pkt->event)
 	{
 	case 0x09: //MIDI_NOTE_ON:
-		// phi_daw_midi_note_on(PHI_MIDI_PORT_USB, pkt->chn, pkt->val1, pkt->val2);
+		// phi_daw_midi_note_on(PHI_MIDI_PORT_USB1, pkt->chn, pkt->val1, pkt->val2);
 		break;
 
 	case 0x08:// MIDI_NOTE_OFF:
-		// phi_daw_midi_note_off(PHI_MIDI_PORT_USB, pkt->chn, pkt->val1, pkt->val2);
+		// phi_daw_midi_note_off(PHI_MIDI_PORT_USB1, pkt->chn, pkt->val1, pkt->val2);
 		break;
 
 	case 0x0B: //MIDI_CONTROL_CHANGE:
-		phi_app_mgr_notify_midi_cc(PHI_MIDI_PORT_USB, pkt->chn, pkt->val1, pkt->val2);
+		phi_app_mgr_notify_midi_cc(PHI_MIDI_PORT_USB1, pkt->chn, pkt->val1, pkt->val2);
 		break;
 	}
 }
@@ -103,7 +104,7 @@ void cenx4_midi_get_dev_info(phi_midi_sysex_dev_info_t * dev_info)
 
 void cenx4_midi_tx_pkt(phi_midi_port_t port, const phi_midi_pkt_t * pkt)
 {
-	if  (port & PHI_MIDI_PORT_USB)
+	if (port & PHI_MIDI_PORT_USB1)
 	{
 		phi_usb_midi_send3(&MDU1, 1, pkt->chn_event, pkt->val1, pkt->val2);
 	}
@@ -111,7 +112,7 @@ void cenx4_midi_tx_pkt(phi_midi_port_t port, const phi_midi_pkt_t * pkt)
 
 void cenx4_midi_tx_sysex(phi_midi_port_t port, const uint8_t * data, size_t len)
 {
-	if  (port & PHI_MIDI_PORT_USB)
+	if (port & PHI_MIDI_PORT_USB1)
 	{
         phi_usb_midi_send_sysex(&MDU1, 1, data, len);
     }

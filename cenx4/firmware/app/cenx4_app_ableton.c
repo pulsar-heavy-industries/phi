@@ -186,8 +186,8 @@ void cenx4_app_ableton_encoder_event(void * _ctx, uint8_t node_id, uint8_t encod
     pkt.val2 = 64 + val_change; // "Relative Binary Offset". Positive offsets are sent as offset plus 64 and negative offsets are sent as 64 minus offset
 
     // This is double on purpose. Ableton seems to change value every other message, and this makes the encoder more responsive
-    phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
-    phi_midi_tx_pkt(PHI_MIDI_PORT_USB, &pkt);
+    phi_midi_tx_pkt(PHI_MIDI_PORT_USB1, &pkt);
+    phi_midi_tx_pkt(PHI_MIDI_PORT_USB1, &pkt);
 }
 
 void cenx4_app_ableton_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, phi_btn_event_t event, uint32_t param)
@@ -411,7 +411,7 @@ void cenx4_app_ableton_send_resync(cenx4_app_ableton_context_t * ctx)
 		.ableton_enable_banks_enc = cenx4_app_cfg.cur.ableton_enable_banks_enc,
 	};
 
-	phi_midi_tx_sysex(PHI_MIDI_PORT_USB, CENX4_MIDI_SYSEX_APP_ABLETON_RESYNC, &resync_msg, sizeof(resync_msg));
+	phi_midi_tx_sysex(PHI_MIDI_PORT_USB1, CENX4_MIDI_SYSEX_APP_ABLETON_RESYNC, &resync_msg, sizeof(resync_msg));
 }
 
 void cenx4_app_ableton_midi_sysex_set_pot_value(cenx4_app_ableton_context_t * ctx, cenx4_app_ableton_sysex_set_pot_value_t * data)
