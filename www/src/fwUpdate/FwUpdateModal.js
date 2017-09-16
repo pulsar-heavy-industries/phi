@@ -58,8 +58,8 @@ class FwUpdateModal extends React.Component {
             </Upload>}
 
             {this.props.fwImg && <div>
-                <strong>Firmware Image:</strong> { this.props.fwImg.fileName } ({ this.props.bytesSent }/{ this.props.fwImg.blImg.buf.length } bytes)<br/>
-                <strong>Software Version:</strong> 0x{ this.props.fwImg.blImg.sw_ver.toString(16) }<br/>
+                <strong>Firmware Image:</strong> { this.props.fwImg.fileName } ({ this.props.bytesSent }/{ this.props.fwImg.blImg.buf.length } bytes)
+                {this.props.fwImg.blImg.sw_ver && <div><strong>Software Version:</strong> 0x{ this.props.fwImg.blImg.sw_ver.toString(16) }</div>}
                 <Progress percent={Math.floor(this.props.bytesSent * 100 / this.props.fwImg.blImg.buf.length)}/>
                 <span>{ this.props.statusMsg }</span>
                 {this.busy && <strong>Do not navigate away from the app.</strong>}

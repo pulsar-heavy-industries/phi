@@ -7,18 +7,13 @@ import { midiSetup } from '../actions'
 import { prepare as fwUpdatePrepare, start as fwUpdateStart } from '../fwUpdate/actions'
 import { FwUpdateModal } from '../fwUpdate'
 import { appShowError } from '../actions'
-
-//import logo from './logo.svg'
+import { MidiBootloaderImg, MidiBootloaderMultiImg } from '../midi'
 
 const mapStateToProps = (state) => {
     return {
         midi: state.midi,
     }
 }
-// TODO
-import binbin from '../../../cenx4/firmware/app/build/bl-ch.bin'
-import binbin2 from '../../../cenx4/firmware/app/build/multi.img'
-import { MidiBootloaderImg } from '../midi'
 
 const mapDispatchToProps = (dispatch) => {
     return {
@@ -32,7 +27,7 @@ const mapDispatchToProps = (dispatch) => {
             // Try and find a firmware that suits us
             for (let blImg of blImgs) {
                 console.log('maybe', blImg)
-                if (!blImg.isCompatibleWithDev(devInfo)) {
+                if (!blImg.isCompatibleWithDev(devInfo) || !(blImg instanceof MidiBootloaderImg)) {
                     continue
                 }
 
@@ -42,19 +37,20 @@ const mapDispatchToProps = (dispatch) => {
             // Nothing suits us
             dispatch(appShowError('No firmware available for this device on the server :('))
         },
-        onUpdateFwClick3: () => {
-            // TODO broken, need MidiBootloaderMultiImg
-            fetch(binbin2)
-                .then((resp) => resp.blob())
-                .then(blob => {
-                    const reader = new FileReader()
-                    reader.addEventListener('loadend', () => {
-                        const buf = Array.from(new Uint8Array(reader.result))
-                        dispatch(fwUpdateStart('boo', new MidiBootloaderImg(buf)))
-                    })
-                    reader.readAsArrayBuffer(blob)
-                })
-        }
+        onUpdateMultiImgFwFromServerClick: (devInfo, blImgs) => {
+            // Try and find a firmware that suits us
+            for (let blImg of blImgs) {
+                console.log('maybe', blImg)
+                if (!blImg.isCompatibleWithDev(devInfo) || !(blImg instanceof MidiBootloaderMultiImg)) {
+                    continue
+                }
+
+                return dispatch(fwUpdateStart('multi-img.img', blImg))
+            }
+
+            // Nothing suits us
+            dispatch(appShowError('No firmware available for this device on the server :('))
+        },
 
     }
 }
@@ -77,22 +73,10 @@ class Main extends React.Component {
                 <Button onClick={() => { this.props.onResetClick(this.props.midi.inputName, this.props.midi.outputName) }}>Reset</Button>
                 <Button onClick={this.props.onUpdateFwClick}>Update firmware</Button>
                 <Button onClick={() => { this.props.onUpdateFwFromServerClick(this.props.midi.devInfo, this.props.midi.serverBlImgs) }}>Update firmware (server)</Button>
-                <Button onClick={this.props.onUpdateFwClick3}>Update multi-img (server)</Button>
+                <Button onClick={() => { this.props.onUpdateMultiImgFwFromServerClick(this.props.midi.devInfo, this.props.midi.serverBlImgs) }}>Update multi-img firmware (server)</Button>
             </div>
         )
 
-//         return (
-//             <div>
-//                 <div className="App-header">
-//                     <img src={logo} className="App-logo" alt="logo" />
-//                     <h2>Welcome to React</h2>
-//                 </div>
-//                 <p className="App-intro">
-//                     To get started, edit <code>src/App.js</code> and save to reload. lol!
-//                     <Button type="primary" onClick={this.handleClick}>Button</Button>
-//                 </p>
-//             </div>
-//         );
     }
 }
 

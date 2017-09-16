@@ -1,3 +1,5 @@
+/*eslint no-use-before-define: ["error", { "classes": false }]*/
+
 import React from 'react'
 import { connect } from 'react-redux'
 import { crc16ccitt, crc32 } from 'crc'
@@ -5,9 +7,51 @@ import Struct from 'struct'
 import { EventEmitter } from 'fbemitter'
 
 
-export class MidiBootloaderImg {
+/******************************************************************************
+ * Constants
+ *****************************************************************************/
+
+const SYSEX_CMD = {
+    ECHO: 1,
+    DEV_INFO: 2,
+    USER: 32,
+}
+
+
+/******************************************************************************
+ * Bootloader images
+ *****************************************************************************/
+
+export class BaseMidiBootloaderImg {
+    static from_buf(buf) {
+        // Get the magic word from the image
+        const magic_word_rdr = Struct().word32Ule('magic')
+        magic_word_rdr.setBuffer(buf)
+        const magic_word = magic_word_rdr.fields.magic
+
+        switch (magic_word) {
+            // Single bootloader image
+            case 0xc0de1337:
+                return new MidiBootloaderImg(buf)
+
+            // Multi-img
+            case 0x4d4c5431:
+                return new MidiBootloaderMultiImg(buf)
+
+            // Unsupported
+            default:
+                throw new Error('Unknown magic_word: 0x' + magic_word.toString(16))
+        }
+     }
+
     constructor(buf) {
         this.buf = buf
+    }
+}
+
+export class MidiBootloaderImg extends BaseMidiBootloaderImg {
+    constructor(buf) {
+        super(buf)
 
         this.HDR_SIZE = 31
 
@@ -28,21 +72,53 @@ export class MidiBootloaderImg {
             this[key] = bl_hdr.fields[key]
         }
 
-        if (this.magic != 0xc0de1337) {
-            throw 'Invalid magic: 0x' + this.magic.toString(16)
+        if (this.magic !== 0xc0de1337) {
+            throw new Error('Invalid magic: 0x' + this.magic.toString(16))
         }
 
         // TODO validate CRC
     }
 
     isCompatibleWithDev(devInfo) {
-        return ((this.dev_id == devInfo.dev_id) &&
-                ((devInfo.hw_ver & this.hw_ver_mask) == this.hw_ver))
+        return ((this.dev_id === devInfo.dev_id) &&
+                ((devInfo.hw_ver & this.hw_ver_mask) === this.hw_ver))
+    }
+}
+
+export class MidiBootloaderMultiImg extends BaseMidiBootloaderImg {
+    constructor(buf) {
+        super(buf)
+
+        this.HDR_SIZE = 13
+
+        const bl_hdr = Struct()
+            .word32Ule('magic')
+            .word32Ule('payload_crc32')
+            .word32Ule('payload_size')
+            .word8Ule('num_bl_hdrs')
+        bl_hdr.setBuffer(buf)
+
+        for (let key of Object.keys(bl_hdr.fields)) {
+            this[key] = bl_hdr.fields[key]
+        }
+
+        if (this.magic !== 0x4d4c5431) {
+            throw new Error('Invalid magic: 0x' + this.magic.toString(16))
+        }
+
+        // TODO validate CRC
+    }
+
+    isCompatibleWithDev(devInfo) {
+        return true
     }
 }
 
 
-/////////////////
+/******************************************************************************
+ * Bootloader
+ *****************************************************************************/
+
 class BaseMidiBootloader {
     constructor(midi) {
         this.midi = midi
@@ -72,7 +148,7 @@ class BaseMidiBootloader {
 class MidiBootloader extends BaseMidiBootloader {
     start(dev_id, blImg) {
         if (!(blImg instanceof MidiBootloaderImg)) {
-            throw 'blImg is not MidiBootloaderImg: ' + blImg
+            throw new Error('blImg is not MidiBootloaderImg: ' + blImg)
         }
 
         const msg = Struct()
@@ -190,17 +266,21 @@ class MidiSerialFlashBootloader extends BaseMidiBootloader {
         self.updateSelfWhenDone = updateSelfWhenDone
     }
 
-    start(dev_id, buf) {
+    start(dev_id, blImg) {
+        if (!(blImg instanceof MidiBootloaderMultiImg)) {
+            throw new Error('blImg is not MidiBootloaderMultiImg: ' + blImg)
+        }
+
         const msg = Struct()
             .word32Ule('img_size')
             .word32Ule('img_crc32')
         msg.allocate()
 
-        msg.fields.img_size = buf.length
-        msg.fields.img_crc32 = crc32(buf)
+        msg.fields.img_size = blImg.buf.length
+        msg.fields.img_crc32 = crc32(blImg.buf)
 
         this.sent = 0
-        this.buf = buf
+        this.buf = blImg.buf
 
         return new Promise((resolve, reject) => {
             this.midi.callSysExCmd(
@@ -337,12 +417,9 @@ export const getMidiDeviceList = () => {
 }
 
 
-const SYSEX_CMD = {
-    ECHO: 1,
-    DEV_INFO: 2,
-    USER: 32,
-}
-
+/******************************************************************************
+ * MIDI API
+ *****************************************************************************/
 
 class MidiDevice {
     constructor(input, output) {
@@ -565,10 +642,10 @@ export const openMidiDevice = (inputName, outputName) => {
         }))
         .then((io) => {
             if (!io.input || !io.output) {
-        throw Error('could not find device specified')
-      } else {
-        return Promise.all([io.input.open(), io.output.open()])
-      }
-    })
-    .then(([input, output]) => new MidiDevice(input, output))
+                throw new Error('could not find device specified')
+            } else {
+                return Promise.all([io.input.open(), io.output.open()])
+            }
+        })
+        .then(([input, output]) => new MidiDevice(input, output))
 }

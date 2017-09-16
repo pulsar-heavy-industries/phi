@@ -1,6 +1,5 @@
-import Struct from 'struct'
 import { midiSetup } from '../actions'
-import { MidiBootloaderImg } from '../midi'
+import { MidiBootloaderImg, MidiBootloaderMultiImg } from '../midi'
 
 export const PREPARE = 'FW_UPDATE_PREPARE'
 export const prepare = () => {
@@ -98,26 +97,9 @@ export const start = (fileName = null, blImg = null) => {
                 let bl
                 if (blImg instanceof MidiBootloaderImg) {
                     bl = getState().midi.dev.getBootloader()
+                } else if (blImg instanceof MidiBootloaderMultiImg) {
+                    bl = getState().midi.dev.getSerialFlashBootloader({updateSelfWhenDone: true})
                 } else {
-                    // TODO this broken. Need MidiBootloaderMultiImg class
-                    // Get the magic word from the image
-                    const magic_word_rdr = Struct().word32Ule('magic')
-                    magic_word_rdr.setBuffer(blImg.buf)
-                    const magic_word = magic_word_rdr.fields.magic
-
-                    switch (magic_word) {
-                        // Single bootloader image
-                        case 0xc0de1337:
-                            break
-
-                        // Multi-img
-                        case 0x4d4c5431:
-                            bl = getState().midi.dev.getSerialFlashBootloader({updateSelfWhenDone: true})
-                            break
-                    }
-                }
-
-                if (!bl) {
                     dispatch(update_status_msg('Unknown image type: ' + blImg))
                     return
                 }
