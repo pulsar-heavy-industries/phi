@@ -4,6 +4,9 @@
 #include "codec.h"
 #include "narvi_midi.h"
 
+extern audio_state_t audio;
+
+
 /******************************************************************************
  * LCD
  *****************************************************************************/
@@ -137,7 +140,10 @@ static THD_FUNCTION(lcd_thread, arg) {
 			  chsnprintf(buf, sizeof(buf) - 1, "L [%s]    ", vu_map[phi_lib_map(fVULevelL * 2, 0, 0xFF, 0, PHI_ARRLEN(vu_map))]);
 			  lcdWriteString(&LCDD1, buf, 0);
 
-			  chsnprintf(buf, sizeof(buf) - 1, "R [%s]    ", vu_map[phi_lib_map(fVULevelR * 2, 0, 0xFF, 0, PHI_ARRLEN(vu_map))]);
+			  chsnprintf(buf, sizeof(buf) - 1, "R [%s]%s",
+				vu_map[phi_lib_map(fVULevelR * 2, 0, 0xFF, 0, PHI_ARRLEN(vu_map))],
+				(audio.mute[0] && (ST2S(chVTGetSystemTime()) % 2)) ? "Mute" : "    "
+			  );
 			  lcdWriteString(&LCDD1, buf, 40);
 		  }
 		  else
@@ -192,8 +198,6 @@ static THD_FUNCTION(blinker_thread, arg)
 /******************************************************************************
  * Main
  *****************************************************************************/
-
-extern audio_state_t audio;
 
 int main(void)
 {
