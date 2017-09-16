@@ -3,7 +3,7 @@
 This repository hosts the source code, documentation and hardware design files for various [Pulsar Heavy Industries](http://pulsarheavyindustries.com/) projects.
 
 There are currently 3 modules we are focusing on:
-* [Cenx4](https://github.com/pulsar-heavy-industries/phi/tree/master/cenx4) - A small OLED+4 rotary encoders+other goodies modular controller
+* [Cenx4](https://github.com/pulsar-heavy-industries/phi/tree/master/cenx4) - A small OLED+4 rotary encoders+other goodies modular controller.
 * [Hyperion](https://github.com/pulsar-heavy-industries/phi/tree/master/hyperion) - A channel strip module, with an OLED display, 2 rotary encoders, 7 knobs, fader, and 8 LED-lit pushbuttons.
 * [Narvi](https://github.com/pulsar-heavy-industries/phi/tree/master/narvi) - a 4 channel audio interface.
 
