@@ -1,5 +1,6 @@
 import Struct from 'struct'
 import { midiSetup } from '../actions'
+import { MidiBootloaderImg } from '../midi'
 
 export const PREPARE = 'FW_UPDATE_PREPARE'
 export const prepare = () => {
@@ -27,13 +28,13 @@ export const update_status_msg = (statusMsg) => {
 export const STARTING = 'FW_UPDATE_STARTING'
 export const CHUNK_SENT = 'FW_UPDATE_CHUNK_SENT'
 export const DONE = 'FW_UPDATE_DONE'
-export const start = (fileName = null, buf = null) => {
+export const start = (fileName = null, blImg = null) => {
     return (dispatch, getState) => {
         let fwImg = null
-        if (fileName && buf) {
+        if (fileName && blImg) {
             fwImg = {
                 fileName,
-                buf,
+                blImg,
             }
 
             const state = getState()
@@ -80,7 +81,7 @@ export const start = (fileName = null, buf = null) => {
                             }
 
                             ++retries
-                            if (retries === 20) {
+                            if (retries === 40) {
                                 reject(new Error('Timeout while waiting for a bootloader device'))
                             } else {
                                 setTimeout(retry, 100)
@@ -94,31 +95,36 @@ export const start = (fileName = null, buf = null) => {
             }
 
             start_bootloader.then(() => {
-                // Get the magic word from the image
-                const magic_word_rdr = Struct().word32Ule('magic')
-                magic_word_rdr.setBuffer(buf);
-                const magic_word = magic_word_rdr.fields.magic;
+                let bl
+                if (blImg instanceof MidiBootloaderImg) {
+                    bl = getState().midi.dev.getBootloader()
+                } else {
+                    // TODO this broken. Need MidiBootloaderMultiImg class
+                    // Get the magic word from the image
+                    const magic_word_rdr = Struct().word32Ule('magic')
+                    magic_word_rdr.setBuffer(blImg.buf)
+                    const magic_word = magic_word_rdr.fields.magic
 
-                let bl;
-                switch (magic_word) {
-                    // Single bootloader image
-                    case 0xc0de1337:
-                        bl = getState().midi.dev.getBootloader();
-                        break;
+                    switch (magic_word) {
+                        // Single bootloader image
+                        case 0xc0de1337:
+                            break
 
-                    // Multi-img
-                    case 0x4d4c5431:
-                        bl = getState().midi.dev.getSerialFlashBootloader({updateSelfWhenDone: true});
-                        break;
+                        // Multi-img
+                        case 0x4d4c5431:
+                            bl = getState().midi.dev.getSerialFlashBootloader({updateSelfWhenDone: true})
+                            break
+                    }
+                }
 
-                    default:
-                        dispatch(update_status_msg('Unknown file magic 0x' + magic_word.toString(16)));
-                        return;
+                if (!bl) {
+                    dispatch(update_status_msg('Unknown image type: ' + blImg))
+                    return
                 }
 
                 bl.start(
                     state.midi.devInfo.dev_id,
-                    buf,
+                    blImg,
                 ).then(() => {
                     bl.sendNextChunk(chunkSent, done)
                 })

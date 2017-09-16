@@ -239,7 +239,7 @@ void narvi_midi_bl_data(phi_midi_port_t port, const void * data, size_t data_len
     ret = PHI_BL_RET_OK;
 
     char buf[20];
-	chsnprintf(buf, sizeof(buf) - 1, "%d%%     ", phi_midi_bl.cur_offset * 100 / phi_midi_bl.img_size);
+	chsnprintf(buf, sizeof(buf) - 1, "%d%%               ", phi_midi_bl.cur_offset * 100 / phi_midi_bl.img_size);
 	lcdReturnHome(&LCDD1);
 	lcdWriteString(&LCDD1, buf, 40);
 

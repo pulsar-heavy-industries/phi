@@ -58,8 +58,8 @@ static const uint8_t audio_device_descriptor_data[18] = {
                          0x00,          /* bDeviceSubClass.                 */
                          0x00,          /* bDeviceProtocol.                 */
                          0x40,          /* bMaxPacketSize.                  */
-                         0x0483 + 20,        /* idVendor (ST).                   */
-                         0x5343 + 20,        /* idProduct.                       */
+						 0x1209,        /* idVendor (pidcoddes).            */
+						 0x6011,        /* idProduct.                       */
                          0x0001,        /* bcdDevice.                       */
                          1,             /* iManufacturer.                   */
                          2,             /* iProduct.                        */

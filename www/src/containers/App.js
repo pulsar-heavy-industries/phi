@@ -6,6 +6,7 @@ import SetupModal from './SetupModal'
 import Main from './Main'
 import { MidiManager } from '../midi'
 import AppError from './AppError'
+import {midiGetServerBootloaderImages as midiGetServerBootloaderImagesAction} from '../actions'
 
 const mapStateToProps = (state) => {
     return {
@@ -17,7 +18,17 @@ const mapStateToProps = (state) => {
     }
 }
 
+const mapDispatchToProps = (dispatch) => {
+    return {
+        getServerMidiBootloaderImages: () => dispatch(midiGetServerBootloaderImagesAction()),
+    }
+}
+
 class App extends React.Component {
+    componentWillMount() {
+        this.props.getServerMidiBootloaderImages()
+    }
+
     render() {
         let maybeError = null
         let maybeSetup = null
@@ -49,4 +60,4 @@ class App extends React.Component {
         )
     }
 }
-export default connect(mapStateToProps)(App)
+export default connect(mapStateToProps, mapDispatchToProps)(App)
