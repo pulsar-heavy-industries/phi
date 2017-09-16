@@ -146,23 +146,30 @@ void phi_midi_tx_sysex(phi_midi_port_t port, uint8_t cmd, const void * data, siz
 
 void phi_midi_rx_handle_sysex(phi_midi_port_t port, uint8_t cmd, const void * data, size_t data_len)
 {
-    switch (cmd)
-    {
-    case PHI_MIDI_SYSEX_CMD_ECHO:
-        phi_midi_tx_sysex(port, cmd, data, data_len);
-        break;
+	if (port & phi_midi_cfg->builtin_cmd_port_mask)
+	{
+		switch (cmd)
+		{
+		case PHI_MIDI_SYSEX_CMD_ECHO:
+			phi_midi_tx_sysex(port, cmd, data, data_len);
+			break;
 
-    case PHI_MIDI_SYSEX_CMD_DEV_INFO:
-        {
-            phi_midi_sysex_dev_info_t dev_info;
-            memset(&dev_info, 0, sizeof(dev_info));
-            phi_midi_cfg->get_dev_info(&dev_info);
-            phi_midi_tx_sysex(port, cmd, (const uint8_t *) &dev_info, sizeof(dev_info));
-        }
-        break;
+		case PHI_MIDI_SYSEX_CMD_DEV_INFO:
+			{
+				phi_midi_sysex_dev_info_t dev_info;
+				memset(&dev_info, 0, sizeof(dev_info));
+				phi_midi_cfg->get_dev_info(&dev_info);
+				phi_midi_tx_sysex(port, cmd, (const uint8_t *) &dev_info, sizeof(dev_info));
+			}
+			break;
 
-    default:
-        phi_midi_cfg->in_sysex(port, cmd, data, data_len);
-        break;
-    }
+		default:
+			phi_midi_cfg->in_sysex(port, cmd, data, data_len);
+			break;
+		}
+	}
+	else
+	{
+		phi_midi_cfg->in_sysex(port, cmd, data, data_len);
+	}
 }

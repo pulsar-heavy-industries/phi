@@ -51,7 +51,7 @@ class DevInfoCard extends React.Component {
                         0x{ this.props.devInfo.dev_id.toString(16) }
                         ({ this.props.devInfo.dev_name }{ this.props.devInfo.is_bootloader ? ' - Bootloader' : ''})
                     </li>
-                    <li><strong>HwSw version:</strong> 0x{ this.props.devInfo.hw_sw_ver.toString(16) }</li>
+                    <li><strong>HwSw version:</strong> 0x{ this.props.devInfo.hw_sw_ver.toString(16) } (Hw: 0x{ this.props.devInfo.hw_ver.toString(16) }, Sw: 0x{ this.props.devInfo.sw_ver.toString(16) })</li>
                     <li><strong>UID:</strong> { this.props.devInfo.uid_str }</li>
                 </ul>
             </div>

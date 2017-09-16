@@ -1,3 +1,5 @@
+/*eslint no-use-before-define: ["error", { "classes": false }]*/
+
 import React from 'react'
 import { connect } from 'react-redux'
 import { crc16ccitt, crc32 } from 'crc'
@@ -5,7 +7,118 @@ import Struct from 'struct'
 import { EventEmitter } from 'fbemitter'
 
 
-/////////////////
+/******************************************************************************
+ * Constants
+ *****************************************************************************/
+
+const SYSEX_CMD = {
+    ECHO: 1,
+    DEV_INFO: 2,
+    USER: 32,
+}
+
+
+/******************************************************************************
+ * Bootloader images
+ *****************************************************************************/
+
+export class BaseMidiBootloaderImg {
+    static from_buf(buf) {
+        // Get the magic word from the image
+        const magic_word_rdr = Struct().word32Ule('magic')
+        magic_word_rdr.setBuffer(buf)
+        const magic_word = magic_word_rdr.fields.magic
+
+        switch (magic_word) {
+            // Single bootloader image
+            case 0xc0de1337:
+                return new MidiBootloaderImg(buf)
+
+            // Multi-img
+            case 0x4d4c5431:
+                return new MidiBootloaderMultiImg(buf)
+
+            // Unsupported
+            default:
+                throw new Error('Unknown magic_word: 0x' + magic_word.toString(16))
+        }
+     }
+
+    constructor(buf) {
+        this.buf = buf
+    }
+}
+
+export class MidiBootloaderImg extends BaseMidiBootloaderImg {
+    constructor(buf) {
+        super(buf)
+
+        this.HDR_SIZE = 31
+
+        const bl_hdr = Struct()
+            .word32Ule('magic')
+            .word32Ule('hdr_data_crc32')
+            .word32Ule('dev_id')
+            .word8Ule('sw_ver')
+            .word8Ule('hw_ver')
+            .word8Ule('hw_ver_mask')
+            .word32Ule('write_addr')
+            .word32Ule('start_addr')
+            .word32Ule('fw_data_size')
+            .word32Ule('fw_data_crc32')
+        bl_hdr.setBuffer(buf)
+
+        for (let key of Object.keys(bl_hdr.fields)) {
+            this[key] = bl_hdr.fields[key]
+        }
+
+        if (this.magic !== 0xc0de1337) {
+            throw new Error('Invalid magic: 0x' + this.magic.toString(16))
+        }
+
+        // TODO validate CRC
+    }
+
+    isCompatibleWithDev(devInfo) {
+        return ((this.dev_id === devInfo.dev_id) &&
+                ((devInfo.hw_ver & this.hw_ver_mask) === this.hw_ver))
+    }
+}
+
+export class MidiBootloaderMultiImg extends BaseMidiBootloaderImg {
+    constructor(buf) {
+        super(buf)
+
+        this.HDR_SIZE = 13
+
+        const bl_hdr = Struct()
+            .word32Ule('magic')
+            .word32Ule('payload_crc32')
+            .word32Ule('payload_size')
+            .word8Ule('num_bl_hdrs')
+        bl_hdr.setBuffer(buf)
+
+        for (let key of Object.keys(bl_hdr.fields)) {
+            this[key] = bl_hdr.fields[key]
+        }
+
+        if (this.magic !== 0x4d4c5431) {
+            throw new Error('Invalid magic: 0x' + this.magic.toString(16))
+        }
+
+        // TODO validate CRC
+    }
+
+    isCompatibleWithDev(devInfo) {
+        return true
+    }
+}
+
+
+/******************************************************************************
+ * Bootloader
+ *****************************************************************************/
+
 class BaseMidiBootloader {
     constructor(midi) {
         this.midi = midi
@@ -27,43 +140,29 @@ class BaseMidiBootloader {
             'PHI_BL_RET_BAD_CRC',
             'PHI_BL_RET_BAD_MAGIC',
             'PHI_BL_RET_AT45_ERROR',
-        ];
-        this.BL_PKT_SIZE = 128;
+        ]
+        this.BL_PKT_SIZE = 128
     }
 }
 
 class MidiBootloader extends BaseMidiBootloader {
-    start(dev_id, buf) {
-        // Read data from our header
-        const bl_hdr_size = 31;
-        const bl_hdr = Struct()
-            .word32Ule('magic')
-            .word32Ule('hdr_data_crc32')
-            .word32Ule('dev_id')
-            .word8Ule('sw_ver')
-            .word8Ule('hw_ver')
-            .word8Ule('hw_ver_mask')
-            .word32Ule('write_addr')
-            .word32Ule('start_addr')
-            .word32Ule('fw_data_size')
-            .word32Ule('fw_data_crc32');
-        bl_hdr.setBuffer(buf);
-
-        // TODO validate magic, dev_id
+    start(dev_id, blImg) {
+        if (!(blImg instanceof MidiBootloaderImg)) {
+            throw new Error('blImg is not MidiBootloaderImg: ' + blImg)
+        }
 
         const msg = Struct()
             .word32Ule('img_size')
             .word32Ule('img_crc32')
-            .array('bl_hdr', bl_hdr_size, 'word8Ule');
-        msg.allocate();
+            .array('bl_hdr', blImg.HDR_SIZE, 'word8Ule')
+        msg.allocate()
 
-        msg.fields.img_size = buf.length;
-        msg.fields.img_crc32 = crc32(buf);
-        msg.fields.bl_hdr = buf.slice(0, bl_hdr_size);
-        console.log(msg.fields.bl_hdr);
+        msg.fields.img_size = blImg.buf.length
+        msg.fields.img_crc32 = crc32(blImg.buf)
+        msg.fields.bl_hdr = blImg.buf.slice(0, blImg.HDR_SIZE)
 
         this.sent = 0
-        this.buf = buf
+        this.buf = blImg.buf
 
         return new Promise((resolve, reject) => {
             this.midi.callSysExCmd(
@@ -73,25 +172,25 @@ class MidiBootloader extends BaseMidiBootloader {
                 (data) => {
                     if (data[1] !== 1)
                     {
-                        reject(this.BL_RETS[data[1]]);
+                        reject(this.BL_RETS[data[1]])
                         // TODO handle this
                         console.log('boo', this.BL_RETS[data[1]])
                     }
                     else
                     {
-                        resolve();
+                        resolve()
                     }
                 },
                 reject
-            );
-        });
+            )
+        })
     }
 
     sendData(offset, buf) {
         const msg = Struct()
             .word32Ule('offset')
-            .array('data', this.BL_PKT_SIZE, 'word8Ule');
-        msg.allocate();
+            .array('data', this.BL_PKT_SIZE, 'word8Ule')
+        msg.allocate()
 
         //buf = Buffer.from(buf)
         msg.fields.offset = offset
@@ -106,21 +205,21 @@ class MidiBootloader extends BaseMidiBootloader {
                 (data) => {
                     if (data[1] !== 1)
                     {
-                        reject(this.BL_RETS[data[1]]);
+                        reject(this.BL_RETS[data[1]])
                     }
                     else
                     {
-                        resolve();
+                        resolve()
                     }
                 },
                 reject
-            );
-        });
+            )
+        })
     }
 
 
     sendNextChunk(chunkSent, done) {
-        const chunk_size = Math.min(this.BL_PKT_SIZE, this.buf.length - this.sent);
+        const chunk_size = Math.min(this.BL_PKT_SIZE, this.buf.length - this.sent)
         console.log(`bl data: ${this.sent}/${this.buf.length}: ${chunk_size}`)
 
         this.sendData(this.sent, this.buf.slice(this.sent, this.sent + chunk_size)).then(
@@ -128,17 +227,17 @@ class MidiBootloader extends BaseMidiBootloader {
                 this.sent += chunk_size
                 chunkSent(chunk_size)
                 if (this.sent === this.buf.length) {
-                    console.log('bl: sending done!');
+                    console.log('bl: sending done!')
 
                     this.handleSendComplete().then(done)//TODO .catch...
                } else {
-                    this.sendNextChunk(chunkSent, done);
+                    this.sendNextChunk(chunkSent, done)
                 }
             },
             (error) => {
-                console.log('bl data error: ', error);
+                console.log('bl data error: ', error)
             }
-        );
+        )
     }
 
     handleSendComplete() {
@@ -163,21 +262,25 @@ class MidiBootloader extends BaseMidiBootloader {
 }
 class MidiSerialFlashBootloader extends BaseMidiBootloader {
     constructor(midi, {updateSelfWhenDone = false} = {}) {
-        super(midi);
-        self.updateSelfWhenDone = updateSelfWhenDone;
+        super(midi)
+        self.updateSelfWhenDone = updateSelfWhenDone
     }
 
-    start(dev_id, buf) {
+    start(dev_id, blImg) {
+        if (!(blImg instanceof MidiBootloaderMultiImg)) {
+            throw new Error('blImg is not MidiBootloaderMultiImg: ' + blImg)
+        }
+
         const msg = Struct()
             .word32Ule('img_size')
             .word32Ule('img_crc32')
-        msg.allocate();
+        msg.allocate()
 
-        msg.fields.img_size = buf.length;
-        msg.fields.img_crc32 = crc32(buf);
+        msg.fields.img_size = blImg.buf.length
+        msg.fields.img_crc32 = crc32(blImg.buf)
 
         this.sent = 0
-        this.buf = buf
+        this.buf = blImg.buf
 
         return new Promise((resolve, reject) => {
             this.midi.callSysExCmd(
@@ -187,25 +290,25 @@ class MidiSerialFlashBootloader extends BaseMidiBootloader {
                 (data) => {
                     if (data[1] !== 1)
                     {
-                        reject(this.BL_RETS[data[1]]);
+                        reject(this.BL_RETS[data[1]])
                         // TODO handle this
                         console.log('boo', this.BL_RETS[data[1]])
                     }
                     else
                     {
-                        resolve();
+                        resolve()
                     }
                 },
                 reject
-            );
-        });
+            )
+        })
     }
 
     sendData(offset, buf) {
         const msg = Struct()
             .word32Ule('offset')
-            .array('data', this.BL_PKT_SIZE, 'word8Ule');
-        msg.allocate();
+            .array('data', this.BL_PKT_SIZE, 'word8Ule')
+        msg.allocate()
 
         //buf = Buffer.from(buf)
         msg.fields.offset = offset
@@ -220,21 +323,21 @@ class MidiSerialFlashBootloader extends BaseMidiBootloader {
                 (data) => {
                     if (data[1] !== 1)
                     {
-                        reject(this.BL_RETS[data[1]]);
+                        reject(this.BL_RETS[data[1]])
                     }
                     else
                     {
-                        resolve();
+                        resolve()
                     }
                 },
                 reject
-            );
-        });
+            )
+        })
     }
 
 
     sendNextChunk(chunkSent, done) {
-        const chunk_size = Math.min(this.BL_PKT_SIZE, this.buf.length - this.sent);
+        const chunk_size = Math.min(this.BL_PKT_SIZE, this.buf.length - this.sent)
         console.log(`bl data: ${this.sent}/${this.buf.length}: ${chunk_size}`)
 
         this.sendData(this.sent, this.buf.slice(this.sent, this.sent + chunk_size)).then(
@@ -242,17 +345,17 @@ class MidiSerialFlashBootloader extends BaseMidiBootloader {
                 this.sent += chunk_size
                 chunkSent(chunk_size)
                 if (this.sent === this.buf.length) {
-                    console.log('bl: sending done!');
+                    console.log('bl: sending done!')
 
                     this.handleSendComplete().then(done)//TODO .catch...
                } else {
-                    this.sendNextChunk(chunkSent, done);
+                    this.sendNextChunk(chunkSent, done)
                 }
             },
             (error) => {
-                console.log('bl data error: ', error);
+                console.log('bl data error: ', error)
             }
-        );
+        )
     }
 
     handleSendComplete() {
@@ -314,12 +417,9 @@ export const getMidiDeviceList = () => {
 }
 
 
-const SYSEX_CMD = {
-    ECHO: 1,
-    DEV_INFO: 2,
-    USER: 32,
-};
-
+/******************************************************************************
+ * MIDI API
+ *****************************************************************************/
 
 class MidiDevice {
     constructor(input, output) {
@@ -343,7 +443,7 @@ class MidiDevice {
     }
 
     onMidiMessage(msg) {
-        var data = msg.data;
+        var data = msg.data
 
         switch (data[0])
         {
@@ -354,85 +454,85 @@ class MidiDevice {
                     (data[2] === 0x12) &&
                     (data[data.length - 1] === 0xf7))
                 {
-                    data = data.slice(3, -1);
-                    let w = 0, rd = 0;
+                    data = data.slice(3, -1)
+                    let w = 0, rd = 0
                     while (rd < data.length)
                     {
                         // read the bits byte
-                        let bits = data[rd];
-                        rd++;
+                        let bits = data[rd]
+                        rd++
 
                         // see how many bytes we will be processing in this chunk
-                        let chunk = Math.min(7, data.length - rd);
+                        let chunk = Math.min(7, data.length - rd)
 
                         for (let i = 0; i < chunk; ++i)
                         {
-                            data[w] = data[rd] | ( (bits & (1 << i)) ? 0x80 : 0 );
-                            rd++;
-                            w++;
+                            data[w] = data[rd] | ( (bits & (1 << i)) ? 0x80 : 0 )
+                            rd++
+                            w++
                         }
                     }
 
-                    let crc1 = data[0] | (data[1] << 8);
-                    data = data.slice(2, w);
-                    let crc2 = crc16ccitt(data);
+                    let crc1 = data[0] | (data[1] << 8)
+                    data = data.slice(2, w)
+                    let crc2 = crc16ccitt(data)
 
                     if (crc1 === crc2)
                     {
-                        this.emitter.emit('in-sysex', data);
+                        this.emitter.emit('in-sysex', data)
                     }
                     else
                     {
-                        console.log('SYSEX BAD CRC', crc1, crc2, data);
+                        console.log('SYSEX BAD CRC', crc1, crc2, data)
                     }
                 }
-                break;
+                break
 
             default:
-                console.log('Unknown MIDI data', data);
-                break;
+                console.log('Unknown MIDI data', data)
+                break
         }
 
     }
 
     sendSysEx(buf) {
         return new Promise((resolve, reject) => {
-            let crc = crc16ccitt(buf);
-            buf = [crc & 0xff, (crc >> 8) & 0xff].concat(buf);
+            let crc = crc16ccitt(buf)
+            buf = [crc & 0xff, (crc >> 8) & 0xff].concat(buf)
 
-            let out_buf = [];
+            let out_buf = []
             for (let r = 0; r < buf.length; )
             {
-                let chunk = buf.length - r;
+                let chunk = buf.length - r
                 if (chunk > 7)
                 {
-                    chunk = 7;
+                    chunk = 7
                 }
 
-                let bits = 0;
+                let bits = 0
                 for (let i = 0; i < chunk; ++i)
                 {
                     if (buf[r + i] & 0x80)
                     {
-                        bits |= (1 << i);
+                        bits |= (1 << i)
                     }
                 }
-                out_buf.push(bits);
+                out_buf.push(bits)
                 for (let i = 0; i < chunk; ++i)
                 {
-                    out_buf.push(buf[r] & 0x7F);
-                    r++;
+                    out_buf.push(buf[r] & 0x7F)
+                    r++
                 }
             }
 
             if (out_buf.length > 295) {
-                reject('nope: ' + out_buf.length);
+                reject('nope: ' + out_buf.length)
             }
 
-            let message = [].concat([0xf0, 0x41, 0x12], out_buf, [0xf7]);
-            this.output.send(message);
-            resolve(true);
-        });
+            let message = [].concat([0xf0, 0x41, 0x12], out_buf, [0xf7])
+            this.output.send(message)
+            resolve(true)
+        })
     }
 
     callSysExCmd(cmd, buf, timeout) {
@@ -448,9 +548,9 @@ class MidiDevice {
                 clearTimeout(timer)
 
                 resolve(data)
-            });
-            this.sendSysEx([cmd].concat(buf || []));
-        });
+            })
+            this.sendSysEx([cmd].concat(buf || []))
+        })
     }
 
     getDevInfo() {
@@ -463,7 +563,7 @@ class MidiDevice {
                         .word32Ule('hw_sw_ver')
                         .array('uid', 16, 'word8')
                         .array('reserved', 4, 'word32Ule')
-                    DevInfo.setBuffer(data);
+                    DevInfo.setBuffer(data)
                     let fields = DevInfo.fields
 
                     fields.uid_str = ''
@@ -477,6 +577,7 @@ class MidiDevice {
 
                     const deviceNames = {
                         0x34584e43: 'CENX4',
+                        0x4956524e: 'Narvi',
                     }
                     fields.dev_name = deviceNames[fields.dev_id] || 'Unknown'
 
@@ -484,11 +585,11 @@ class MidiDevice {
                     fields.hw_ver = (fields.hw_sw_ver >> 24) & 0x7f
                     fields.sw_ver = fields.hw_sw_ver & 0xffffff
 
-                    resolve(fields);
+                    resolve(fields)
                 },
                 reject
             )
-        });
+        })
     }
 
     getBootloader() {
@@ -541,10 +642,10 @@ export const openMidiDevice = (inputName, outputName) => {
         }))
         .then((io) => {
             if (!io.input || !io.output) {
-        throw Error('could not find device specified');
-      } else {
-        return Promise.all([io.input.open(), io.output.open()]);
-      }
-    })
-    .then(([input, output]) => new MidiDevice(input, output));
+                throw new Error('could not find device specified')
+            } else {
+                return Promise.all([io.input.open(), io.output.open()])
+            }
+        })
+        .then(([input, output]) => new MidiDevice(input, output))
 }

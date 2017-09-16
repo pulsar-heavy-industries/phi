@@ -127,7 +127,6 @@ CSRC = $(STARTUPSRC) \
 	   $(PHI_LIB)/phi_can.c \
 	   $(PHI_LIB)/phi_lib.c \
 	   $(PHI_LIB)/phi_midi.c \
-	   $(PHI_LIB)/phi_usb_bulk.c \
 	   $(PHI_LIB)/phi_usb_midi.c \
 	   $(PHI_LIB)/phi_at45.c \
 	   $(PHI_LIB)/st/stm32f3xx_hal_flash.c \

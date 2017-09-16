@@ -1,7 +1,7 @@
 import { combineReducers } from 'redux'
 import { routerReducer as routing } from 'react-router-redux'
 
-import { APP_ERROR, APP_RESET, MIDI_READY } from '../actions'
+import { APP_ERROR, APP_RESET, MIDI_READY, MIDI_SERVER_BOOTLOADER_IMAGES_LOADED } from '../actions'
 import { reducers as fwUpdate } from '../fwUpdate'
 
 const INITIAL_MIDI_STATE = {
@@ -27,6 +27,12 @@ const midi = (state = INITIAL_MIDI_STATE, action) => {
                 outputName: action.outputName,
                 dev: action.dev,
                 devInfo: action.devInfo,
+            }
+
+        case MIDI_SERVER_BOOTLOADER_IMAGES_LOADED:
+            return {
+                ...state,
+                serverBlImgs: action.blImgs,
             }
 
         default:

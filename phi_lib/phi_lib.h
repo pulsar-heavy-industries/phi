@@ -12,7 +12,7 @@
 
 #if defined(STM32F303xC) || defined(STM32F072xB)
 #define STM32_REG_UNIQUE_ID 0x1FFFF7AC
-#elif defined(STM32F407xx)
+#elif defined(STM32F407xx) || defined(STM32F427xx)
 #define STM32_REG_UNIQUE_ID 0x1FFF7A10
 #else
 #error ?

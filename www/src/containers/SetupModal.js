@@ -30,6 +30,7 @@ const SetupForm = Form.create()(
         [
             'Pulsar Heavy Industries CENX4 CENX4 MIDI',
             'Pulsar Heavy Industries CENX4',
+            'Pulsar Heavy Industries Narvi NarviCtrl',
         ].forEach((val) => {
             if (!defaultInput && inputs.indexOf(val) !== -1)
             {
