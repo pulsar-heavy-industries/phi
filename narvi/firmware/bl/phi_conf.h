@@ -12,7 +12,6 @@
 #define NARVI_DEV_ID     PHI_BL_DEV_ID
 
 
-
 /******************************************************************************
  * Bootloader
  *****************************************************************************/
@@ -20,5 +19,6 @@
 // These two come from a phi_bl.mk compilation flag
 #define NARVI_BL_USER_ADDR        PHI_BL_USER_ADDR
 #define NARVI_BL_FLASH_PAGE_SIZE  PHI_BL_PAGE_SIZE
+
 
 #endif /* PHI_CONF_H_ */

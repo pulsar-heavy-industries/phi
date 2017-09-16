@@ -6,7 +6,7 @@ narvi:
 - CAN
 - USB<->MIDI forwarding code is hacky and needs sysex support, fix in narvi_midi.c
 - BL code review + cleanup
-- BL add support for forcing BL using pushbutton
+- AT45 and ROT1 not working
 
 
 - move headphones button one to the left, so that its available in all modes (normal/browser/cue)

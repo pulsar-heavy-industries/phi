@@ -1,13 +1,15 @@
 #include "phi_lib/phi_lib.h"
 #include "phi_lib/phi_bl_common.h"
+#include "phi_lib/phi_at45.h"
 #include "usbcfg.h"
 #include "lcd.h"
 #include "narvi_midi.h"
+#include "narvi_io.h"
 
-/*===========================================================================*/
-/* LCD configuration                                                         */
-/*===========================================================================*/
 
+/******************************************************************************
+ * LCD
+ *****************************************************************************//* LCD */
 #define LINE_RS                     PAL_LINE(GPIOE, 13U) // MISO
 #define LINE_E                      PAL_LINE(GPIOE, 14U) // MOSI
 #define LINE_A                      PAL_LINE(GPIOE, 14U) // UNUSED
@@ -41,60 +43,75 @@ static const LCDConfig lcdcfg = {
 };
 
 
+/******************************************************************************
+ * Serial Flash
+ *****************************************************************************/
+const phi_at45_cfg_t at45_cfg = {
+	.spi = &SPID3,
+	.spi_cfg = {
+		NULL,
+		GPIOD,
+		GPIOD_FLASH_CS,
+		SPI_CR1_BR_1,
+	},
+};
+
+phi_at45_t at45;
 
 
-/*
- * Green LED blinker thread, times are in milliseconds.
- */
-static THD_WORKING_AREA(waThread2, 128);
-static THD_FUNCTION(Thread2, arg) {
+/******************************************************************************
+ * LED Blinker
+ *****************************************************************************/
 
-  (void)arg;
-  chRegSetThreadName("blinker2");
-  while (true) {
-    palClearPad(GPIOA, GPIOA_USER_LED);
-    chThdSleepMilliseconds(250);
-    palSetPad(GPIOA, GPIOA_USER_LED);
-    chThdSleepMilliseconds(250);
-  }
+static THD_WORKING_AREA(wa_blinker_thread, 128);
+static THD_FUNCTION(blinker_thread, arg)
+{
+	(void)arg;
+	chRegSetThreadName("blinker");
+
+	while (true) {
+		palClearPad(GPIOA, GPIOA_USER_LED);
+		chThdSleepMilliseconds(250);
+		palSetPad(GPIOA, GPIOA_USER_LED);
+		chThdSleepMilliseconds(250);
+	}
 }
-/*===========================================================================*/
-/* Initialization and main thread.                                           */
-/*===========================================================================*/
 
+
+/******************************************************************************
+ * Main
+ *****************************************************************************/
 
 char boot_user_status[16];
 
-void user_jump_to_app(uint32_t address) {
-  typedef void (*pFunction)(void);
+void user_jump_to_app(uint32_t address)
+{
+	typedef void (*pFunction)(void);
+	pFunction Jump_To_Application;
+	volatile uint32_t * JumpAddress;
+	const volatile uint32_t * ApplicationAddress = (volatile uint32_t *) address;
 
-  pFunction Jump_To_Application;
+	/* get jump address from application vector table */
+	JumpAddress = (volatile uint32_t *) ApplicationAddress[1];
 
-  /* variable that will be loaded with the start address of the application */
-  volatile uint32_t * JumpAddress;
-  const volatile uint32_t * ApplicationAddress = (volatile uint32_t *) address;
+	/* load this address into function pointer */
+	Jump_To_Application = (pFunction) JumpAddress;
 
-  /* get jump address from application vector table */
-  JumpAddress = (volatile uint32_t *) ApplicationAddress[1];
+	/* reset all interrupts to default */
+	chSysDisable();
 
-  /* load this address into function pointer */
-  Jump_To_Application = (pFunction) JumpAddress;
+	/* Clear pending interrupts just to be on the safe side*/
+	// TODO SCB_ICSR = ICSR_PENDSVCLR;
 
-  /* reset all interrupts to default */
-  chSysDisable();
+	/* Disable all interrupts */
+	for (int i = WWDG_IRQn; i < 90; ++i)
+	{
+		nvicDisableVector(i);
+	}
 
-  /* Clear pending interrupts just to be on the safe side*/
-  // TODO SCB_ICSR = ICSR_PENDSVCLR;
-
-  /* Disable all interrupts */
-  for (int i = WWDG_IRQn; i < 90; ++i)
-  {
-      nvicDisableVector(i);
-  }
-
-  /* set stack pointer as in application's vector table */
-  __set_MSP((uint32_t) (ApplicationAddress[0]));
-  Jump_To_Application();
+	/* set stack pointer as in application's vector table */
+	__set_MSP((uint32_t) (ApplicationAddress[0]));
+	Jump_To_Application();
 }
 
 void boot_user(void)
@@ -105,6 +122,14 @@ void boot_user(void)
 
     int is_watchdog_reset = RCC->CSR;
     RCC->CSR |= RCC_CSR_RMVF;
+
+    bool force_bl = palReadPad(GPIOC, GPIOC_CTRL_ROT1_SW) ? FALSE : TRUE;
+//    force_bl = TRUE;
+    if (force_bl)
+    {
+        strcpy(boot_user_status, "Forced");
+        return;
+    }
 
     if (is_watchdog_reset & RCC_CSR_WDGRSTF)
     {
@@ -147,18 +172,10 @@ void boot_user(void)
 /*
  * Application entry point.
  */
-int main(void) {
-	bool force_bl;
-
+int main(void)
+{
     halInit();
-
-    force_bl = FALSE; // TODO
-    if (!force_bl) {
-        boot_user();
-    } else {
-        strcpy(boot_user_status, "Forced");
-    }
-
+    boot_user();
     chSysInit();
 
     lcdInit();
@@ -166,13 +183,29 @@ int main(void) {
     palSetLineMode(LINE_E, PAL_MODE_OUTPUT_PUSHPULL | PAL_STM32_OSPEED_HIGHEST);
     lcdStart(&LCDD1, &lcdcfg);
     lcdWriteString(&LCDD1, "PHI Narvi - BL", 0);
-    lcdWriteString(&LCDD1, boot_user_status, 40);
 
+#if 0
+	phi_at45_ret_t ret;
+	char buf[20];
 
-    //  ab_main_midi_init();
+    /* Try to init serial flash */
+    ret = phi_at45_init(&at45, &at45_cfg);
+    if (ret == PHI_AT45_RET_SUCCESS)
+    {
+    	chsnprintf(buf, sizeof(buf) - 1, "AT45: %dMB", (at45.desc->num_pages * 512) / (1024 * 1024));
+    }
+    else
+    {
+    	chsnprintf(buf, sizeof(buf) - 1, "AT45 err: %d", ret);
+    }
+    lcdWriteString(&LCDD1, buf, 40);
+    chThdSleepSeconds(1);
+#endif
+
     mduObjectInit(&MDU1);
     mduStart(&MDU1, &midiusbcfg);
 
+    narvi_io_init();
     narvi_midi_init();
 
     /*
@@ -185,7 +218,7 @@ int main(void) {
     usbStart(midiusbcfg.usbp, &usbcfg);
     usbConnectBus(midiusbcfg.usbp);
 
-    chThdCreateStatic(waThread2, sizeof(waThread2), NORMALPRIO + 10, Thread2, NULL);
+    chThdCreateStatic(wa_blinker_thread, sizeof(wa_blinker_thread), NORMALPRIO + 10, blinker_thread, NULL);
 
     while (true) {
     	chThdSleepMilliseconds(500);
