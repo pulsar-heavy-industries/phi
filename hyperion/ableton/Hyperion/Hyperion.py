@@ -41,9 +41,9 @@ class HyperionChan(CompoundComponent):
 
         self._fader = SliderElement(MIDI_CC_TYPE, 1, [0x4d, 0x4f][midi_ch]) # 1st slider, 3rd slider
 
-        self._cs = ChannelStripComponent()
-        self._cs.set_volume_control(self._fader)
-        self._vu = VUMeter(self)
+        #self._cs = ChannelStripComponent()
+        #self._cs.set_volume_control(self._fader)
+        #self._vu = VUMeter(self)
 
         self._track = None
         self._bind_to_track(self.hyperion.song().tracks[0])
@@ -57,11 +57,28 @@ class HyperionChan(CompoundComponent):
         self._left.remove_value_listener(self._left_right_button)
         self._right.remove_value_listener(self._left_right_button)
 
+    def get_all_tracks(self, all_tracks):
+        got_tracks = []
+
+        for cur_track in all_tracks:
+            if isinstance(cur_track, (Live.Track.Track, Live.DrumChain.DrumChain)):
+                got_tracks.append(cur_track)
+
+            devices = list(cur_track.devices)
+            if len(devices) and isinstance(devices[0], Live.RackDevice.RackDevice):
+                got_tracks.extend(self.get_all_tracks(devices[0].chains))
+
+        return got_tracks
+
     def _left_right_button(self, value, sender):
         if value == 0:
             return
 
-        tracks = list(self.hyperion.song().tracks)
+        tracks = self.get_all_tracks(self.hyperion.song().tracks)
+        for t in tracks:
+            self.log('AAAAA {}', t.name)
+
+        # tracks = list(self.hyperion.song().tracks)
         try:
             cur_track_idx = tracks.index(self._track)
         except ValueError:
@@ -74,7 +91,9 @@ class HyperionChan(CompoundComponent):
 
     def _bind_to_track(self, track):
         if self._track:
-            self._cs.set_track(None)
+            #self._cs.set_track(None)
+            self._fader.release_parameter()
+
             self._track = None
 
         if not track:
@@ -82,12 +101,15 @@ class HyperionChan(CompoundComponent):
 
         self.log('binding to {}', track.name)
         self._track = track
-        self._cs.set_track(track)
 
-        if self._track.has_audio_output:
-            self._vu.set_vu_meter(track, self._fader)
-        else:
-            self._vu.set_vu_meter(None, None)
+        self._fader.connect_to(track.mixer_device.volume)
+
+        # self._cs.set_track(track)
+
+        # if self._track.has_audio_output:
+        #     self._vu.set_vu_meter(track, self._fader)
+        # else:
+        #     self._vu.set_vu_meter(None, None)
 
 class Hyperion(ControlSurface):
     def __init__(self, c_instance):
@@ -129,7 +151,7 @@ class Hyperion(ControlSurface):
     def disconnect(self):
         ControlSurface.disconnect(self)
 
-        [chan.disconnect() for chain in self.hyperion_chans]
+        [chan.disconnect() for chan in self.hyperion_chans]
 
         sys.stdin = self.originalstdin
         sys.stdout = self.originalstdout
