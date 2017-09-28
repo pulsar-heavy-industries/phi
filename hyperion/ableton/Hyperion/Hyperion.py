@@ -11,6 +11,7 @@ from _Framework.SliderElement import SliderElement
 from _Framework.InputControlElement import *
 from _Framework.CompoundComponent import CompoundComponent
 from _Framework.ChannelStripComponent import ChannelStripComponent, release_control
+from VUMeter import VUMeter
 
 
 
@@ -42,6 +43,7 @@ class HyperionChan(CompoundComponent):
 
         self._cs = ChannelStripComponent()
         self._cs.set_volume_control(self._fader)
+        self._vu = VUMeter(self)
 
         self._track = None
         self._bind_to_track(self.hyperion.song().tracks[0])
@@ -81,6 +83,11 @@ class HyperionChan(CompoundComponent):
         self.log('binding to {}', track.name)
         self._track = track
         self._cs.set_track(track)
+
+        if self._track.has_audio_output:
+            self._vu.set_vu_meter(track, self._fader)
+        else:
+            self._vu.set_vu_meter(None, None)
 
 class Hyperion(ControlSurface):
     def __init__(self, c_instance):
