@@ -12,8 +12,12 @@ from _Framework.SliderElement import SliderElement
 from _Framework.InputControlElement import *
 from _Framework.CompoundComponent import CompoundComponent
 from _Framework.ChannelStripComponent import ChannelStripComponent, release_control
-from VUMeter import VUMeter
 
+
+from VUMeter import VUMeter
+from MIDIProtocol import (
+    SysExProtocol,
+)
 
 
 
@@ -133,9 +137,15 @@ class HyperionChan(CompoundComponent):
         # else:
         #     self._vu.set_vu_meter(None, None)
 
+        self.hyperion.sysex.set_title(self.mod_num, track.name)
+
 class Hyperion(ControlSurface):
     def __init__(self, c_instance):
-        ControlSurface.__init__(self,c_instance)
+        ControlSurface.__init__(self, c_instance)
+
+        self.send_midi = c_instance.send_midi
+        self.sysex = SysExProtocol(self)
+
         with self.component_guard():
             self.__c_instance = c_instance
             self.hyperion_chans = [HyperionChan(self, mod_num) for mod_num in range(2)]
@@ -167,9 +177,6 @@ class Hyperion(ControlSurface):
         a =self
         b = self.__c_instance
 
-
-
-
     def disconnect(self):
         ControlSurface.disconnect(self)
 
@@ -179,6 +186,12 @@ class Hyperion(ControlSurface):
         sys.stdout = self.originalstdout
         sys.stderr = self.originalstderr
         self.telnetSocket.close()
+
+    def handle_sysex(self, midi_bytes):
+        data = self.sysex.decode(midi_bytes)
+        if data is None:
+            return super(Hyperion, self).handle_sysex(midi_bytes)
+        self.log('Incoming sysex: {}', data)
 
     def update_display(self):
         ControlSurface.update_display(self)
