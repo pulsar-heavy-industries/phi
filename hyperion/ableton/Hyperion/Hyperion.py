@@ -49,6 +49,11 @@ class HyperionChan(CompoundComponent):
         self._track_selector_encoder.add_value_listener(self._on_track_selector_encoder)
 
         self._fader = SliderElement(MIDI_CC_TYPE, MIDI_MASTER_CH + 1 + mod_num, 0x25)
+        self._pots = [
+            EncoderElement(MIDI_CC_TYPE, MIDI_MASTER_CH + 1 + mod_num, 0x1E + num, Live.MidiMap.MapMode.absolute, name='Pot{}'.format(num))
+            for num in range(8)
+        ]
+
         # self.pots = [
         #     EncoderElement(MIDI_CC_TYPE, 1, [0x0d, 0x0f][midi_ch], Live.MidiMap.MapMode.absolute, name='Pot1'),
         #     EncoderElement(MIDI_CC_TYPE, 1, [0x1d, 0x1f][midi_ch], Live.MidiMap.MapMode.absolute, name='Pot2'),
@@ -56,7 +61,9 @@ class HyperionChan(CompoundComponent):
 
         #self._cs = ChannelStripComponent()
         #self._cs.set_volume_control(self._fader)
-        #self._vu = VUMeter(self)
+        self._vu_slider = SliderElement(MIDI_CC_TYPE, MIDI_MASTER_CH + 1 + mod_num, 60)
+
+        self._vu = VUMeter(self)
 
         self._track = None
         self._bind_to_track(self.hyperion.song().tracks[0])
@@ -67,8 +74,8 @@ class HyperionChan(CompoundComponent):
     def disconnect(self):
         super(HyperionChan, self).disconnect()
 
-        self._left.remove_value_listener(self._left_right_button)
-        self._right.remove_value_listener(self._left_right_button)
+        # self._left.remove_value_listener(self._left_right_button)
+        # self._right.remove_value_listener(self._left_right_button)
 
     def _get_track_mapper_device(self, track):
         for device in track.devices:
@@ -114,7 +121,9 @@ class HyperionChan(CompoundComponent):
         if self._track:
             #self._cs.set_track(None)
             self._fader.release_parameter()
-            ## [pot.release_parameter() for pot in self.pots]
+            [pot.release_parameter() for pot in self._pots]
+
+            self._track.remove_name_listener(self._on_name_changed)
 
             self._track = None
 
@@ -127,17 +136,21 @@ class HyperionChan(CompoundComponent):
         self._fader.connect_to(track.mixer_device.volume)
 
         mapper_dev = self._get_track_mapper_device(track)
-        # self.pots[0].connect_to(mapper_dev.parameters[3])
-        # self.pots[1].connect_to(mapper_dev.parameters[4])
+        for num in range(8):
+            self._pots[num].connect_to(mapper_dev.parameters[3 + num]) # MacroA0 MacroA1 etc
 
         # self._cs.set_track(track)
 
-        # if self._track.has_audio_output:
-        #     self._vu.set_vu_meter(track, self._fader)
-        # else:
-        #     self._vu.set_vu_meter(None, None)
+        if getattr(self._track, 'has_audio_output', False) and hasattr(self._track, 'add_output_meter_left_listener'):
+            self._vu.set_vu_meter(track, self._vu_slider)
+        else:
+            self._vu.set_vu_meter(None, None)
 
-        self.hyperion.sysex.set_title(self.mod_num, track.name)
+        self._track.add_name_listener(self._on_name_changed)
+        self._on_name_changed()
+
+    def _on_name_changed(self):
+        self.hyperion.sysex.set_title(self.mod_num, self._track.name)
 
 class Hyperion(ControlSurface):
     def __init__(self, c_instance):

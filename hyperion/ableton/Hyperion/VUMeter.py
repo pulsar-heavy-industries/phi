@@ -5,7 +5,7 @@ from _Framework.SliderElement import SliderElement
 from _Framework.InputControlElement import *
 CHANNEL_SCALE_MAX = 1.0
 CHANNEL_SCALE_MIN = 0.5
-CHANNEL_SCALE_INCREMENTS = 128
+CHANNEL_SCALE_INCREMENTS = 127
 RMS_FRAMES = 10
 USE_RMS = False
 
@@ -64,7 +64,12 @@ class VUMeter(ControlSurfaceComponent):
         return increments / (top - bottom)
 
     def set_vu_meter(self, track, slider):
+        if self.slider:
+            self.send_vu_value(1)
         self.slider = slider
+        if self.slider:
+            self.send_vu_value(1)
+
         if self._vu_meter != None:
             self._vu_meter.remove_output_meter_left_listener(self.observe)
 
