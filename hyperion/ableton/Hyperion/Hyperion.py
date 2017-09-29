@@ -49,6 +49,8 @@ class HyperionChan(CompoundComponent):
             ButtonElement(True, MIDI_CC_TYPE, MIDI_MASTER_CH + 1 + mod_num, 1 + num, name='Btn{}'.format(num))
             for num in range(8)
         ]
+        self._enc_right_btn = ButtonElement(True, MIDI_CC_TYPE, MIDI_MASTER_CH + 1 + mod_num, 10, name='EncRightBtn')
+        self._enc_right_btn.add_value_listener(self._on_enc_right_btn)
 
         #self._cs = ChannelStripComponent()
         #self._cs.set_volume_control(self._fader)
@@ -70,8 +72,35 @@ class HyperionChan(CompoundComponent):
     def disconnect(self):
         super(HyperionChan, self).disconnect()
 
-        # self._left.remove_value_listener(self._left_right_button)
-        # self._right.remove_value_listener(self._left_right_button)
+        self._enc_right_btn.remove_value_listener(self._on_enc_right_btn)
+
+    def _get_parent_by_type(self, obj, parent_type):
+        if not obj.canonical_parent:
+            return
+        if isinstance(obj.canonical_parent, parent_type):
+            return obj.canonical_parent
+        return self._get_parent_by_type(obj.canonical_parent, parent_type)
+
+    def _on_enc_right_btn(self, value):
+        if value and self._track:
+            self.log('type {}',type(self._track))
+
+            song = self.hyperion.song()
+            if isinstance(self._track, Live.Track.Track):
+                song.view.selected_track = self._track
+            elif isinstance(self._track, Live.DrumChain.DrumChain):
+                parent_track = self._get_parent_by_type(self._track, Live.Track.Track)
+
+                song.view.selected_track = parent_track
+                try:
+                    song.view.selected_chain = self._track
+                except:
+                    try:
+                        song.view.selected_track = parent_track
+                        song.view.selected_chain = self._track.canonical_parent.canonical_parent
+                        self._track.canonical_parent.view.selected_chain = self._track
+                    except:
+                        pass
 
     def _get_track_mapper_device(self, track):
         for device in track.devices:
