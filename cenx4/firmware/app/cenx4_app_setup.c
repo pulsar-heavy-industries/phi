@@ -279,6 +279,13 @@ void cenx4_app_setup_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num, ph
 			phi_app_mgr_switch_app(&cenx4_app_traktor_desc, &(cenx4_app_contexts.traktor));
 			break;
 
+        case CENX4_APP_SETUP_ACTION_ABLETON2:
+        	cenx4_app_cfg.cur.startup_app = CENX4_APP_CFG_STARTUP_APP_ABLETON2;
+        	cenx4_app_cfg_save(&cenx4_app_cfg);
+
+			phi_app_mgr_switch_app(&cenx4_app_ableton2_desc, &(cenx4_app_contexts.ableton2));
+			break;
+
         case CENX4_APP_SETUP_ACTION_UPDATE_SLAVES:
         	cenx4_app_setup_bootload_slave(ctx, 10);
         	break;
@@ -414,6 +421,7 @@ msg_t cenx4_app_setup_update_ui(cenx4_app_setup_context_t * ctx, uint8_t node_id
 			"Log",
 			"BL",
 			"Traktor",
+			"Ableton2",
 			"UpdSlaves"
     	};
 

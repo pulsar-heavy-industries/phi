@@ -141,6 +141,7 @@ CSRC = $(STARTUPSRC) \
 	   usbcfg.c \
        main.c \
 	   cenx4_app_ableton.c \
+	   cenx4_app_ableton2.c \
 	   cenx4_app_cfg.c \
 	   cenx4_app_init.c \
 	   cenx4_app_setup.c \

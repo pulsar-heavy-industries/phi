@@ -30,6 +30,7 @@ typedef struct cenx4_app_cfg_s
             enum {
             	CENX4_APP_CFG_STARTUP_APP_SETUP = 0,
 				CENX4_APP_CFG_STARTUP_APP_ABLETON,
+				CENX4_APP_CFG_STARTUP_APP_ABLETON2,
 				CENX4_APP_CFG_STARTUP_APP_TRAKTOR,
             } startup_app;
 

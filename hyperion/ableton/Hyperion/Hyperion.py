@@ -18,33 +18,37 @@ from VUMeter import VUMeter
 
 
 IS_MOMENTARY=True
+MIDI_MASTER_CH = 0
 
 a=  None
 b = None
 
 class HyperionChan(CompoundComponent):
-    def __init__(self, hyperion, midi_ch, *a, **kw):
+    def __init__(self, hyperion, mod_num, *a, **kw):
         super(HyperionChan, self).__init__(*a, **kw)
 
         self.hyperion = hyperion
-        self.midi_ch = midi_ch
+        self.mod_num = mod_num
 
-        def make_button(midi_ch, identifier, name, midi_type=MIDI_CC_TYPE):
-            return ButtonElement(True, midi_type, midi_ch, identifier, name=name)
+        # def make_button(midi_ch, identifier, name, midi_type=MIDI_CC_TYPE):
+        #     return ButtonElement(True, midi_type, midi_ch, identifier, name=name)
 
-        ids = [[0x29, 0x2a], [0x2b, 0x2c]]
+        # ids = [[0x29, 0x2a], [0x2b, 0x2c]]
 
-        self._left = make_button(1, ids[midi_ch][0], 'Left{}'.format(midi_ch), MIDI_NOTE_TYPE)
-        self._left.add_value_listener(self._left_right_button, identify_sender=True)
+        # self._left = make_button(1, ids[midi_ch][0], 'Left{}'.format(midi_ch), MIDI_NOTE_TYPE)
+        # self._left.add_value_listener(self._left_right_button, identify_sender=True)
 
-        self._right = make_button(1, ids[midi_ch][1], 'Right{}'.format(midi_ch), MIDI_NOTE_TYPE) # 2 is hack for launchcontrol midi ch
-        self._right.add_value_listener(self._left_right_button, identify_sender=True)
+        # self._right = make_button(1, ids[midi_ch][1], 'Right{}'.format(midi_ch), MIDI_NOTE_TYPE) # 2 is hack for launchcontrol midi ch
+        # self._right.add_value_listener(self._left_right_button, identify_sender=True)
 
-        self._fader = SliderElement(MIDI_CC_TYPE, 1, [0x4d, 0x4f][midi_ch]) # 1st slider, 3rd slider
-        self.pots = [
-            EncoderElement(MIDI_CC_TYPE, 1, [0x0d, 0x0f][midi_ch], Live.MidiMap.MapMode.absolute, name='Pot1'),
-            EncoderElement(MIDI_CC_TYPE, 1, [0x1d, 0x1f][midi_ch], Live.MidiMap.MapMode.absolute, name='Pot2'),
-        ]
+        self._track_selector_encoder = EncoderElement(MIDI_CC_TYPE, MIDI_MASTER_CH + 1 + mod_num, 0x15, Live.MidiMap.MapMode.relative_smooth_binary_offset) # Right encoder on Hyperion
+        self._track_selector_encoder.add_value_listener(self._on_track_selector_encoder)
+
+        self._fader = SliderElement(MIDI_CC_TYPE, MIDI_MASTER_CH + 1 + mod_num, 0x25)
+        # self.pots = [
+        #     EncoderElement(MIDI_CC_TYPE, 1, [0x0d, 0x0f][midi_ch], Live.MidiMap.MapMode.absolute, name='Pot1'),
+        #     EncoderElement(MIDI_CC_TYPE, 1, [0x1d, 0x1f][midi_ch], Live.MidiMap.MapMode.absolute, name='Pot2'),
+        # ]
 
         #self._cs = ChannelStripComponent()
         #self._cs.set_volume_control(self._fader)
@@ -54,7 +58,7 @@ class HyperionChan(CompoundComponent):
         self._bind_to_track(self.hyperion.song().tracks[0])
 
     def log(self, msg, *args):
-        self.hyperion.log_message(('HyperionChan({}): ' + msg).format(self.midi_ch, *args))
+        self.hyperion.log_message(('HyperionChan({}): ' + msg).format(self.mod_num, *args))
 
     def disconnect(self):
         super(HyperionChan, self).disconnect()
@@ -80,32 +84,33 @@ class HyperionChan(CompoundComponent):
 
         return got_tracks
 
-    def _left_right_button(self, value, sender):
-        if value == 0:
-            return
+    def _on_track_selector_encoder(self, value):
+        direction = 1 if value > 64 else -1
 
         tracks = self._get_all_tracks(self.hyperion.song().tracks)
         tracks = [track for track in tracks if self._get_track_mapper_device(track)]
 
-        for t in tracks:
-            self.log('AAAAA {}', t.name)
+        # for t in tracks:
+        #     self.log('AAAAA {}', t.name)
 
-        # tracks = list(self.hyperion.song().tracks)
         try:
             cur_track_idx = tracks.index(self._track)
         except ValueError:
-            self._bind_to_track(self._track)
+            self.log('track disappeared :(')
+            self._bind_to_track(tracks[0])
         else:
-            cur_track_idx += 1
+            cur_track_idx += direction
             if cur_track_idx == len(tracks):
                 cur_track_idx = 0
+            if cur_track_idx == -1:
+                cur_track_idx = len(tracks) - 1
             self._bind_to_track(tracks[cur_track_idx])
 
     def _bind_to_track(self, track):
         if self._track:
             #self._cs.set_track(None)
             self._fader.release_parameter()
-            [pot.release_parameter() for pot in self.pots]
+            ## [pot.release_parameter() for pot in self.pots]
 
             self._track = None
 
@@ -118,8 +123,8 @@ class HyperionChan(CompoundComponent):
         self._fader.connect_to(track.mixer_device.volume)
 
         mapper_dev = self._get_track_mapper_device(track)
-        self.pots[0].connect_to(mapper_dev.parameters[3])
-        self.pots[1].connect_to(mapper_dev.parameters[4])
+        # self.pots[0].connect_to(mapper_dev.parameters[3])
+        # self.pots[1].connect_to(mapper_dev.parameters[4])
 
         # self._cs.set_track(track)
 
@@ -133,7 +138,7 @@ class Hyperion(ControlSurface):
         ControlSurface.__init__(self,c_instance)
         with self.component_guard():
             self.__c_instance = c_instance
-            self.hyperion_chans = [HyperionChan(self, ch) for ch in range(2)]
+            self.hyperion_chans = [HyperionChan(self, mod_num) for mod_num in range(2)]
 
         # Telnet
         self.originalstdin = sys.stdin

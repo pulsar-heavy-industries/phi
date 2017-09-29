@@ -40,6 +40,10 @@ void cenx4_app_init_start(void * _ctx)
 		phi_app_mgr_switch_app(&cenx4_app_ableton_desc, &(cenx4_app_contexts.ableton));
 		break;
 
+	case CENX4_APP_CFG_STARTUP_APP_ABLETON2:
+		phi_app_mgr_switch_app(&cenx4_app_ableton2_desc, &(cenx4_app_contexts.ableton2));
+		break;
+
 	case CENX4_APP_CFG_STARTUP_APP_TRAKTOR:
 		phi_app_mgr_switch_app(&cenx4_app_traktor_desc, &(cenx4_app_contexts.traktor));
 		break;
