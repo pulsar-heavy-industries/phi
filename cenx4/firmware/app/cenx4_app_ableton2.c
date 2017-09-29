@@ -190,23 +190,16 @@ void cenx4_app_ableton2_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num,
 		uint8_t mod_num = ctx->node_id_to_mod_num[cenx4_app_cfg_get_mapped_node_id(node_id)];
 		if (mod_num != CENX4_APP_CFG_INVALID_MODULE_NUM)
 		{
-			pkt.chn = CENX4_APP_ABLETON2_MIDI_CH_MASTER + 1 + mod_num;
-			pkt.event = 0xB; // Control Change
-			pkt.val1 = btn_num + 1;
-			switch (event)
+			// Fake toggle button
+			if (event == PHI_BTN_EVENT_PRESSED)
 			{
-			case PHI_BTN_EVENT_PRESSED:
-				pkt.val2 = 0x7f;
-				phi_midi_tx_pkt(PHI_MIDI_PORT_USB1, &pkt);
-				break;
+				ctx->hyperions[mod_num].buttons_state[btn_num] = !ctx->hyperions[mod_num].buttons_state[btn_num];
 
-			case PHI_BTN_EVENT_RELEASED:
-				pkt.val2 = 0;
+				pkt.chn = CENX4_APP_ABLETON2_MIDI_CH_MASTER + 1 + mod_num;
+				pkt.event = 0xB; // Control Change
+				pkt.val1 = btn_num + 1;
+				pkt.val2 = ctx->hyperions[mod_num].buttons_state[btn_num] ? 0x7f : 0;
 				phi_midi_tx_pkt(PHI_MIDI_PORT_USB1, &pkt);
-				break;
-
-			default:
-				break;
 			}
 		}
 	}
@@ -259,6 +252,8 @@ void cenx4_app_ableton2_midi_cc(void * _ctx, phi_midi_port_t port, uint8_t ch, u
 					.btn_num = cc - 1,
 					.led = val,
 				};
+
+				ctx->hyperions[mod_num].buttons_state[set_btn_led.btn_num] = set_btn_led.led ? 1 : 0;
 
 				phi_can_xfer(
 					&cenx4_can,

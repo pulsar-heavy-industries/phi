@@ -27,23 +27,15 @@ MIDI_MASTER_CH = 0
 a=  None
 b = None
 
+# TODO: EncoderElement for pots don't need to send feedback, we have no use for it
+# TODO: need to resync when the controller connects
+
 class HyperionChan(CompoundComponent):
     def __init__(self, hyperion, mod_num, *a, **kw):
         super(HyperionChan, self).__init__(*a, **kw)
 
         self.hyperion = hyperion
         self.mod_num = mod_num
-
-        # def make_button(midi_ch, identifier, name, midi_type=MIDI_CC_TYPE):
-        #     return ButtonElement(True, midi_type, midi_ch, identifier, name=name)
-
-        # ids = [[0x29, 0x2a], [0x2b, 0x2c]]
-
-        # self._left = make_button(1, ids[midi_ch][0], 'Left{}'.format(midi_ch), MIDI_NOTE_TYPE)
-        # self._left.add_value_listener(self._left_right_button, identify_sender=True)
-
-        # self._right = make_button(1, ids[midi_ch][1], 'Right{}'.format(midi_ch), MIDI_NOTE_TYPE) # 2 is hack for launchcontrol midi ch
-        # self._right.add_value_listener(self._left_right_button, identify_sender=True)
 
         self._track_selector_encoder = EncoderElement(MIDI_CC_TYPE, MIDI_MASTER_CH + 1 + mod_num, 0x15, Live.MidiMap.MapMode.relative_smooth_binary_offset) # Right encoder on Hyperion
         self._track_selector_encoder.add_value_listener(self._on_track_selector_encoder)
@@ -53,11 +45,10 @@ class HyperionChan(CompoundComponent):
             EncoderElement(MIDI_CC_TYPE, MIDI_MASTER_CH + 1 + mod_num, 0x1E + num, Live.MidiMap.MapMode.absolute, name='Pot{}'.format(num))
             for num in range(8)
         ]
-
-        # self.pots = [
-        #     EncoderElement(MIDI_CC_TYPE, 1, [0x0d, 0x0f][midi_ch], Live.MidiMap.MapMode.absolute, name='Pot1'),
-        #     EncoderElement(MIDI_CC_TYPE, 1, [0x1d, 0x1f][midi_ch], Live.MidiMap.MapMode.absolute, name='Pot2'),
-        # ]
+        self._btns = [
+            ButtonElement(True, MIDI_CC_TYPE, MIDI_MASTER_CH + 1 + mod_num, 1 + num, name='Btn{}'.format(num))
+            for num in range(8)
+        ]
 
         #self._cs = ChannelStripComponent()
         #self._cs.set_volume_control(self._fader)
@@ -66,7 +57,12 @@ class HyperionChan(CompoundComponent):
         self._vu = VUMeter(self)
 
         self._track = None
-        self._bind_to_track(self.hyperion.song().tracks[0])
+
+        tracks = self._get_all_tracks(self.hyperion.song().tracks)
+        if len(tracks) > self.mod_num:
+            self._bind_to_track(tracks[self.mod_num])
+        else:
+            self._bind_to_track(None)
 
     def log(self, msg, *args):
         self.hyperion.log_message(('HyperionChan({}): ' + msg).format(self.mod_num, *args))
@@ -93,13 +89,12 @@ class HyperionChan(CompoundComponent):
             if len(devices) and isinstance(devices[0], Live.RackDevice.RackDevice):
                 got_tracks.extend(self._get_all_tracks(devices[0].chains))
 
-        return got_tracks
+        return [track for track in got_tracks if self._get_track_mapper_device(track)]
 
     def _on_track_selector_encoder(self, value):
         direction = 1 if value > 64 else -1
 
         tracks = self._get_all_tracks(self.hyperion.song().tracks)
-        tracks = [track for track in tracks if self._get_track_mapper_device(track)]
 
         # for t in tracks:
         #     self.log('AAAAA {}', t.name)
@@ -122,6 +117,7 @@ class HyperionChan(CompoundComponent):
             #self._cs.set_track(None)
             self._fader.release_parameter()
             [pot.release_parameter() for pot in self._pots]
+            [btn.release_parameter() for btn in self._btns]
 
             self._track.remove_name_listener(self._on_name_changed)
 
@@ -138,6 +134,7 @@ class HyperionChan(CompoundComponent):
         mapper_dev = self._get_track_mapper_device(track)
         for num in range(8):
             self._pots[num].connect_to(mapper_dev.parameters[3 + num]) # MacroA0 MacroA1 etc
+            self._btns[num].connect_to(mapper_dev.parameters[11 + num]) # MacroB0 MacroB1 etc
 
         # self._cs.set_track(track)
 
@@ -161,7 +158,7 @@ class Hyperion(ControlSurface):
 
         with self.component_guard():
             self.__c_instance = c_instance
-            self.hyperion_chans = [HyperionChan(self, mod_num) for mod_num in range(2)]
+            self.hyperion_chans = [HyperionChan(self, mod_num) for mod_num in range(3)]
 
         # Telnet
         self.originalstdin = sys.stdin

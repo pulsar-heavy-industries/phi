@@ -41,6 +41,7 @@ typedef struct cenx4_app_ableton2_context_s
     // Hyperion modules state
     struct {
     	char title[HYPERION_UI_MAX_LINE_TEXT_LEN];
+    	uint8_t buttons_state[8];
     } hyperions[CENX4_APP_CFG_MAX_MODULES];
 
 } cenx4_app_ableton2_context_t;
