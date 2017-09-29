@@ -7,6 +7,7 @@ import StringIO, socket, code
 import Live #you import Live, in order to be able to use its components
 from _Framework.ControlSurface import ControlSurface
 from _Framework.ButtonElement import ButtonElement
+from _Framework.EncoderElement import EncoderElement
 from _Framework.SliderElement import SliderElement
 from _Framework.InputControlElement import *
 from _Framework.CompoundComponent import CompoundComponent
@@ -40,6 +41,10 @@ class HyperionChan(CompoundComponent):
         self._right.add_value_listener(self._left_right_button, identify_sender=True)
 
         self._fader = SliderElement(MIDI_CC_TYPE, 1, [0x4d, 0x4f][midi_ch]) # 1st slider, 3rd slider
+        self.pots = [
+            EncoderElement(MIDI_CC_TYPE, 1, [0x0d, 0x0f][midi_ch], Live.MidiMap.MapMode.absolute, name='Pot1'),
+            EncoderElement(MIDI_CC_TYPE, 1, [0x1d, 0x1f][midi_ch], Live.MidiMap.MapMode.absolute, name='Pot2'),
+        ]
 
         #self._cs = ChannelStripComponent()
         #self._cs.set_volume_control(self._fader)
@@ -57,7 +62,12 @@ class HyperionChan(CompoundComponent):
         self._left.remove_value_listener(self._left_right_button)
         self._right.remove_value_listener(self._left_right_button)
 
-    def get_all_tracks(self, all_tracks):
+    def _get_track_mapper_device(self, track):
+        for device in track.devices:
+            if device.name == 'MultiMapper16 V2.0':
+                return device
+
+    def _get_all_tracks(self, all_tracks):
         got_tracks = []
 
         for cur_track in all_tracks:
@@ -66,7 +76,7 @@ class HyperionChan(CompoundComponent):
 
             devices = list(cur_track.devices)
             if len(devices) and isinstance(devices[0], Live.RackDevice.RackDevice):
-                got_tracks.extend(self.get_all_tracks(devices[0].chains))
+                got_tracks.extend(self._get_all_tracks(devices[0].chains))
 
         return got_tracks
 
@@ -74,7 +84,9 @@ class HyperionChan(CompoundComponent):
         if value == 0:
             return
 
-        tracks = self.get_all_tracks(self.hyperion.song().tracks)
+        tracks = self._get_all_tracks(self.hyperion.song().tracks)
+        tracks = [track for track in tracks if self._get_track_mapper_device(track)]
+
         for t in tracks:
             self.log('AAAAA {}', t.name)
 
@@ -93,6 +105,7 @@ class HyperionChan(CompoundComponent):
         if self._track:
             #self._cs.set_track(None)
             self._fader.release_parameter()
+            [pot.release_parameter() for pot in self.pots]
 
             self._track = None
 
@@ -103,6 +116,10 @@ class HyperionChan(CompoundComponent):
         self._track = track
 
         self._fader.connect_to(track.mixer_device.volume)
+
+        mapper_dev = self._get_track_mapper_device(track)
+        self.pots[0].connect_to(mapper_dev.parameters[3])
+        self.pots[1].connect_to(mapper_dev.parameters[4])
 
         # self._cs.set_track(track)
 
