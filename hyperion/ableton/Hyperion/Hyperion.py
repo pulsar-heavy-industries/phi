@@ -200,7 +200,10 @@ class Hyperion(ControlSurface):
 
         self.telnetSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.telnetSocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.telnetSocket.bind( ('', 1337) )
+        try:
+            self.telnetSocket.bind( ('', 1337) )
+        except:
+            pass
         self.telnetSocket.setblocking(False)
         self.telnetSocket.listen(1)
         self.telnetConnection = None
