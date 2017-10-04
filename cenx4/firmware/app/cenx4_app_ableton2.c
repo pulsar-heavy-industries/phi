@@ -26,6 +26,8 @@ void cenx4_app_ableton2_start(void * _ctx)
     chDbgCheck(ctx != NULL);
     memset(ctx, 0, sizeof(*ctx));
 
+    strcpy(ctx->ui_default.text_top, "WaitHost...");
+
     // Load mod_num_to_uid from cfg
 	cenx4_app_cfg_get_node_id_to_mod_num_map(
 		HYPERION_DEV_ID,
@@ -161,7 +163,14 @@ void cenx4_app_ableton2_encoder_event(void * _ctx, uint8_t node_id, uint8_t enco
 
 	if (node_id == 0)
 	{
-		// Not doing anything with the Cenx4 for now
+		if (ctx->mode == CENX4_APP_ABLETON2_MODE_DEFAULT)
+		{
+			pkt.chn = CENX4_APP_ABLETON2_MIDI_CH_MASTER;
+			pkt.event = 0xB; // Control Change
+			pkt.val1 = 20 + encoder_num;
+			pkt.val2 = 64 + val_change; // "Relative Binary Offset". Positive offsets are sent as offset plus 64 and negative offsets are sent as 64 minus offset
+			phi_midi_tx_pkt(PHI_MIDI_PORT_USB1, &pkt);
+		}
 	}
 	else
 	{
@@ -184,7 +193,35 @@ void cenx4_app_ableton2_btn_event(void * _ctx, uint8_t node_id, uint8_t btn_num,
 
 	if (node_id == 0)
 	{
+		if ((btn_num == 0) &&
+			(event == PHI_BTN_EVENT_HELD) &&
+			(param >= 5000))
+		{
+			phi_app_mgr_switch_app(&cenx4_app_setup_desc, &(cenx4_app_contexts.setup));
+			return;
+		}
 
+		if (ctx->mode == CENX4_APP_ABLETON2_MODE_DEFAULT)
+		{
+			pkt.chn = CENX4_APP_ABLETON2_MIDI_CH_MASTER;
+			pkt.event = 0xB; // Control Change
+			pkt.val1 = btn_num + 1;
+			switch (event)
+			{
+			case PHI_BTN_EVENT_PRESSED:
+				pkt.val2 = 0x7f;
+				phi_midi_tx_pkt(PHI_MIDI_PORT_USB1, &pkt);
+				break;
+
+			case PHI_BTN_EVENT_RELEASED:
+				pkt.val2 = 0;
+				phi_midi_tx_pkt(PHI_MIDI_PORT_USB1, &pkt);
+				break;
+
+			default:
+				break;
+			}
+		}
 	}
 	else
 	{
@@ -343,8 +380,19 @@ void cenx4_app_ableton2_midi_sysex(void * _ctx, phi_midi_port_t port, uint8_t cm
 	case CENX4_MIDI_SYSEX_APP_ABLETON2_SET_TITLE:
 		if (data_len == sizeof(cenx4_app_ableton2_sysex_set_title_t))
 		{
-			cenx4_app_ableton2_midi_sysex_set_title(ctx, (cenx4_app_ableton2_sysex_set_title_t *) data);
+			cenx4_app_ableton2_midi_sysex_set_title(ctx, (const cenx4_app_ableton2_sysex_set_title_t *) data);
 		}
+		break;
+
+	case CENX4_MIDI_SYSEX_APP_ABLETON2_UPDATE_UI_DEFAULT:
+		if (data_len == sizeof(cenx4_app_ableton2_sysex_update_ui_default_t))
+		{
+			cenx4_app_ableton2_midi_sysex_update_ui_default(ctx, (const cenx4_app_ableton2_sysex_update_ui_default_t *) data);
+		}
+		break;
+
+	default:
+		break;
 	}
 }
 
@@ -359,19 +407,9 @@ void cenx4_app_ableton2_reconfigure_displays(cenx4_app_ableton2_context_t * ctx)
 	switch (ctx->mode)
 	{
 	case CENX4_APP_ABLETON2_MODE_DEFAULT:
-		ui->dispmode = CENX4_UI_DISPMODE_SPLIT_POT;
-
-		ui->state.split_pot.pots[0].flags =
-				CENX4_UI_DISPMODE_POT_FLAGS_ROUND |
-				CENX4_UI_DISPMODE_POT_FLAGS_FILL |
-				CENX4_UI_DISPMODE_POT_FLAGS_RENDER_VAL |
-				CENX4_UI_DISPMODE_POT_FLAGS_TOP_FONT_AUTO;
-		chsnprintf(ui->state.split_pot.pots[0].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "Pot1");
-		ui->state.split_pot.pots[0].val = 10;
-
-		ui->state.split_pot.pots[1].flags = ui->state.split_pot.pots[0].flags;
-		chsnprintf(ui->state.split_pot.pots[1].text_top, CENX4_UI_MAX_LINE_TEXT_LEN - 1, "Pot2");
-		ui->state.split_pot.pots[1].val = 50;
+		ui->state.callback.func = (void (*)(cenx4_ui_t *, void *)) cenx4_app_ableton2_render_default_left;
+		ui->state.callback.ctx = ctx;
+		ui->dispmode = CENX4_UI_DISPMODE_CALLBACK;
 		break;
 
 	default:
@@ -387,8 +425,6 @@ void cenx4_app_ableton2_reconfigure_displays(cenx4_app_ableton2_context_t * ctx)
 	switch (ctx->mode)
 	{
 	case CENX4_APP_ABLETON2_MODE_DEFAULT:
-//		ui->state.callback.func = cenx4_app_ableton2_render_vu_meters;
-//		ui->state.callback.ctx = ctx;
 		ui->dispmode = CENX4_UI_DISPMODE_LOGO;
 		break;
 
@@ -433,7 +469,7 @@ msg_t cenx4_app_ableton2_update_slave_display(cenx4_app_ableton2_context_t * ctx
 	);
 }
 
-void cenx4_app_ableton2_midi_sysex_set_title(cenx4_app_ableton2_context_t * ctx, cenx4_app_ableton2_sysex_set_title_t * data)
+void cenx4_app_ableton2_midi_sysex_set_title(cenx4_app_ableton2_context_t * ctx, const cenx4_app_ableton2_sysex_set_title_t * data)
 {
 	if (data->mod_num >= CENX4_APP_CFG_MAX_MODULES)
 	{
@@ -454,4 +490,22 @@ void cenx4_app_ableton2_midi_sysex_set_title(cenx4_app_ableton2_context_t * ctx,
 void cenx4_app_ableton2_send_resync(cenx4_app_ableton2_context_t * ctx)
 {
 	phi_midi_tx_sysex(PHI_MIDI_PORT_USB1, CENX4_MIDI_SYSEX_APP_ABLETON2_RESYNC, NULL, 0);
+}
+
+void cenx4_app_ableton2_render_default_left(cenx4_ui_t * ui, cenx4_app_ableton2_context_t * ctx)
+{
+	chDbgCheck(ctx->mode == CENX4_APP_ABLETON2_MODE_DEFAULT);
+	cenx4_ui_text(ui, 0, 0, ui->w, 0, justifyCenter, ctx->ui_default.text_top);
+	cenx4_ui_text(ui, 0, gdispGGetHeight(ui->g) - 10, ui->w, 0, justifyCenter, ctx->ui_default.text_bottom);
+}
+
+void cenx4_app_ableton2_midi_sysex_update_ui_default(cenx4_app_ableton2_context_t * ctx, const cenx4_app_ableton2_sysex_update_ui_default_t * data)
+{
+	if ((data->text_top[sizeof(data->text_top) - 1] != 0) ||
+		(data->text_bottom[sizeof(data->text_bottom) - 1] != 0)) {
+		return;
+	}
+
+	strcpy(ctx->ui_default.text_top, data->text_top);
+	strcpy(ctx->ui_default.text_bottom, data->text_bottom);
 }

@@ -43,6 +43,7 @@ def crc16(data, crc=0xffff, table=CRC16_TABLE):
 
 CENX4_APP_ABLETON2_SYSEX_SET_TITLE = 51
 CENX4_APP_ABLETON2_SYSEX_RESYNC = 52
+CENX4_APP_ABLETON2_SYSEX_UPDATE_UI_DEFAULT = 53
 CENX4_UI_MAX_LINE_TEXT_LEN = 16
 
 
@@ -121,3 +122,10 @@ class SysExProtocol(object):
             mod_num,
         ] + self.c_str(title, CENX4_UI_MAX_LINE_TEXT_LEN)
         self.send_midi(buf)
+
+    def update_ui_default(self, text_top, text_bottom):
+        self.send_midi(
+            [CENX4_APP_ABLETON2_SYSEX_UPDATE_UI_DEFAULT] +
+            self.c_str(text_top, CENX4_UI_MAX_LINE_TEXT_LEN) +
+            self.c_str(text_bottom, CENX4_UI_MAX_LINE_TEXT_LEN)
+        )

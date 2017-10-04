@@ -179,6 +179,78 @@ class HyperionChan(CompoundComponent):
     def _on_name_changed(self):
         self.hyperion.sysex.set_title(self.mod_num, self._track.name if self._track else '-')
 
+
+class Cenx4Master(CompoundComponent):
+    def __init__(self, hyperion, *a, **kw):
+        super(Cenx4Master, self).__init__(*a, **kw)
+
+        self.hyperion = hyperion
+
+        # Cenx4 controls
+        self._encs = [
+            EncoderElement(MIDI_CC_TYPE, MIDI_MASTER_CH, 0x14, Live.MidiMap.MapMode.relative_smooth_binary_offset),
+            EncoderElement(MIDI_CC_TYPE, MIDI_MASTER_CH, 0x15, Live.MidiMap.MapMode.relative_smooth_binary_offset),
+            EncoderElement(MIDI_CC_TYPE, MIDI_MASTER_CH, 0x16, Live.MidiMap.MapMode.relative_smooth_binary_offset),
+            EncoderElement(MIDI_CC_TYPE, MIDI_MASTER_CH, 0x17, Live.MidiMap.MapMode.relative_smooth_binary_offset),
+        ]
+
+        self._encs[0].add_value_listener(self._on_enc0)
+        self._encs[1].add_value_listener(self._on_enc1)
+
+        # Default UI mode data
+        self._actions = [
+            {
+                'text': 'LoadPreset',
+            }, {
+                'text': 'SavePreset',
+            },
+        ]
+        self._cur_preset_num = 0
+        self._cur_selected_action = 0
+        self._presets = [None] * 10
+
+
+        self.update_display()
+
+    def disconnect(self):
+        super(Cenx4Master, self).disconnect()
+
+        self._encs[0].remove_value_listener(self._on_enc0)
+
+    def log(self, msg, *args):
+        self.hyperion.log_message(('Cenx4Master: ' + msg).format(*args))
+
+    def _get_data(self, key, default):
+        return self.hyperion.song().get_data('hyperion.v1.cenx4master.' + key, default)
+
+    def _set_data(self, key, val):
+        return self.hyperion.song().set_data('hyperion.v1.cenx4master.' + key, val)
+
+    def _on_enc0(self, value):
+        self._cur_preset_num += (1 if value > 64 else -1)
+        if self._cur_preset_num < 0:
+            self._cur_preset_num = len(self._presets) - 1
+        if self._cur_preset_num >= len(self._presets):
+            self._cur_preset_num = 0
+
+        self.update_display()
+
+    def _on_enc1(self, value):
+        self._cur_selected_action += (1 if value > 64 else -1)
+        if self._cur_selected_action < 0:
+            self._cur_selected_action = len(self._actions) - 1
+        if self._cur_selected_action >= len(self._actions):
+            self._cur_selected_action = 0
+
+        self.update_display()
+
+    def update_display(self):
+            self.hyperion.sysex.update_ui_default(
+                'Preset {}/{}'.format(self._cur_preset_num + 1, len(self._presets)),
+                self._actions[self._cur_selected_action]['text'],
+            )
+
+
 class Hyperion(ControlSurface):
     def __init__(self, c_instance):
         ControlSurface.__init__(self, c_instance)
@@ -189,7 +261,9 @@ class Hyperion(ControlSurface):
 
         with self.component_guard():
             self.__c_instance = c_instance
+
             self.hyperion_chans = [HyperionChan(self, mod_num) for mod_num in range(3)]
+            self.master_ctrl = Cenx4Master(self)
 
         # Telnet
         self.originalstdin = sys.stdin

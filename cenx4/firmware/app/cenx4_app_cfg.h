@@ -2,6 +2,8 @@
 #define CENX4_APP_CFG_H_
 
 #include "phi_lib/phi_can.h"
+#include "cenx4_ui.h"
+#include "../../../hyperion/firmware/app/hyperion_app_slave_can.h"
 
 #define CENX4_APP_CFG_MAGIC    PHI_DEV_ID('C', 'F', 'G', '1')
 #define CENX4_APP_CFG_VER      1
@@ -35,6 +37,7 @@ typedef struct cenx4_app_cfg_s
             } startup_app;
 
             // Ableton specific: Make the last encoder switch banks
+            // TODO: store this in Ableton, not here (using song().set_data())
             bool ableton_enable_banks_enc;
 
         } cur;

@@ -17,9 +17,12 @@ typedef struct {
 	char title[HYPERION_UI_MAX_LINE_TEXT_LEN];
 } cenx4_app_ableton2_sysex_set_title_t;
 
+typedef struct {
+	char text_top[CENX4_UI_MAX_LINE_TEXT_LEN];
+	char text_bottom[CENX4_UI_MAX_LINE_TEXT_LEN];
+} cenx4_app_ableton2_sysex_update_ui_default_t;
 
-typedef enum
-{
+typedef enum {
 	CENX4_APP_ABLETON2_MODE_DEFAULT = 0,
 } cenx4_app_ableton2_mode_t;
 
@@ -28,6 +31,12 @@ extern const phi_app_desc_t cenx4_app_ableton2_desc;
 typedef struct cenx4_app_ableton2_context_s
 {
 	cenx4_app_ableton2_mode_t mode;
+
+	// UI stuff - default mode
+	struct {
+		char text_top[CENX4_UI_MAX_LINE_TEXT_LEN];
+		char text_bottom[CENX4_UI_MAX_LINE_TEXT_LEN];
+	} ui_default;
 
     // Number of modules available
     uint8_t num_modules;
@@ -60,7 +69,11 @@ void cenx4_app_ableton2_midi_sysex(void * ctx, phi_midi_port_t port, uint8_t cmd
 void cenx4_app_ableton2_reconfigure_displays(cenx4_app_ableton2_context_t * ctx);
 msg_t cenx4_app_ableton2_update_slave_display(cenx4_app_ableton2_context_t * ctx, uint8_t node_id);
 
-void cenx4_app_ableton2_midi_sysex_set_title(cenx4_app_ableton2_context_t * ctx, cenx4_app_ableton2_sysex_set_title_t * data);
+void cenx4_app_ableton2_midi_sysex_set_title(cenx4_app_ableton2_context_t * ctx, const cenx4_app_ableton2_sysex_set_title_t * data);
+void cenx4_app_ableton2_midi_sysex_update_ui_default(cenx4_app_ableton2_context_t * ctx, const cenx4_app_ableton2_sysex_update_ui_default_t * data);
 void cenx4_app_ableton2_send_resync(cenx4_app_ableton2_context_t * ctx);
+
+void cenx4_app_ableton2_render_default_left(cenx4_ui_t * ui, cenx4_app_ableton2_context_t * ctx);
+
 
 #endif /* CENX4_APP_ABLETON2_H_ */

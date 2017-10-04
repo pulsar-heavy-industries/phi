@@ -13,6 +13,7 @@ void cenx4_app_cfg_load(void)
 {
 	uint32_t crc;
 
+	chDbgCheck(sizeof(cenx4_app_cfg) < 2048);
 
     memcpy(&cenx4_app_cfg, (void *)CENX4_APP_CFG_ADDR, sizeof(cenx4_app_cfg));
 
