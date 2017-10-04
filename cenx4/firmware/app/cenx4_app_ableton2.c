@@ -124,6 +124,9 @@ void cenx4_app_ableton2_start(void * _ctx)
     	}
     }
 
+    // Notify Ableton we are ready, in case it's waiting for us
+    cenx4_app_ableton2_send_resync(ctx);
+
     return;
 
 err_bad_cfg:
@@ -446,4 +449,9 @@ void cenx4_app_ableton2_midi_sysex_set_title(cenx4_app_ableton2_context_t * ctx,
 	strncpy(ctx->hyperions[data->mod_num].title, data->title, HYPERION_UI_MAX_LINE_TEXT_LEN - 1);
 
 	cenx4_app_ableton2_update_slave_display(ctx, node_id);
+}
+
+void cenx4_app_ableton2_send_resync(cenx4_app_ableton2_context_t * ctx)
+{
+	phi_midi_tx_sysex(PHI_MIDI_PORT_USB1, CENX4_MIDI_SYSEX_APP_ABLETON2_RESYNC, NULL, 0);
 }

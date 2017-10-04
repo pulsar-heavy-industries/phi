@@ -33,6 +33,7 @@ enum {
 
 	// ableton2 app commands
 	CENX4_MIDI_SYSEX_APP_ABLETON2_SET_TITLE,	// 51
+	CENX4_MIDI_SYSEX_APP_ABLETON2_RESYNC,       // 52
 };
 
 void cenx4_midi_init(void);

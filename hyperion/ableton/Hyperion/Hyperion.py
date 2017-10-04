@@ -17,6 +17,7 @@ from _Framework.ChannelStripComponent import ChannelStripComponent, release_cont
 from VUMeter import VUMeter
 from MIDIProtocol import (
     SysExProtocol,
+    CENX4_APP_ABLETON2_SYSEX_RESYNC,
 )
 
 
@@ -176,7 +177,7 @@ class HyperionChan(CompoundComponent):
         self._on_name_changed()
 
     def _on_name_changed(self):
-        self.hyperion.sysex.set_title(self.mod_num, self._track.name)
+        self.hyperion.sysex.set_title(self.mod_num, self._track.name if self._track else '-')
 
 class Hyperion(ControlSurface):
     def __init__(self, c_instance):
@@ -184,6 +185,7 @@ class Hyperion(ControlSurface):
 
         self.send_midi = c_instance.send_midi
         self.sysex = SysExProtocol(self)
+        self.log = self.log_message
 
         with self.component_guard():
             self.__c_instance = c_instance
@@ -233,6 +235,19 @@ class Hyperion(ControlSurface):
         data = self.sysex.decode(midi_bytes)
         if data is None:
             return super(Hyperion, self).handle_sysex(midi_bytes)
+        if not len(data):
+            return
+
+        if data[0] == CENX4_APP_ABLETON2_SYSEX_RESYNC:
+            self.log('SysEx Resync requested')
+            for chan in self.hyperion_chans:
+                chan._on_name_changed()
+                if chan._vu.slider:
+                    chan._vu.send_vu_value(1)
+                for btn in chan._btns:
+                    param = btn.mapped_parameter()
+                    btn.send_value(param.value if param else 0, True)
+
         self.log('Incoming sysex: {}', data)
 
     def update_display(self):

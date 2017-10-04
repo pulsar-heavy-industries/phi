@@ -61,5 +61,6 @@ void cenx4_app_ableton2_reconfigure_displays(cenx4_app_ableton2_context_t * ctx)
 msg_t cenx4_app_ableton2_update_slave_display(cenx4_app_ableton2_context_t * ctx, uint8_t node_id);
 
 void cenx4_app_ableton2_midi_sysex_set_title(cenx4_app_ableton2_context_t * ctx, cenx4_app_ableton2_sysex_set_title_t * data);
+void cenx4_app_ableton2_send_resync(cenx4_app_ableton2_context_t * ctx);
 
 #endif /* CENX4_APP_ABLETON2_H_ */
