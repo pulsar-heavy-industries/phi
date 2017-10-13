@@ -12,7 +12,7 @@ const SPIConfig dac_main_spi_cfg = {
 extern int32_t dac_buffer[DAC_AUDIO_BUFFER_SIZE + DAC_AUDIO_MAX_PACKET_SIZE];
 extern int32_t dac_buffer2[DAC_AUDIO_BUFFER_SIZE + DAC_AUDIO_MAX_PACKET_SIZE];
 
-const stm32_dma_stream_t * sai_dma1, * sai_dma2;
+const stm32_dma_stream_t * sai_dma1 = NULL, * sai_dma2 = NULL;
 
 static void dma_sai_interrupt(void * dat, uint32_t flags)
 {
@@ -23,6 +23,11 @@ static void dma_sai_interrupt(void * dat, uint32_t flags)
 void codec_init(void)
 {
 	uint32_t sai_tx_dma_mode;
+
+	if (sai_dma1 || sai_dma2)
+	{
+		return;
+	}
 
 	/* PLLSAI activation.*/
 	RCC->PLLSAICFGR = (STM32_PLLSAIN_VALUE << 6) | (STM32_PLLSAIR_VALUE << 28) | (STM32_PLLSAIQ_VALUE << 24);
@@ -162,6 +167,29 @@ void codec_init(void)
 	SAI1_Block_A->CR1 |= SAI_xCR1_SAIEN;
 }
 
+void codec_deinit(void)
+{
+	/* Disable SAI1 */
+	SAI1_Block_B->CR1 &= ~SAI_xCR1_DMAEN;
+	SAI1_Block_B->CR1 &= ~SAI_xCR1_SAIEN;
+
+	SAI1_Block_A->CR1 &= ~SAI_xCR1_DMAEN;
+	SAI1_Block_A->CR1 &= ~SAI_xCR1_SAIEN;
+
+	/* Deinit DMA */
+	if (sai_dma2) {
+		dmaStreamDisable(sai_dma2);
+		dmaStreamRelease(sai_dma2);
+		sai_dma2 = NULL;
+	}
+
+	if (sai_dma1) {
+		dmaStreamDisable(sai_dma1);
+		dmaStreamRelease(sai_dma1);
+		sai_dma1 = NULL;
+	}
+
+}
 
 void codec_set_vol(uint8_t vol)
 {

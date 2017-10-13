@@ -3,6 +3,7 @@
 #include "lcd.h"
 #include "codec.h"
 #include "narvi_midi.h"
+#include "narvi_io.h"
 
 extern audio_state_t audio;
 
@@ -188,9 +189,9 @@ static THD_FUNCTION(blinker_thread, arg)
 
     while (true) {
     	palClearPad(GPIOA, GPIOA_USER_LED);
-    	chThdSleepMilliseconds(250);
+    	chThdSleepMilliseconds(audio.playback ? 100 : 500);
     	palSetPad(GPIOA, GPIOA_USER_LED);
-    	chThdSleepMilliseconds(250);
+    	chThdSleepMilliseconds(audio.playback ? 100 : 500);
     }
 }
 
@@ -218,6 +219,8 @@ int main(void)
     lcdWriteString(&LCDD1, "PHI Narvi", 0);
     lcdWriteString(&LCDD1, buf, 40);
 
+    narvi_io_init();
+
     // MIDI is on SD6, baudrate is configured in hal.conf (SERIAL_DEFAULT_BITRATE)
     sdStart(&SD6, NULL);
 
@@ -232,7 +235,6 @@ int main(void)
     usbStart(midiusbcfg.usbp, &usbcfg);
     usbConnectBus(midiusbcfg.usbp);
 
-    codec_init();
     chThdCreateStatic(lcd_thread_wa, sizeof(lcd_thread_wa), NORMALPRIO + 10, lcd_thread, NULL);
     chThdCreateStatic(blinker_thread_wa, sizeof(blinker_thread_wa), NORMALPRIO + 10, blinker_thread, NULL);
 
@@ -259,8 +261,11 @@ int main(void)
          */
         if (evt & AUDIO_EVENT_PLAYBACK) {
         	if (audio.playback) {
+        		usb_reset_audio_bufs();
         		start_sof_capture();
+        		codec_init();
         	} else {
+        		codec_deinit();
         		stop_sof_capture();
         		usb_reset_audio_bufs();
         	}

@@ -3,10 +3,14 @@
 
 MIDIUSBDriver MDU1;
 audio_state_t audio;
-volatile int32_t dac_buffer[DAC_AUDIO_BUFFER_SIZE + DAC_AUDIO_MAX_PACKET_SIZE];
-volatile int32_t dac_buffer2[DAC_AUDIO_BUFFER_SIZE + DAC_AUDIO_MAX_PACKET_SIZE];
+
+volatile int32_t dac_buffer[DAC_AUDIO_BUFFER_SIZE];
+uint32_t dac_buffer_pos = 0;
+
+volatile int32_t dac_buffer2[DAC_AUDIO_BUFFER_SIZE];
+uint32_t dac_buffer2_pos = 0;
+
 static uint32_t usb_buffer[USB_AUDIO_BUFFER_SIZE + USB_AUDIO_MAX_PACKET_SIZE];
-static uint32_t dac_buffer_wr_addr = 0;
 
 
 #define USBD1_DATA_REQUEST_EP           1
@@ -536,15 +540,36 @@ void usb_reset_audio_bufs(void)
 {
 	memset((void *) dac_buffer, 0, sizeof(dac_buffer));
 	memset((void *) dac_buffer2, 0, sizeof(dac_buffer2));
-	dac_buffer_wr_addr = 0;
+	dac_buffer_pos = DAC_AUDIO_BUFFER_SIZE / 2;
+	dac_buffer2_pos = DAC_AUDIO_BUFFER_SIZE / 2;
 }
 
+volatile int cntz[10] = {0, };
 void audio_received(USBDriver *usbp, usbep_t ep) {
   if (audio.playback) {
       int samples_received = usbGetReceiveTransactionSizeX(usbp, ep) / 8;
-      uint16_t new_addr = dac_buffer_wr_addr + samples_received;
 
       last = usbGetReceiveTransactionSizeX(usbp, ep);
+      chDbgCheck((last % 8) == 0);
+      switch (last)
+      {
+      case 0:
+    	  cntz[0]++;
+    	  break;
+
+      case 768:
+    	  cntz[1]++;
+    	  break;
+
+      case 752:
+    	  cntz[2]++;
+    	  break;
+
+      default:
+    	  cntz[9]++;
+    	  chDbgCheck(FALSE);
+    	  break;
+      }
       total_samples_received += samples_received;
       ++calls;
 
@@ -554,7 +579,9 @@ void audio_received(USBDriver *usbp, usbep_t ep) {
           int32_t s;
 
           s = usb_buffer[j++] >> 8;
-          dac_buffer2[dac_buffer_wr_addr + i] = s;
+          dac_buffer2[dac_buffer2_pos++] = s;
+          if (dac_buffer2_pos == DAC_AUDIO_BUFFER_SIZE) dac_buffer2_pos = 0;
+
 
           if (s & 0x800000)
 		  {
@@ -567,7 +594,9 @@ void audio_received(USBDriver *usbp, usbep_t ep) {
 
 
           s = usb_buffer[j++] >> 8;
-          dac_buffer2[dac_buffer_wr_addr + i + 1] = s;
+          dac_buffer2[dac_buffer2_pos++] = s;
+          if (dac_buffer2_pos == DAC_AUDIO_BUFFER_SIZE) dac_buffer2_pos = 0;
+
           if (s & 0x800000)
 		  {
         	  s |= 0xff << 24;
@@ -577,29 +606,18 @@ void audio_received(USBDriver *usbp, usbep_t ep) {
         	  VU_Level_Right = s;
 		  }
 
-          s = usb_buffer[j++];// << 8;
-//          s = ((s & 0xFFFF) << 16) | (s >> 16);
-          dac_buffer[dac_buffer_wr_addr + i] = s >> 8;
-
+          s = usb_buffer[j++];
+          dac_buffer[dac_buffer_pos++] = s >> 8;
+          if (dac_buffer_pos == DAC_AUDIO_BUFFER_SIZE) dac_buffer_pos = 0;
 
           s = usb_buffer[j++];
-//          s = ((s & 0xFFFF) << 16) | (s >> 16);
-          dac_buffer[dac_buffer_wr_addr + i + 1] = s >> 8;
+          dac_buffer[dac_buffer_pos++] = s >> 8;
+          if (dac_buffer_pos == DAC_AUDIO_BUFFER_SIZE) dac_buffer_pos = 0;
 
 
           i += 2;
 
       }
-
-    /* Handle buffer wrap */
-    if (new_addr >= DAC_AUDIO_BUFFER_SIZE) {
-      for (int i = DAC_AUDIO_BUFFER_SIZE; i < new_addr; i++) {
-        dac_buffer[i - DAC_AUDIO_BUFFER_SIZE] = dac_buffer[i];
-        dac_buffer2[i - DAC_AUDIO_BUFFER_SIZE] = dac_buffer2[i];
-      }
-      new_addr -= DAC_AUDIO_BUFFER_SIZE;
-    }
-    dac_buffer_wr_addr = new_addr;
 
     chSysLockFromISR();
     usbStartReceiveI(usbp, ep, (uint8_t *)&usb_buffer[0], USB_AUDIO_MAX_PACKET_SIZE);
@@ -820,7 +838,7 @@ void start_playback(USBDriver *usbp) {
   if (!audio.playback) {
     audio.playback = true;
     audio.buffer_errors = 0;
-    dac_buffer_wr_addr = DAC_AUDIO_PACKET_SIZE / 2;
+//    dac_buffer_wr_ = DAC_AUDIO_PACKET_SIZE / 2;
     chSysLockFromISR();
     chEvtBroadcastFlagsI(&audio.audio_events, AUDIO_EVENT_PLAYBACK);
     usbStartTransmitI(usbp, AUDIO_FEEDBACK_ENDPOINT, NULL, 0);

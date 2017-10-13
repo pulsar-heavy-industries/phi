@@ -134,7 +134,8 @@ CSRC = $(STARTUPSRC) \
 	   usbcfg.c \
 	   main.c \
 	   lcd.c \
-	   narvi_midi.c
+	   narvi_midi.c \
+	   narvi_io.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.

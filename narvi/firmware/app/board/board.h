@@ -50,9 +50,9 @@
 #define GPIOA_SWCLK            14U
 #define GPIOA_TP_INT           15U
 
-#define GPIOB_ROT2_SW          0U
-#define GPIOB_ROT2_A           1U
-#define GPIOB_ROT2_B           2U
+#define GPIOB_CTRL_ROT2_SW     0U
+#define GPIOB_CTRL_ROT2_A      1U
+#define GPIOB_CTRL_ROT2_B      2U
 #define GPIOB_SWO              3U
 #define GPIOB_PIN4             4U
 #define GPIOB_PIN5             5U
@@ -312,9 +312,9 @@
 /*
  * GPIOB setup:
  */
-#define VAL_GPIOB_MODER             (PIN_MODE_INPUT(GPIOB_ROT2_SW) |         \
-                                     PIN_MODE_INPUT(GPIOB_ROT2_A) |          \
-                                     PIN_MODE_INPUT(GPIOB_ROT2_B) |          \
+#define VAL_GPIOB_MODER             (PIN_MODE_INPUT(GPIOB_CTRL_ROT2_SW) |    \
+                                     PIN_MODE_INPUT(GPIOB_CTRL_ROT2_A) |     \
+                                     PIN_MODE_INPUT(GPIOB_CTRL_ROT2_B) |     \
                                      PIN_MODE_ALTERNATE(GPIOB_SWO) |         \
                                      PIN_MODE_INPUT(GPIOB_PIN4) |            \
                                      PIN_MODE_INPUT(GPIOB_PIN5) |            \
@@ -328,9 +328,9 @@
                                      PIN_MODE_INPUT(GPIOB_OTG_HS_VBUS) |     \
                                      PIN_MODE_ALTERNATE(GPIOB_OTG_HS_DM) |   \
                                      PIN_MODE_ALTERNATE(GPIOB_OTG_HS_DP))
-#define VAL_GPIOB_OTYPER            (PIN_OTYPE_PUSHPULL(GPIOB_ROT2_SW) |     \
-                                     PIN_OTYPE_PUSHPULL(GPIOB_ROT2_A) |      \
-                                     PIN_OTYPE_PUSHPULL(GPIOB_ROT2_B) |      \
+#define VAL_GPIOB_OTYPER            (PIN_OTYPE_PUSHPULL(GPIOB_CTRL_ROT2_SW) |\
+                                     PIN_OTYPE_PUSHPULL(GPIOB_CTRL_ROT2_A) | \
+                                     PIN_OTYPE_PUSHPULL(GPIOB_CTRL_ROT2_B) | \
                                      PIN_OTYPE_PUSHPULL(GPIOB_SWO) |         \
                                      PIN_OTYPE_PUSHPULL(GPIOB_PIN4) |        \
                                      PIN_OTYPE_PUSHPULL(GPIOB_PIN5) |        \
@@ -344,9 +344,9 @@
                                      PIN_OTYPE_PUSHPULL(GPIOB_OTG_HS_VBUS) | \
                                      PIN_OTYPE_PUSHPULL(GPIOB_OTG_HS_DM) |   \
                                      PIN_OTYPE_PUSHPULL(GPIOB_OTG_HS_DP))
-#define VAL_GPIOB_OSPEEDR           (PIN_OSPEED_VERYLOW(GPIOB_ROT2_SW) |     \
-                                     PIN_OSPEED_VERYLOW(GPIOB_ROT2_A) |      \
-                                     PIN_OSPEED_VERYLOW(GPIOB_ROT2_B) |      \
+#define VAL_GPIOB_OSPEEDR           (PIN_OSPEED_VERYLOW(GPIOB_CTRL_ROT2_SW) |\
+                                     PIN_OSPEED_VERYLOW(GPIOB_CTRL_ROT2_A) | \
+                                     PIN_OSPEED_VERYLOW(GPIOB_CTRL_ROT2_B) | \
                                      PIN_OSPEED_HIGH(GPIOB_SWO) |            \
                                      PIN_OSPEED_VERYLOW(GPIOB_PIN4) |        \
                                      PIN_OSPEED_VERYLOW(GPIOB_PIN5) |        \
@@ -360,9 +360,9 @@
                                      PIN_OSPEED_VERYLOW(GPIOB_OTG_HS_VBUS) | \
                                      PIN_OSPEED_HIGH(GPIOB_OTG_HS_DM) |      \
                                      PIN_OSPEED_HIGH(GPIOB_OTG_HS_DP))
-#define VAL_GPIOB_PUPDR             (PIN_PUPDR_PULLUP(GPIOB_ROT2_SW) |       \
-                                     PIN_PUPDR_PULLUP(GPIOB_ROT2_A) |        \
-                                     PIN_PUPDR_PULLUP(GPIOB_ROT2_B) |        \
+#define VAL_GPIOB_PUPDR             (PIN_PUPDR_PULLUP(GPIOB_CTRL_ROT2_SW) |  \
+                                     PIN_PUPDR_PULLUP(GPIOB_CTRL_ROT2_A) |   \
+                                     PIN_PUPDR_PULLUP(GPIOB_CTRL_ROT2_B) |   \
                                      PIN_PUPDR_FLOATING(GPIOB_SWO) |         \
                                      PIN_PUPDR_PULLUP(GPIOB_PIN4) |          \
                                      PIN_PUPDR_PULLUP(GPIOB_PIN5) |          \
@@ -376,9 +376,9 @@
                                      PIN_PUPDR_PULLDOWN(GPIOB_OTG_HS_VBUS) | \
                                      PIN_PUPDR_FLOATING(GPIOB_OTG_HS_DM) |   \
                                      PIN_PUPDR_FLOATING(GPIOB_OTG_HS_DP))
-#define VAL_GPIOB_ODR               (PIN_ODR_HIGH(GPIOB_ROT2_SW) |           \
-                                     PIN_ODR_HIGH(GPIOB_ROT2_A) |            \
-                                     PIN_ODR_HIGH(GPIOB_ROT2_B) |            \
+#define VAL_GPIOB_ODR               (PIN_ODR_HIGH(GPIOB_CTRL_ROT2_SW) |      \
+                                     PIN_ODR_HIGH(GPIOB_CTRL_ROT2_A) |       \
+                                     PIN_ODR_HIGH(GPIOB_CTRL_ROT2_B) |       \
                                      PIN_ODR_HIGH(GPIOB_SWO) |               \
                                      PIN_ODR_HIGH(GPIOB_PIN4) |              \
                                      PIN_ODR_HIGH(GPIOB_PIN5) |              \
@@ -392,9 +392,9 @@
                                      PIN_ODR_HIGH(GPIOB_OTG_HS_VBUS) |       \
                                      PIN_ODR_HIGH(GPIOB_OTG_HS_DM) |         \
                                      PIN_ODR_HIGH(GPIOB_OTG_HS_DP))
-#define VAL_GPIOB_AFRL              (PIN_AFIO_AF(GPIOB_ROT2_SW, 0U) |        \
-                                     PIN_AFIO_AF(GPIOB_ROT2_A, 0U) |         \
-                                     PIN_AFIO_AF(GPIOB_ROT2_B, 0U) |         \
+#define VAL_GPIOB_AFRL              (PIN_AFIO_AF(GPIOB_CTRL_ROT2_SW, 0U) |   \
+                                     PIN_AFIO_AF(GPIOB_CTRL_ROT2_A, 0U) |    \
+                                     PIN_AFIO_AF(GPIOB_CTRL_ROT2_B, 0U) |    \
                                      PIN_AFIO_AF(GPIOB_SWO, 5U) |            \
                                      PIN_AFIO_AF(GPIOB_PIN4, 0U) |           \
                                      PIN_AFIO_AF(GPIOB_PIN5, 0U) |           \

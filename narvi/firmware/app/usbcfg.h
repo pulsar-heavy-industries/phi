@@ -63,8 +63,7 @@ extern const MIDIUSBConfig midiusbcfg;
 #define AUDIO_SAMPLES_PER_FRAME     (AUDIO_SAMPLING_FREQUENCY / 1000)
 
 #define DAC_AUDIO_CHANNELS              2U
-#define DAC_AUDIO_PACKET_SIZE           (AUDIO_SAMPLES_PER_FRAME * DAC_AUDIO_CHANNELS \
-                                     * AUDIO_RESOLUTION / 8)
+#define DAC_AUDIO_PACKET_SIZE           (AUDIO_SAMPLES_PER_FRAME * DAC_AUDIO_CHANNELS * AUDIO_RESOLUTION / 8)
 /* Because of samplerate feedback host can send more samples per frame */
 #define DAC_AUDIO_MAX_PACKET_SIZE       (DAC_AUDIO_PACKET_SIZE + 4)
 #define DAC_AUDIO_BUFFER_SIZE           (AUDIO_SAMPLES_PER_FRAME * DAC_AUDIO_CHANNELS * 8)
@@ -75,8 +74,7 @@ extern const MIDIUSBConfig midiusbcfg;
 
 
 #define USB_AUDIO_CHANNELS              4U
-#define USB_AUDIO_PACKET_SIZE           (AUDIO_SAMPLES_PER_FRAME * USB_AUDIO_CHANNELS \
-                                     * AUDIO_RESOLUTION / 8)
+#define USB_AUDIO_PACKET_SIZE           (AUDIO_SAMPLES_PER_FRAME * USB_AUDIO_CHANNELS * AUDIO_RESOLUTION / 8)
 /* Because of samplerate feedback host can send more samples per frame */
 #define USB_AUDIO_MAX_PACKET_SIZE       (USB_AUDIO_PACKET_SIZE + 16)
 #define USB_AUDIO_BUFFER_SIZE           (AUDIO_SAMPLES_PER_FRAME * USB_AUDIO_CHANNELS * 8)

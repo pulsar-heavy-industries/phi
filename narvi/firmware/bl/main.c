@@ -184,12 +184,9 @@ int main(void)
     lcdStart(&LCDD1, &lcdcfg);
     lcdWriteString(&LCDD1, "PHI Narvi - BL", 0);
 
-#if 0
-	phi_at45_ret_t ret;
-	char buf[20];
-
     /* Try to init serial flash */
-    ret = phi_at45_init(&at45, &at45_cfg);
+	char buf[20];
+    phi_at45_ret_t ret = phi_at45_init(&at45, &at45_cfg);
     if (ret == PHI_AT45_RET_SUCCESS)
     {
     	chsnprintf(buf, sizeof(buf) - 1, "AT45: %dMB", (at45.desc->num_pages * 512) / (1024 * 1024));
@@ -200,7 +197,6 @@ int main(void)
     }
     lcdWriteString(&LCDD1, buf, 40);
     chThdSleepSeconds(1);
-#endif
 
     mduObjectInit(&MDU1);
     mduStart(&MDU1, &midiusbcfg);
