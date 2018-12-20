@@ -2,7 +2,7 @@
 
 This repository contains the source code, Ableton remote script and hardware design for the Pulsar Heavy Industries Cenx4 controller.
 
-![Controller picture](http://rundste.in/assets/diy-music-machines-ableton-live-controller-update/front.jpg)
+![Controller picture](https://eranrund.files.wordpress.com/2018/04/front.jpg)
 
 The main features are (some of which are already fully implemented):
 - Easy to use: Automatic mapping of selected device's parameters (as seen in the image below). Getting this to work requires almost no setup and no manual mapping in Ableton (just selecting the right remote script).
@@ -12,9 +12,9 @@ The main features are (some of which are already fully implemented):
 
 I am still in the process in documenting everything, but please refer to the following posts for more information:
 
-[DIY Music Machines - Introduction](http://rundste.in/2016/12/08/diy-music-machines-intro.html)
+[DIY Music Machines - Introduction](https://blog.rundste.in/2016/12/08/diy-music-machines-introduction/)
 
-[DIY Music Machines - Ableton Live Controller Update](http://rundste.in/2017/03/05/diy-music-machines-ableton-live-controller-update.html)
+[DIY Music Machines - Ableton Live Controller Update](https://blog.rundste.in/2017/03/05/diy-music-machines-ableton-live-controller-update/)
 
 # Basic steps in getting this to run
 
