@@ -2,7 +2,7 @@
 
 This repository contains the source code, Ableton remote script and hardware design for the Pulsar Heavy Industries Hyperion module.
 
-![Hyperion](http://rundste.in/assets/diy-music-machines-mixer-and-audio-interface/phi-3-hyperions.jpg)
+![Hyperion](https://eranrund.files.wordpress.com/2018/04/phi-3-hyperions.jpgg)
 
 Each Hyperion module provides you with:
 * Fader.
